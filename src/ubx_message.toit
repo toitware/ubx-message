@@ -35,17 +35,6 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-
-
-  // Put the GPS into backup mode.
-  constructor.RXM_PMREQ --time=0:
-    clazz = UBX_RXM
-    id = 0x41
-    payload = ByteArray 16
-    LITTLE_ENDIAN.put_uint32 payload 4 time
-    LITTLE_ENDIAN.put_int32  payload 8 0b10  // Configuration flag
-    LITTLE_ENDIAN.put_int32  payload 12 0  // Configuration flag
-
   // Set settings.
   constructor.CFG_PMS --get=false:
     clazz = 0x06
@@ -322,6 +311,16 @@ class CfgRst extends Message:
     LITTLE_ENDIAN.put_uint16 payload 0 clear_sections
     LITTLE_ENDIAN.put_uint8 payload 2 reset_mode
     LITTLE_ENDIAN.put_uint8 payload 3 0
+
+class RxmPmreq extends Message:
+  static ID ::= 0x41
+  // Put the GPS into backup mode.
+  constructor --time=0:
+    super Message.UBX_RXM ID (ByteArray 16)
+    LITTLE_ENDIAN.put_uint32 payload 4 time
+    LITTLE_ENDIAN.put_int32  payload 8 0b10  // Configuration flag
+    LITTLE_ENDIAN.put_int32  payload 12 0  // Configuration flag
+
 /*
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
