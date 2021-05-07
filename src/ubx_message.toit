@@ -35,29 +35,6 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-  constructor.MGA_INI_TIME_UTC --time/Time=Time.now --second_accuracy=0 --nanosecond_accuracy=200_000_000:
-    clazz = UBX_MGA
-    id = 0x40
-    payload = ByteArray 24
-    type := 0x10
-    version := 0x00
-    time_info := time.utc
-    LITTLE_ENDIAN.put_uint8  payload 0  type
-    LITTLE_ENDIAN.put_uint8  payload 1  version
-    LITTLE_ENDIAN.put_uint8  payload 2  0x00            // Time reference.
-    LITTLE_ENDIAN.put_uint8  payload 3  18              // Number of leap seconds since 1980 (18 as of Dec 31, 2016 - might be updated again in 2020)
-    LITTLE_ENDIAN.put_uint16 payload 4  time_info.year
-    LITTLE_ENDIAN.put_uint8  payload 6  time_info.month
-    LITTLE_ENDIAN.put_uint8  payload 7  time_info.day
-    LITTLE_ENDIAN.put_uint8  payload 8  time_info.h
-    LITTLE_ENDIAN.put_uint8  payload 9  time_info.m
-    LITTLE_ENDIAN.put_uint8  payload 10 time_info.s
-    LITTLE_ENDIAN.put_uint8  payload 11 0               // Reserved.
-    LITTLE_ENDIAN.put_uint32 payload 12 time_info.ns
-    LITTLE_ENDIAN.put_uint16 payload 16 second_accuracy
-    LITTLE_ENDIAN.put_uint16 payload 18 0               // Reserved.
-    LITTLE_ENDIAN.put_uint32 payload 20 nanosecond_accuracy
-
   constructor.MGA_INI_POS_LLH --latitude/int --longitude/int --altitude/int --accuracy_cm/int:
     clazz = UBX_MGA
     id = 0x40
@@ -320,6 +297,29 @@ class CfgSbas extends Message:
       LITTLE_ENDIAN.put_uint8 pl 3 0
       LITTLE_ENDIAN.put_uint32 pl 4 scanmode
     super Message.UBX_CFG ID pl
+
+class MgaIniTimeUtc extends Message:
+  static ID ::= 0x40
+  constructor --time/Time=Time.now --second_accuracy=0 --nanosecond_accuracy=200_000_000:
+    super Message.UBX_MGA ID (ByteArray 24)
+    type := 0x10
+    version := 0x00
+    time_info := time.utc
+    LITTLE_ENDIAN.put_uint8  payload 0  type
+    LITTLE_ENDIAN.put_uint8  payload 1  version
+    LITTLE_ENDIAN.put_uint8  payload 2  0x00            // Time reference.
+    LITTLE_ENDIAN.put_uint8  payload 3  18              // Number of leap seconds since 1980 (18 as of Dec 31, 2016 - might be updated again in 2020)
+    LITTLE_ENDIAN.put_uint16 payload 4  time_info.year
+    LITTLE_ENDIAN.put_uint8  payload 6  time_info.month
+    LITTLE_ENDIAN.put_uint8  payload 7  time_info.day
+    LITTLE_ENDIAN.put_uint8  payload 8  time_info.h
+    LITTLE_ENDIAN.put_uint8  payload 9  time_info.m
+    LITTLE_ENDIAN.put_uint8  payload 10 time_info.s
+    LITTLE_ENDIAN.put_uint8  payload 11 0               // Reserved.
+    LITTLE_ENDIAN.put_uint32 payload 12 time_info.ns
+    LITTLE_ENDIAN.put_uint16 payload 16 second_accuracy
+    LITTLE_ENDIAN.put_uint16 payload 18 0               // Reserved.
+    LITTLE_ENDIAN.put_uint32 payload 20 nanosecond_accuracy
 
 /*
 Spec:
