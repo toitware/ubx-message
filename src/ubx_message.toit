@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT-style license that can be found
 // in the LICENSE file.
 
+import reader show *
 /**
 UBX messages from the UBX protocol for communicating with the GNSS receivers
   in the ublox Max-M* series.
@@ -108,6 +109,31 @@ compute_checksum msg/ByteArray [callback]:
     ck_a = (ck_a + msg[i]) & 0xff
     ck_b = (ck_b + ck_a) & 0xff
   callback.call ck_a ck_b
+
+is_valid_frame frame/ByteArray -> bool:
+  ck_a ::= frame[frame.size - 2]
+  ck_b ::= frame[frame.size - 1]
+  compute_checksum frame: | a b |
+    return ck_a == a and ck_b == b
+  return false
+
+message r/Reader -> Message?:
+  reader := BufferedReader r
+  if (reader.byte 0) != 0xb5 or (reader.byte 1) != 0x62: return null
+
+  // Verify length and get full the packet.
+  length ::= (reader.byte 4) | (((reader.byte 5) & 0xff) << 8)
+  if length < 0 or length > 512: return null
+  frame ::= reader.bytes length + 8
+
+  // Verify the checksum.
+  if not is_valid_frame frame: return null
+
+  msg_class ::= frame[2]
+  msg_id    ::= frame[3]
+  payload   ::= frame[6..length + 6]
+  reader.skip length + 8
+  return Message msg_class msg_id payload
 
 class CfgMsg extends Message:
   static ID ::= 0x01
