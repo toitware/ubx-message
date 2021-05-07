@@ -35,15 +35,6 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-  // Set settings.
-  constructor.CFG_PMS --get=false:
-    clazz = 0x06
-    id = 0x86
-    if get:
-      payload = ByteArray 0
-    else:
-      payload = ByteArray 8: 0
-
   // Set advanced power settings.
   constructor.CFG_PM2 --get=false:
     clazz = 0x06
@@ -320,6 +311,15 @@ class RxmPmreq extends Message:
     LITTLE_ENDIAN.put_uint32 payload 4 time
     LITTLE_ENDIAN.put_int32  payload 8 0b10  // Configuration flag
     LITTLE_ENDIAN.put_int32  payload 12 0  // Configuration flag
+
+class CfgPms extends Message:
+  static ID ::= 0x86
+  // Set settings.
+  constructor --get=false:
+    pl := #[]
+    if not get:
+      pl = ByteArray 8: 0
+    super Message.UBX_CFG ID pl
 
 /*
 Spec:
