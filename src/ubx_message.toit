@@ -18,23 +18,23 @@ class Message:
   id /int
   payload /ByteArray ::= #[]
 
-  static UBX_NAV ::= 0x01
-  static UBX_RXM ::= 0x02
-  static UBX_INF ::= 0x04
-  static UBX_ACK ::= 0x05
-  static UBX_CFG ::= 0x06
-  static UBX_MON ::= 0x0A
-  static UBX_MGA ::= 0x13
+  static NAV ::= 0x01
+  static RXM ::= 0x02
+  static INF ::= 0x04
+  static ACK ::= 0x05
+  static CFG ::= 0x06
+  static MON ::= 0x0A
+  static MGA ::= 0x13
 
-  static PACK_CLASSES ::= {UBX_NAV: "NAV", UBX_INF: "INF", UBX_ACK: "ACK", UBX_CFG: "CFG", UBX_MON: "MON", UBX_MGA: "MGA"}
+  static PACK_CLASSES ::= {NAV: "NAV", INF: "INF", ACK: "ACK", CFG: "CFG", MON: "MON", MGA: "MGA"}
 
   static PACK_IDS ::= {
-    UBX_NAV: {0x02: "POSLLH", 0x03: "STATUS", 0x07: "PVT", 0x21: "TIMEUTC",  0x35: "SAT"},
-    UBX_INF: {0x03: "TEST"},
-    UBX_ACK: {0x00: "NAK", 0x01: "ACK"},
-    UBX_CFG: {0x01: "MSG", 0x04: "RST", 0x08: "RATE", 0x11: "RXM", 0x23: "NAVX5", 0x24: "NAV5", 0x3b: "PM2", 0x3e: "GNSS", 0x86: "PMS"},
-    UBX_MON: {0x09: "HW"},
-    UBX_MGA: {0x40: "INI", 0x60: "ACK"},
+    NAV: {0x02: "POSLLH", 0x03: "STATUS", 0x07: "PVT", 0x21: "TIMEUTC",  0x35: "SAT"},
+    INF: {0x03: "TEST"},
+    ACK: {0x00: "NAK", 0x01: "ACK"},
+    CFG: {0x01: "MSG", 0x04: "RST", 0x08: "RATE", 0x11: "RXM", 0x23: "NAVX5", 0x24: "NAV5", 0x3b: "PM2", 0x3e: "GNSS", 0x86: "PMS"},
+    MON: {0x09: "HW"},
+    MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
   constructor .clazz .id .payload:
@@ -114,7 +114,7 @@ class CfgMsg extends Message:
   static ID ::= 0x01
 
   constructor --msg_class --msg_id --rate:
-    super Message.UBX_CFG ID #[msg_class, msg_id, rate]
+    super Message.CFG ID #[msg_class, msg_id, rate]
 
 /*
 Spec:
@@ -142,7 +142,7 @@ class CfgGnss extends Message:
         5, qzss_reserved_channels, qzss_max_channels, 0, 1, 0, 1, 1,
         6, glonas_reserved_channels, glonas_max_channels, 0, 1, 0, 1, 1
       ]
-    super Message.UBX_CFG ID pl
+    super Message.CFG ID pl
 
 class CfgNavx5 extends Message:
   static ID ::= 0x23
@@ -179,18 +179,18 @@ class CfgNavx5 extends Message:
         // If we made the 17th byte conditional on a parameter, then the
         // compiler wouldn't be able to create the literal efficiently.
         pl[17] = 1
-    super Message.UBX_CFG ID pl
+    super Message.CFG ID pl
 
 class CfgNav5 extends Message:
   static ID ::= 0x24
 
   constructor.CFG_NAV5 --get=false:
-    super Message.UBX_CFG ID #[]
+    super Message.CFG ID #[]
 
 class CfgRate extends Message:
   static ID ::= 0x08
   constructor --get=false:
-    super Message.UBX_CFG ID #[]
+    super Message.CFG ID #[]
 
 
 class CfgSbas extends Message:
@@ -204,12 +204,12 @@ class CfgSbas extends Message:
       LITTLE_ENDIAN.put_uint8 pl 2 3           // Obsolete value.
       LITTLE_ENDIAN.put_uint8 pl 3 0
       LITTLE_ENDIAN.put_uint32 pl 4 scanmode
-    super Message.UBX_CFG ID pl
+    super Message.CFG ID pl
 
 class MgaIniTimeUtc extends Message:
   static ID ::= 0x40
   constructor --time/Time=Time.now --second_accuracy=0 --nanosecond_accuracy=200_000_000:
-    super Message.UBX_MGA ID (ByteArray 24)
+    super Message.MGA ID (ByteArray 24)
     type := 0x10
     version := 0x00
     time_info := time.utc
@@ -232,12 +232,12 @@ class MgaIniTimeUtc extends Message:
 class NavTimeutcPoll extends Message:
   static ID ::= 0x21
   constructor:
-    super Message.UBX_NAV ID #[]
+    super Message.NAV ID #[]
 
 class MgaIniPosLLH extends Message:
   static ID ::= 0x40
   constructor --latitude/int --longitude/int --altitude/int --accuracy_cm/int:
-    super Message.UBX_MGA ID (ByteArray 20: 0)
+    super Message.MGA ID (ByteArray 20: 0)
     type := 0x01
     version := 0x00
     LITTLE_ENDIAN.put_uint8 payload 0 type
@@ -249,23 +249,23 @@ class MgaIniPosLLH extends Message:
 class NavPosLlhPoll extends Message:
   static ID ::= 0x02
   constructor:
-    super Message.UBX_NAV ID #[]
+    super Message.NAV ID #[]
 
 class NavStatusPoll extends Message:
   static ID ::= 0x03
   constructor:
-    super Message.UBX_NAV ID #[]
+    super Message.NAV ID #[]
 
 class NavPvtPoll extends Message:
   static ID ::= 0x07
   constructor:
-    super Message.UBX_NAV ID #[]
+    super Message.NAV ID #[]
 
 class CfgRst extends Message:
   static ID ::= 0x04
   // Default clear_sections is a cold start, 0xFFFF is a controlled software reset.
   constructor --clear_sections=0xFFFF --reset_mode=2:
-    super Message.UBX_CFG ID (ByteArray 4)
+    super Message.CFG ID (ByteArray 4)
     LITTLE_ENDIAN.put_uint16 payload 0 clear_sections
     LITTLE_ENDIAN.put_uint8 payload 2 reset_mode
     LITTLE_ENDIAN.put_uint8 payload 3 0
@@ -274,7 +274,7 @@ class RxmPmreq extends Message:
   static ID ::= 0x41
   // Put the GPS into backup mode.
   constructor --time=0:
-    super Message.UBX_RXM ID (ByteArray 16)
+    super Message.RXM ID (ByteArray 16)
     LITTLE_ENDIAN.put_uint32 payload 4 time
     LITTLE_ENDIAN.put_int32  payload 8 0b10  // Configuration flag
     LITTLE_ENDIAN.put_int32  payload 12 0  // Configuration flag
@@ -286,24 +286,24 @@ class CfgPms extends Message:
     pl := #[]
     if not get:
       pl = ByteArray 8: 0
-    super Message.UBX_CFG ID pl
+    super Message.CFG ID pl
 
 class CfgRxm extends Message:
   static ID ::= 0x11
   // Set power mode.
   constructor --mode=1 --get=false:
-    super Message.UBX_CFG ID (ByteArray 2)
+    super Message.CFG ID (ByteArray 2)
     payload[1] = mode
 
   constructor --get:
     // TODO: What to throw here?
     if not get: throw BAD_ARGUMENT
-    super Message.UBX_CFG ID #[]
+    super Message.CFG ID #[]
 
 class MonHw extends Message:
   static ID ::= 0x09
   constructor:
-    super Message.UBX_MON ID #[]
+    super Message.MON ID #[]
 
 class CfgPm2 extends Message:
   static ID ::= 0x3b
@@ -320,7 +320,7 @@ class CfgPm2 extends Message:
       LITTLE_ENDIAN.put_uint32 pl 16 10000
       LITTLE_ENDIAN.put_uint16 pl 20 0
       LITTLE_ENDIAN.put_uint16 pl 22 0
-    super Message.UBX_CFG ID pl
+    super Message.CFG ID pl
 /*
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
@@ -335,7 +335,7 @@ class UBXNavPosLLH extends Message:
     super packet.clazz packet.id packet.payload
 
   static is_instance packet/Message -> bool:
-    return packet.clazz == Message.UBX_NAV and packet.id == ID
+    return packet.clazz == Message.NAV and packet.id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -368,7 +368,7 @@ class UbxNavPvt extends Message:
     super packet.clazz packet.id packet.payload
 
   static is_instance packet/Message -> bool:
-    return packet.clazz == Message.UBX_NAV and packet.id == ID
+    return packet.clazz == Message.NAV and packet.id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -436,7 +436,7 @@ class UbxNavStatus extends Message:
     super packet.clazz packet.id packet.payload
 
   static is_instance packet/Message -> bool:
-    return packet.clazz == Message.UBX_NAV and packet.id == ID
+    return packet.clazz == Message.NAV and packet.id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -459,7 +459,7 @@ class UbxNavSat extends Message:
     super packet.clazz packet.id packet.payload
 
   static is_instance packet/Message -> bool:
-    return packet.clazz == Message.UBX_NAV and packet.id == ID
+    return packet.clazz == Message.NAV and packet.id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -516,7 +516,7 @@ class UbxNavTimeUtc extends Message:
     super packet.clazz packet.id packet.payload
 
   static is_instance packet/Message -> bool:
-    return packet.clazz == Message.UBX_NAV and packet.id == ID
+    return packet.clazz == Message.NAV and packet.id == ID
 
   is_valid -> bool:
     return is_instance this
