@@ -8,7 +8,7 @@
 
 import binary show LITTLE_ENDIAN UINT32_MAX
 
-class Packet:
+class Message:
   pack_class ::= 0
   pack_id ::= 0
   payload / ByteArray? ::= null
@@ -322,17 +322,17 @@ compute_checksum msg/ByteArray --from=2 --except=2 [callback]:
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
 */
-class UBXNavPosLLH extends Packet:
+class UBXNavPosLLH extends Message:
   static ID ::= 0x02
 
   payload_/ByteArray ::= ?
 
-  constructor packet/Packet:
+  constructor packet/Message:
     payload_ = packet.payload
     super packet.pack_class packet.pack_id 0 packet.payload
 
-  static is_instance packet/Packet -> bool:
-    return packet.pack_class == Packet.UBX_NAV and packet.pack_id == ID
+  static is_instance packet/Message -> bool:
+    return packet.pack_class == Message.UBX_NAV and packet.pack_id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -355,17 +355,17 @@ class UBXNavPosLLH extends Packet:
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C351.5%2Cnull%5D
 */
-class UbxNavPvt extends Packet:
+class UbxNavPvt extends Message:
   static ID ::= 0x07
 
   payload_/ByteArray ::= ?
 
-  constructor packet/Packet:
+  constructor packet/Message:
     payload_ = packet.payload
     super packet.pack_class packet.pack_id 0 packet.payload
 
-  static is_instance packet/Packet -> bool:
-    return packet.pack_class == Packet.UBX_NAV and packet.pack_id == ID
+  static is_instance packet/Message -> bool:
+    return packet.pack_class == Message.UBX_NAV and packet.pack_id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -423,17 +423,17 @@ class UbxNavPvt extends Packet:
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1057%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
 */
-class UbxNavStatus extends Packet:
+class UbxNavStatus extends Message:
   static ID ::= 0x03
 
   payload_/ByteArray ::= ?
 
-  constructor packet/Packet:
+  constructor packet/Message:
     payload_ = packet.payload
     super packet.pack_class packet.pack_id 0 packet.payload
 
-  static is_instance packet/Packet -> bool:
-    return packet.pack_class == Packet.UBX_NAV and packet.pack_id == ID
+  static is_instance packet/Message -> bool:
+    return packet.pack_class == Message.UBX_NAV and packet.pack_id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -446,17 +446,17 @@ class UbxNavStatus extends Packet:
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1039%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
 */
-class UbxNavSat extends Packet:
+class UbxNavSat extends Message:
   static ID ::= 0x35
 
   payload_/ByteArray ::= ?
 
-  constructor packet/Packet:
+  constructor packet/Message:
     payload_ = packet.payload
     super packet.pack_class packet.pack_id 0 packet.payload
 
-  static is_instance packet/Packet -> bool:
-    return packet.pack_class == Packet.UBX_NAV and packet.pack_id == ID
+  static is_instance packet/Message -> bool:
+    return packet.pack_class == Message.UBX_NAV and packet.pack_id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -503,17 +503,17 @@ class SatelliteData:
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1105%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C683.15%2Cnull%5D
 */
-class UbxNavTimeUtc extends Packet:
+class UbxNavTimeUtc extends Message:
   static ID ::= 0x21
 
   payload_/ByteArray ::= ?
 
-  constructor packet/Packet:
+  constructor packet/Message:
     payload_ = packet.payload
     super packet.pack_class packet.pack_id 0 packet.payload
 
-  static is_instance packet/Packet -> bool:
-    return packet.pack_class == Packet.UBX_NAV and packet.pack_id == ID
+  static is_instance packet/Message -> bool:
+    return packet.pack_class == Message.UBX_NAV and packet.pack_id == ID
 
   is_valid -> bool:
     return is_instance this
