@@ -11,6 +11,8 @@ A description of the UBX protocol can be found here: https://www.u-blox.com/site
 
 import binary show LITTLE_ENDIAN UINT32_MAX
 
+BAD_ARGUMENT ::= "BAD ARGUMENT"
+
 class Message:
   clazz /int
   id /int
@@ -295,7 +297,7 @@ class CfgRxm extends Message:
 
   constructor --get:
     // TODO: What to throw here?
-    if not get: throw "invalid argument"
+    if not get: throw BAD_ARGUMENT
     super Message.UBX_CFG ID #[]
 
 class MonHw extends Message:
