@@ -36,10 +36,6 @@ class Message:
   }
 
 
-  constructor.NAV_PVT_poll:
-    clazz = UBX_NAV
-    id = 0x07
-    payload = ByteArray 0
 
   // Default clear_sections is a cold start, 0xFFFF is a controlled software reset.
   constructor.CFG_RST --clear_sections=0xFFFF --reset_mode=2:
@@ -321,6 +317,12 @@ class NavStatusPoll extends Message:
   static ID ::= 0x03
   constructor:
     super Message.UBX_NAV ID #[]
+
+class NavPvtPoll extends Message:
+  static ID ::= 0x07
+  constructor:
+    super Message.UBX_NAV ID #[]
+
 /*
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
