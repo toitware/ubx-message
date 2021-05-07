@@ -52,11 +52,6 @@ class Message:
       LITTLE_ENDIAN.put_uint16 payload 20 0
       LITTLE_ENDIAN.put_uint16 payload 22 0
 
-  constructor.MON_HW:
-    clazz = UBX_MON
-    id = 0x09
-    payload = ByteArray 0
-
   constructor .clazz .id .payload:
 
   to_byte_array -> ByteArray:
@@ -319,6 +314,11 @@ class CfgRxm extends Message:
     // TODO: What to throw here?
     if not get: throw "invalid argument"
     super Message.UBX_CFG ID #[]
+
+class MonHw extends Message:
+  static ID ::= 0x09
+  constructor:
+    super Message.UBX_MON ID #[]
 
 /*
 Spec:
