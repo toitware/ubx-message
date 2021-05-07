@@ -47,11 +47,6 @@ class Message:
     LITTLE_ENDIAN.put_int32 payload 12 altitude
     LITTLE_ENDIAN.put_uint32 payload 16 accuracy_cm
 
-  constructor.NAV_TIMEUTC_poll:
-    clazz = UBX_NAV
-    id = 0x21
-    payload = ByteArray 0
-
   constructor.NAV_POS_LLH_poll:
     clazz = UBX_NAV
     id = 0x02
@@ -320,6 +315,11 @@ class MgaIniTimeUtc extends Message:
     LITTLE_ENDIAN.put_uint16 payload 16 second_accuracy
     LITTLE_ENDIAN.put_uint16 payload 18 0               // Reserved.
     LITTLE_ENDIAN.put_uint32 payload 20 nanosecond_accuracy
+
+class NavTimeutcPoll extends Message:
+  static ID ::= 0x21
+  constructor:
+    super Message.UBX_NAV ID #[]
 
 /*
 Spec:
