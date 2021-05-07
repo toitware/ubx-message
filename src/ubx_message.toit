@@ -35,19 +35,6 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-  constructor.CFG_SBAS --get=false --scanmode=0b1_00000000_01001000:
-    clazz = UBX_CFG
-    id = 0x16
-    if get:
-      payload = #[]
-    else:
-      payload = ByteArray 8
-      LITTLE_ENDIAN.put_uint8 payload 0 0b00000001
-      LITTLE_ENDIAN.put_uint8 payload 1 0b00000011
-      LITTLE_ENDIAN.put_uint8 payload 2 3           // Obsolete value.
-      LITTLE_ENDIAN.put_uint8 payload 3 0
-      LITTLE_ENDIAN.put_uint32 payload 4 scanmode
-
   constructor.MGA_INI_TIME_UTC --time/Time=Time.now --second_accuracy=0 --nanosecond_accuracy=200_000_000:
     clazz = UBX_MGA
     id = 0x40
@@ -319,6 +306,20 @@ class CfgRate extends Message:
   static ID ::= 0x08
   constructor --get=false:
     super Message.UBX_CFG ID #[]
+
+
+class CfgSbas extends Message:
+  static ID ::= 0x16
+  constructor --get=false --scanmode=0b1_00000000_01001000:
+    pl := #[]
+    if not get:
+      pl = ByteArray 8
+      LITTLE_ENDIAN.put_uint8 pl 0 0b00000001
+      LITTLE_ENDIAN.put_uint8 pl 1 0b00000011
+      LITTLE_ENDIAN.put_uint8 pl 2 3           // Obsolete value.
+      LITTLE_ENDIAN.put_uint8 pl 3 0
+      LITTLE_ENDIAN.put_uint32 pl 4 scanmode
+    super Message.UBX_CFG ID pl
 
 /*
 Spec:
