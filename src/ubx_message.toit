@@ -100,10 +100,11 @@ class Message:
   ubx_nav_timeutc -> UbxNavTimeUtc:
     return UbxNavTimeUtc this
 
-compute_checksum msg/ByteArray --from=2 --except=2 [callback]:
+compute_checksum msg/ByteArray [callback]:
   ck_a := 0
   ck_b := 0
-  for i := from; i < msg.size - except; i++:
+  msg = msg[2..msg.size - 2]
+  msg.size.repeat: | i |
     ck_a = (ck_a + msg[i]) & 0xff
     ck_b = (ck_b + ck_a) & 0xff
   callback.call ck_a ck_b
