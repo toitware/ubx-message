@@ -12,9 +12,9 @@ A description of the UBX protocol can be found here: https://www.u-blox.com/site
 import binary show LITTLE_ENDIAN UINT32_MAX
 
 class Message:
-  clazz ::= 0
-  id ::= 0
-  payload / ByteArray? ::= null
+  clazz /int
+  id /int
+  payload /ByteArray? ::= null
 
   static UBX_NAV ::= 0x01
   static UBX_RXM ::= 0x02
