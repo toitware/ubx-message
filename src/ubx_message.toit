@@ -35,17 +35,7 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-  constructor.MGA_INI_POS_LLH --latitude/int --longitude/int --altitude/int --accuracy_cm/int:
-    clazz = UBX_MGA
-    id = 0x40
-    payload = ByteArray 20: 0
-    type := 0x01
-    version := 0x00
-    LITTLE_ENDIAN.put_uint8 payload 0 type
-    LITTLE_ENDIAN.put_int32 payload 4 latitude
-    LITTLE_ENDIAN.put_int32 payload 8 longitude
-    LITTLE_ENDIAN.put_int32 payload 12 altitude
-    LITTLE_ENDIAN.put_uint32 payload 16 accuracy_cm
+
 
   constructor.NAV_POS_LLH_poll:
     clazz = UBX_NAV
@@ -320,6 +310,18 @@ class NavTimeutcPoll extends Message:
   static ID ::= 0x21
   constructor:
     super Message.UBX_NAV ID #[]
+
+class MgaIniPosLLH extends Message:
+  static ID ::= 0x40
+  constructor --latitude/int --longitude/int --altitude/int --accuracy_cm/int:
+    super Message.UBX_MGA ID (ByteArray 20: 0)
+    type := 0x01
+    version := 0x00
+    LITTLE_ENDIAN.put_uint8 payload 0 type
+    LITTLE_ENDIAN.put_int32 payload 4 latitude
+    LITTLE_ENDIAN.put_int32 payload 8 longitude
+    LITTLE_ENDIAN.put_int32 payload 12 altitude
+    LITTLE_ENDIAN.put_uint32 payload 16 accuracy_cm
 
 /*
 Spec:
