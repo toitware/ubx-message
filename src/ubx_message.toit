@@ -12,8 +12,8 @@ A description of the UBX protocol can be found here: https://www.u-blox.com/site
 import binary show LITTLE_ENDIAN UINT32_MAX
 
 class Message:
-  pack_class ::= 0
-  pack_id ::= 0
+  clazz ::= 0
+  id ::= 0
   payload / ByteArray? ::= null
 
   static UBX_NAV ::= 0x01
@@ -36,8 +36,8 @@ class Message:
   }
 
   constructor.CFG_MSG --msg_class --msg_id --rate:
-    pack_class = UBX_CFG
-    pack_id = 0x01
+    clazz = UBX_CFG
+    id = 0x01
     payload = ByteArray 3
     payload[0] = msg_class
     payload[1] = msg_id
@@ -49,8 +49,8 @@ class Message:
       --sbas_reserved_channels=1 --sbas_max_channels=3
       --qzss_reserved_channels=0 --qzss_max_channels=3
       --glonas_reserved_channels=8 --glonas_max_channels=14:
-    pack_class = UBX_CFG
-    pack_id = 0x3e
+    clazz = UBX_CFG
+    id = 0x3e
     // U-blox recommend using QZSS whenever GPS is active at the same time.
     if get:
       payload = ByteArray 0
@@ -67,8 +67,8 @@ class Message:
       ].copy
 
   constructor.CFG_NAVX5 --ack_aiding/bool --get=false:
-    pack_class = UBX_CFG
-    pack_id = 0x23
+    clazz = UBX_CFG
+    id = 0x23
 
     if get:
       payload = ByteArray 0
@@ -104,27 +104,27 @@ class Message:
         payload[17] = 1
 
   constructor.CFG_NAV5 --get=false:
-    pack_class = UBX_CFG
-    pack_id = 0x24
+    clazz = UBX_CFG
+    id = 0x24
 
     if get:
       payload = ByteArray 0
 
   constructor.CFG_RXM --get=false:
-    pack_class = UBX_CFG
-    pack_id = 0x11
+    clazz = UBX_CFG
+    id = 0x11
     if get:
       payload = ByteArray 0
 
   constructor.CFG_RATE --get=false:
-    pack_class = UBX_CFG
-    pack_id = 0x08
+    clazz = UBX_CFG
+    id = 0x08
     if get:
       payload = ByteArray 0
 
   constructor.CFG_SBAS --get=false --scanmode=0b1_00000000_01001000:
-    pack_class = UBX_CFG
-    pack_id = 0x16
+    clazz = UBX_CFG
+    id = 0x16
     if get:
       payload = ByteArray 0
     else:
@@ -136,8 +136,8 @@ class Message:
       LITTLE_ENDIAN.put_uint32 payload 4 scanmode
 
   constructor.MGA_INI_TIME_UTC --time/Time=Time.now --second_accuracy=0 --nanosecond_accuracy=200_000_000:
-    pack_class = UBX_MGA
-    pack_id = 0x40
+    clazz = UBX_MGA
+    id = 0x40
     payload = ByteArray 24
     type := 0x10
     version := 0x00
@@ -159,8 +159,8 @@ class Message:
     LITTLE_ENDIAN.put_uint32 payload 20 nanosecond_accuracy
 
   constructor.MGA_INI_POS_LLH --latitude/int --longitude/int --altitude/int --accuracy_cm/int:
-    pack_class = UBX_MGA
-    pack_id = 0x40
+    clazz = UBX_MGA
+    id = 0x40
     payload = ByteArray 20: 0
     type := 0x01
     version := 0x00
@@ -171,29 +171,29 @@ class Message:
     LITTLE_ENDIAN.put_uint32 payload 16 accuracy_cm
 
   constructor.NAV_TIMEUTC_poll:
-    pack_class = UBX_NAV
-    pack_id = 0x21
+    clazz = UBX_NAV
+    id = 0x21
     payload = ByteArray 0
 
   constructor.NAV_POS_LLH_poll:
-    pack_class = UBX_NAV
-    pack_id = 0x02
+    clazz = UBX_NAV
+    id = 0x02
     payload = ByteArray 0
 
   constructor.NAV_STATUS_poll:
-    pack_class = UBX_NAV
-    pack_id = 0x03
+    clazz = UBX_NAV
+    id = 0x03
     payload = ByteArray 0
 
   constructor.NAV_PVT_poll:
-    pack_class = UBX_NAV
-    pack_id = 0x07
+    clazz = UBX_NAV
+    id = 0x07
     payload = ByteArray 0
 
   // Default clear_sections is a cold start, 0xFFFF is a controlled software reset.
   constructor.CFG_RST --clear_sections=0xFFFF --reset_mode=2:
-    pack_class = UBX_CFG
-    pack_id = 0x04
+    clazz = UBX_CFG
+    id = 0x04
     payload = ByteArray 4
     LITTLE_ENDIAN.put_uint16 payload 0 clear_sections
     LITTLE_ENDIAN.put_uint8 payload 2 reset_mode
@@ -201,8 +201,8 @@ class Message:
 
   // Put the GPS into backup mode.
   constructor.RXM_PMREQ --time=0:
-    pack_class = UBX_RXM
-    pack_id = 0x41
+    clazz = UBX_RXM
+    id = 0x41
     payload = ByteArray 16
     LITTLE_ENDIAN.put_uint32 payload 4 time
     LITTLE_ENDIAN.put_int32  payload 8 0b10  // Configuration flag
@@ -210,8 +210,8 @@ class Message:
 
   // Set settings.
   constructor.CFG_PMS --get=false:
-    pack_class = 0x06
-    pack_id = 0x86
+    clazz = 0x06
+    id = 0x86
     if get:
       payload = ByteArray 0
     else:
@@ -219,8 +219,8 @@ class Message:
 
   // Set advanced power settings.
   constructor.CFG_PM2 --get=false:
-    pack_class = 0x06
-    pack_id = 0x3B
+    clazz = 0x06
+    id = 0x3B
     if get:
       payload = ByteArray 0
     else:
@@ -236,25 +236,25 @@ class Message:
 
   // Set power mode.
   constructor.CFG_RXM --mode=1:
-    pack_class = 0x06
-    pack_id = 0x11
+    clazz = 0x06
+    id = 0x11
     payload = ByteArray 2
     payload[1] = mode
 
   constructor.MON_HW:
-    pack_class = UBX_MON
-    pack_id = 0x09
+    clazz = UBX_MON
+    id = 0x09
     payload = ByteArray 0
 
   // TODO (lau) Remove length. Implicitly given by payload.
-  constructor .pack_class .pack_id length .payload:
+  constructor .clazz .id length .payload:
 
   to_byte_array -> ByteArray:
     bytes := ByteArray 8 + payload.size
     bytes[0] = 0xB5
     bytes[1] = 0x62
-    bytes[2] = pack_class
-    bytes[3] = pack_id
+    bytes[2] = clazz
+    bytes[3] = id
     LITTLE_ENDIAN.put_uint16 bytes 4 payload.size
     bytes.replace 6 payload
     compute_checksum bytes: | ck_a ck_b |
@@ -263,17 +263,17 @@ class Message:
     return bytes
 
   class_string -> string:
-    PACK_CLASSES.get pack_class
+    PACK_CLASSES.get clazz
       --if_present=:
         return it
       --if_absent=:
-        return "0x$(%02x pack_class)"
+        return "0x$(%02x clazz)"
     unreachable
 
   id_string -> string:
-    absent_block ::=: return "0x$(%02x pack_id)"
-    ids := PACK_IDS.get pack_class --if_absent=absent_block
-    ids.get pack_id
+    absent_block ::=: return "0x$(%02x id)"
+    ids := PACK_IDS.get clazz --if_absent=absent_block
+    ids.get id
       --if_present=:
         return it
       --if_absent=absent_block
@@ -332,10 +332,10 @@ class UBXNavPosLLH extends Message:
 
   constructor packet/Message:
     payload_ = packet.payload
-    super packet.pack_class packet.pack_id 0 packet.payload
+    super packet.clazz packet.id 0 packet.payload
 
   static is_instance packet/Message -> bool:
-    return packet.pack_class == Message.UBX_NAV and packet.pack_id == ID
+    return packet.clazz == Message.UBX_NAV and packet.id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -365,10 +365,10 @@ class UbxNavPvt extends Message:
 
   constructor packet/Message:
     payload_ = packet.payload
-    super packet.pack_class packet.pack_id 0 packet.payload
+    super packet.clazz packet.id 0 packet.payload
 
   static is_instance packet/Message -> bool:
-    return packet.pack_class == Message.UBX_NAV and packet.pack_id == ID
+    return packet.clazz == Message.UBX_NAV and packet.id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -433,10 +433,10 @@ class UbxNavStatus extends Message:
 
   constructor packet/Message:
     payload_ = packet.payload
-    super packet.pack_class packet.pack_id 0 packet.payload
+    super packet.clazz packet.id 0 packet.payload
 
   static is_instance packet/Message -> bool:
-    return packet.pack_class == Message.UBX_NAV and packet.pack_id == ID
+    return packet.clazz == Message.UBX_NAV and packet.id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -456,10 +456,10 @@ class UbxNavSat extends Message:
 
   constructor packet/Message:
     payload_ = packet.payload
-    super packet.pack_class packet.pack_id 0 packet.payload
+    super packet.clazz packet.id 0 packet.payload
 
   static is_instance packet/Message -> bool:
-    return packet.pack_class == Message.UBX_NAV and packet.pack_id == ID
+    return packet.clazz == Message.UBX_NAV and packet.id == ID
 
   is_valid -> bool:
     return is_instance this
@@ -513,10 +513,10 @@ class UbxNavTimeUtc extends Message:
 
   constructor packet/Message:
     payload_ = packet.payload
-    super packet.pack_class packet.pack_id 0 packet.payload
+    super packet.clazz packet.id 0 packet.payload
 
   static is_instance packet/Message -> bool:
-    return packet.pack_class == Message.UBX_NAV and packet.pack_id == ID
+    return packet.clazz == Message.UBX_NAV and packet.id == ID
 
   is_valid -> bool:
     return is_instance this
