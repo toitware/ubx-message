@@ -35,13 +35,6 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-
-
-  constructor.NAV_POS_LLH_poll:
-    clazz = UBX_NAV
-    id = 0x02
-    payload = ByteArray 0
-
   constructor.NAV_STATUS_poll:
     clazz = UBX_NAV
     id = 0x03
@@ -323,6 +316,10 @@ class MgaIniPosLLH extends Message:
     LITTLE_ENDIAN.put_int32 payload 12 altitude
     LITTLE_ENDIAN.put_uint32 payload 16 accuracy_cm
 
+class NavPosLlhPoll extends Message:
+  static ID ::= 0x02
+  constructor:
+    super Message.UBX_NAV ID #[]
 /*
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
