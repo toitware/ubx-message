@@ -35,10 +35,6 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-  constructor.NAV_STATUS_poll:
-    clazz = UBX_NAV
-    id = 0x03
-    payload = ByteArray 0
 
   constructor.NAV_PVT_poll:
     clazz = UBX_NAV
@@ -318,6 +314,11 @@ class MgaIniPosLLH extends Message:
 
 class NavPosLlhPoll extends Message:
   static ID ::= 0x02
+  constructor:
+    super Message.UBX_NAV ID #[]
+
+class NavStatusPoll extends Message:
+  static ID ::= 0x03
   constructor:
     super Message.UBX_NAV ID #[]
 /*
