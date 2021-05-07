@@ -35,80 +35,6 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-  constructor.CFG_MSG --msg_class --msg_id --rate:
-    clazz = UBX_CFG
-    id = 0x01
-    payload = ByteArray 3
-    payload[0] = msg_class
-    payload[1] = msg_id
-    payload[2] = rate
-
-  // The UBX-CFG-GNSS is described on p. 175 of the docs.
-  constructor.CFG_GNSS --get=false
-      --gps_reserved_channels=8 --gps_max_channels=16
-      --sbas_reserved_channels=1 --sbas_max_channels=3
-      --qzss_reserved_channels=0 --qzss_max_channels=3
-      --glonas_reserved_channels=8 --glonas_max_channels=14:
-    clazz = UBX_CFG
-    id = 0x3e
-    // U-blox recommend using QZSS whenever GPS is active at the same time.
-    if get:
-      payload = ByteArray 0
-    else:
-      payload = #[
-        0, 0, 32, 7,
-        0, gps_reserved_channels, gps_max_channels, 0, 1, 0, 1, 1,
-        1, sbas_reserved_channels,  sbas_max_channels, 0, 1, 0, 1, 1,
-        2, 0,  0, 0, 0, 0, 1, 1,
-        3, 0,  0, 0, 0, 0, 1, 1,
-        4, 0,  0, 0, 0, 0, 1, 1,
-        5, qzss_reserved_channels, qzss_max_channels, 0, 1, 0, 1, 1,
-        6, glonas_reserved_channels, glonas_max_channels, 0, 1, 0, 1, 1
-      ].copy
-
-  constructor.CFG_NAVX5 --ack_aiding/bool --get=false:
-    clazz = UBX_CFG
-    id = 0x23
-
-    if get:
-      payload = ByteArray 0
-    else:
-      // Payload copied from chip output.
-      payload = #[
-        2, 0,             // 0: version
-        255, 255,         // 2: mask1
-        63, 2, 0, 0,      // 4: mask2
-        3, 2,             // 8: reserved1
-        3,                // 10: minSVs
-        32,               // 11: maxSVs
-        6,                // 12: minCNO
-        0,                // 13: reserved2
-        0,                // 14: initial fix must be 3D
-        1, 0,             // 15: reserved3
-        0,                // 17: ackAiding
-        75, 7,            // 18: wknRollover
-        0, 1, 0, 0, 1, 1, // 20: reserved4
-        0,                // 26: usePPP
-        0,                // 27: aopCfg
-        0, 100,           // 28: reserved5
-        100, 0,           // 30: aopOrBMaxErr
-        0, 1, 17, 0,      // 32: reserved6
-        0, 0, 0,          // 36: reserved7
-        0                 // 39: useAdr
-      ].copy
-      if ack_aiding:
-        // We are assigning the ackAiding byte after creation, so that the
-        // payload initially points to the read-only byte-array.
-        // If we made the 17th byte conditional on a parameter, then the
-        // compiler wouldn't be able to create the literal efficiently.
-        payload[17] = 1
-
-  constructor.CFG_NAV5 --get=false:
-    clazz = UBX_CFG
-    id = 0x24
-
-    if get:
-      payload = ByteArray 0
 
   constructor.CFG_RXM --get=false:
     clazz = UBX_CFG
@@ -319,6 +245,82 @@ compute_checksum msg/ByteArray --from=2 --except=2 [callback]:
     ck_b = (ck_b + ck_a) & 0xff
   callback.call ck_a ck_b
 
+class CfgMsg extends Message:
+  static ID ::= 0x01
+
+  constructor --msg_class --msg_id --rate:
+    super Message.UBX_CFG ID #[msg_class, msg_id, rate]
+
+/*
+Spec:
+https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A667%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C379.84%2Cnull%5D
+*/
+class CfgGnss extends Message:
+  static ID ::= 0x3e
+
+  constructor --get=false
+      --gps_reserved_channels=8 --gps_max_channels=16
+      --sbas_reserved_channels=1 --sbas_max_channels=3
+      --qzss_reserved_channels=0 --qzss_max_channels=3
+      --glonas_reserved_channels=8 --glonas_max_channels=14:
+
+    pl := #[]
+    // U-blox recommend using QZSS whenever GPS is active at the same time.
+    if not get:
+      pl = #[
+        0, 0, 32, 7,
+        0, gps_reserved_channels, gps_max_channels, 0, 1, 0, 1, 1,
+        1, sbas_reserved_channels,  sbas_max_channels, 0, 1, 0, 1, 1,
+        2, 0,  0, 0, 0, 0, 1, 1,
+        3, 0,  0, 0, 0, 0, 1, 1,
+        4, 0,  0, 0, 0, 0, 1, 1,
+        5, qzss_reserved_channels, qzss_max_channels, 0, 1, 0, 1, 1,
+        6, glonas_reserved_channels, glonas_max_channels, 0, 1, 0, 1, 1
+      ]
+    super Message.UBX_CFG ID pl
+
+class CfgNavx5 extends Message:
+  static ID ::= 0x23
+
+  constructor --ack_aiding/bool --get=false:
+    pl := #[]
+    if not get:
+      // Payload copied from chip output.
+      pl = #[
+        2, 0,             // 0: version
+        255, 255,         // 2: mask1
+        63, 2, 0, 0,      // 4: mask2
+        3, 2,             // 8: reserved1
+        3,                // 10: minSVs
+        32,               // 11: maxSVs
+        6,                // 12: minCNO
+        0,                // 13: reserved2
+        0,                // 14: initial fix must be 3D
+        1, 0,             // 15: reserved3
+        0,                // 17: ackAiding
+        75, 7,            // 18: wknRollover
+        0, 1, 0, 0, 1, 1, // 20: reserved4
+        0,                // 26: usePPP
+        0,                // 27: aopCfg
+        0, 100,           // 28: reserved5
+        100, 0,           // 30: aopOrBMaxErr
+        0, 1, 17, 0,      // 32: reserved6
+        0, 0, 0,          // 36: reserved7
+        0                 // 39: useAdr
+      ]
+      if ack_aiding:
+        // We are assigning the ackAiding byte after creation, so that the
+        // payload initially points to the read-only byte-array.
+        // If we made the 17th byte conditional on a parameter, then the
+        // compiler wouldn't be able to create the literal efficiently.
+        pl[17] = 1
+    super Message.UBX_CFG ID pl
+
+class CfgNav5 extends Message:
+  static ID ::= 0x24
+
+  constructor.CFG_NAV5 --get=false:
+    super Message.UBX_CFG ID #[]
 
 /*
 Spec:
