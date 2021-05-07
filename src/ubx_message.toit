@@ -35,23 +35,6 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-  // Set advanced power settings.
-  constructor.CFG_PM2 --get=false:
-    clazz = 0x06
-    id = 0x3B
-    if get:
-      payload = ByteArray 0
-    else:
-      payload = ByteArray 44
-      payload[0] = 0x01
-      payload[2] = 1
-      LITTLE_ENDIAN.put_uint32 payload 4 0
-      LITTLE_ENDIAN.put_uint32 payload 8 0
-      LITTLE_ENDIAN.put_uint32 payload 12 10000
-      LITTLE_ENDIAN.put_uint32 payload 16 10000
-      LITTLE_ENDIAN.put_uint16 payload 20 0
-      LITTLE_ENDIAN.put_uint16 payload 22 0
-
   constructor .clazz .id .payload:
 
   to_byte_array -> ByteArray:
@@ -320,6 +303,22 @@ class MonHw extends Message:
   constructor:
     super Message.UBX_MON ID #[]
 
+class CfgPm2 extends Message:
+  static ID ::= 0x3b
+  // Set advanced power settings.
+  constructor --get=false:
+    pl := #[]
+    if not get:
+      pl = ByteArray 44
+      pl[0] = 0x01
+      pl[2] = 1
+      LITTLE_ENDIAN.put_uint32 pl 4 0
+      LITTLE_ENDIAN.put_uint32 pl 8 0
+      LITTLE_ENDIAN.put_uint32 pl 12 10000
+      LITTLE_ENDIAN.put_uint32 pl 16 10000
+      LITTLE_ENDIAN.put_uint16 pl 20 0
+      LITTLE_ENDIAN.put_uint16 pl 22 0
+    super Message.UBX_CFG ID pl
 /*
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
