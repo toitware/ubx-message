@@ -37,15 +37,6 @@ class Message:
 
 
 
-  // Default clear_sections is a cold start, 0xFFFF is a controlled software reset.
-  constructor.CFG_RST --clear_sections=0xFFFF --reset_mode=2:
-    clazz = UBX_CFG
-    id = 0x04
-    payload = ByteArray 4
-    LITTLE_ENDIAN.put_uint16 payload 0 clear_sections
-    LITTLE_ENDIAN.put_uint8 payload 2 reset_mode
-    LITTLE_ENDIAN.put_uint8 payload 3 0
-
   // Put the GPS into backup mode.
   constructor.RXM_PMREQ --time=0:
     clazz = UBX_RXM
@@ -323,6 +314,14 @@ class NavPvtPoll extends Message:
   constructor:
     super Message.UBX_NAV ID #[]
 
+class CfgRst extends Message:
+  static ID ::= 0x04
+  // Default clear_sections is a cold start, 0xFFFF is a controlled software reset.
+  constructor --clear_sections=0xFFFF --reset_mode=2:
+    super Message.UBX_CFG ID (ByteArray 4)
+    LITTLE_ENDIAN.put_uint16 payload 0 clear_sections
+    LITTLE_ENDIAN.put_uint8 payload 2 reset_mode
+    LITTLE_ENDIAN.put_uint8 payload 3 0
 /*
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
