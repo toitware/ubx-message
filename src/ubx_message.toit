@@ -2,8 +2,11 @@
 // Use of this source code is governed by a MIT-style license that can be found
 // in the LICENSE file.
 
-/*
-  U-blox docs: https://www.u-blox.com/en/docs/
+/**
+UBX messages from the UBX protocol for communicating with the GNSS receivers
+  in the ublox Max-M* series.
+
+A description of the UBX protocol can be found here: https://www.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_UBX-13003221.pdf
 */
 
 import binary show LITTLE_ENDIAN UINT32_MAX
