@@ -52,13 +52,6 @@ class Message:
       LITTLE_ENDIAN.put_uint16 payload 20 0
       LITTLE_ENDIAN.put_uint16 payload 22 0
 
-  // Set power mode.
-  constructor.CFG_RXM --mode=1:
-    clazz = 0x06
-    id = 0x11
-    payload = ByteArray 2
-    payload[1] = mode
-
   constructor.MON_HW:
     clazz = UBX_MON
     id = 0x09
@@ -214,12 +207,6 @@ class CfgNav5 extends Message:
   constructor.CFG_NAV5 --get=false:
     super Message.UBX_CFG ID #[]
 
-class CfgRxm extends Message:
-  static ID ::= 0x11
-
-  constructor --get=false:
-    super Message.UBX_CFG ID #[]
-
 class CfgRate extends Message:
   static ID ::= 0x08
   constructor --get=false:
@@ -320,6 +307,18 @@ class CfgPms extends Message:
     if not get:
       pl = ByteArray 8: 0
     super Message.UBX_CFG ID pl
+
+class CfgRxm extends Message:
+  static ID ::= 0x11
+  // Set power mode.
+  constructor --mode=1 --get=false:
+    super Message.UBX_CFG ID (ByteArray 2)
+    payload[1] = mode
+
+  constructor --get:
+    // TODO: What to throw here?
+    if not get: throw "invalid argument"
+    super Message.UBX_CFG ID #[]
 
 /*
 Spec:
