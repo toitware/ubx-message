@@ -35,11 +35,6 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-  constructor.CFG_RXM --get=false:
-    clazz = UBX_CFG
-    id = 0x11
-    payload = #[]
-
   constructor.CFG_RATE --get=false:
     clazz = UBX_CFG
     id = 0x08
@@ -317,6 +312,12 @@ class CfgNav5 extends Message:
   static ID ::= 0x24
 
   constructor.CFG_NAV5 --get=false:
+    super Message.UBX_CFG ID #[]
+
+class CfgRxm extends Message:
+  static ID ::= 0x11
+
+  constructor --get=false:
     super Message.UBX_CFG ID #[]
 
 /*
