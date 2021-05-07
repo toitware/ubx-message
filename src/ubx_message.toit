@@ -246,8 +246,7 @@ class Message:
     id = 0x09
     payload = ByteArray 0
 
-  // TODO (lau) Remove length. Implicitly given by payload.
-  constructor .clazz .id length .payload:
+  constructor .clazz .id .payload:
 
   to_byte_array -> ByteArray:
     bytes := ByteArray 8 + payload.size
@@ -332,7 +331,7 @@ class UBXNavPosLLH extends Message:
 
   constructor packet/Message:
     payload_ = packet.payload
-    super packet.clazz packet.id 0 packet.payload
+    super packet.clazz packet.id packet.payload
 
   static is_instance packet/Message -> bool:
     return packet.clazz == Message.UBX_NAV and packet.id == ID
@@ -365,7 +364,7 @@ class UbxNavPvt extends Message:
 
   constructor packet/Message:
     payload_ = packet.payload
-    super packet.clazz packet.id 0 packet.payload
+    super packet.clazz packet.id packet.payload
 
   static is_instance packet/Message -> bool:
     return packet.clazz == Message.UBX_NAV and packet.id == ID
@@ -433,7 +432,7 @@ class UbxNavStatus extends Message:
 
   constructor packet/Message:
     payload_ = packet.payload
-    super packet.clazz packet.id 0 packet.payload
+    super packet.clazz packet.id packet.payload
 
   static is_instance packet/Message -> bool:
     return packet.clazz == Message.UBX_NAV and packet.id == ID
@@ -456,7 +455,7 @@ class UbxNavSat extends Message:
 
   constructor packet/Message:
     payload_ = packet.payload
-    super packet.clazz packet.id 0 packet.payload
+    super packet.clazz packet.id packet.payload
 
   static is_instance packet/Message -> bool:
     return packet.clazz == Message.UBX_NAV and packet.id == ID
@@ -513,7 +512,7 @@ class UbxNavTimeUtc extends Message:
 
   constructor packet/Message:
     payload_ = packet.payload
-    super packet.clazz packet.id 0 packet.payload
+    super packet.clazz packet.id packet.payload
 
   static is_instance packet/Message -> bool:
     return packet.clazz == Message.UBX_NAV and packet.id == ID
