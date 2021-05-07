@@ -14,7 +14,7 @@ import binary show LITTLE_ENDIAN UINT32_MAX
 class Message:
   clazz /int
   id /int
-  payload /ByteArray? ::= null
+  payload /ByteArray ::= #[]
 
   static UBX_NAV ::= 0x01
   static UBX_RXM ::= 0x02
@@ -35,24 +35,21 @@ class Message:
     UBX_MGA: {0x40: "INI", 0x60: "ACK"},
   }
 
-
   constructor.CFG_RXM --get=false:
     clazz = UBX_CFG
     id = 0x11
-    if get:
-      payload = ByteArray 0
+    payload = #[]
 
   constructor.CFG_RATE --get=false:
     clazz = UBX_CFG
     id = 0x08
-    if get:
-      payload = ByteArray 0
+    payload = #[]
 
   constructor.CFG_SBAS --get=false --scanmode=0b1_00000000_01001000:
     clazz = UBX_CFG
     id = 0x16
     if get:
-      payload = ByteArray 0
+      payload = #[]
     else:
       payload = ByteArray 8
       LITTLE_ENDIAN.put_uint8 payload 0 0b00000001
