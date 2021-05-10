@@ -587,11 +587,11 @@ https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1105%2C%22gen%22%3
 class UbxNavTimeUtc extends Message:
   static ID ::= 0x21
 
-  payload_/ByteArray ::= ?
-
   constructor packet/Message:
-    payload_ = packet.payload
     super packet.clazz packet.id packet.payload
+
+  constructor.poll:
+    super Message.NAV ID #[]
 
   id_string -> string:
     return "TIMEUTC"
@@ -603,6 +603,6 @@ class UbxNavTimeUtc extends Message:
     return is_instance this
 
   accuracy -> Duration?:
-    value := LITTLE_ENDIAN.uint32 payload_ 4
+    value := LITTLE_ENDIAN.uint32 payload 4
     if value == UINT32_MAX: return null
     return Duration --ns=value
