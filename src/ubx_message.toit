@@ -25,16 +25,7 @@ class Message:
   static MON ::= 0x0A
   static MGA ::= 0x13
 
-  static PACK_CLASSES ::= {NAV: "NAV", INF: "INF", ACK: "ACK", CFG: "CFG", MON: "MON", MGA: "MGA"}
-
-  static PACK_IDS ::= {
-    NAV: {0x02: "POSLLH", 0x03: "STATUS", 0x07: "PVT", 0x21: "TIMEUTC",  0x35: "SAT"},
-    INF: {0x03: "TEST"},
-    ACK: {0x00: "NAK", 0x01: "ACK"},
-    CFG: {0x01: "MSG", 0x04: "RST", 0x08: "RATE", 0x11: "RXM", 0x23: "NAVX5", 0x24: "NAV5", 0x3b: "PM2", 0x3e: "GNSS", 0x86: "PMS"},
-    MON: {0x09: "HW"},
-    MGA: {0x40: "INI", 0x60: "ACK"},
-  }
+  static PACK_CLASSES ::= {NAV: "NAV", RXM: "RXM", INF: "INF", ACK: "ACK", CFG: "CFG", MON: "MON", MGA: "MGA"}
 
   constructor .clazz .id .payload:
 
@@ -60,22 +51,16 @@ class Message:
     unreachable
 
   id_string -> string:
-    absent_block ::=: return "0x$(%02x id)"
-    ids := PACK_IDS.get clazz --if_absent=absent_block
-    ids.get id
-      --if_present=:
-        return it
-      --if_absent=absent_block
-    unreachable
+    return "0x$(%02x id)"
 
   message_type -> string:
     return "UBX-$class_string-$id_string"
 
   is_ubx_nav_pos_llh -> bool:
-    return UBXNavPosLLH.is_instance this
+    return UBXNavPosllh.is_instance this
 
-  ubx_nav_pos_llh -> UBXNavPosLLH:
-    return UBXNavPosLLH this
+  ubx_nav_pos_llh -> UBXNavPosllh:
+    return UBXNavPosllh this
 
   is_ubx_nav_pvt -> bool:
     return UbxNavPvt.is_instance this
@@ -135,11 +120,15 @@ message r/Reader -> Message?:
   reader.skip length + 8
   return Message msg_class msg_id payload
 
+
 class CfgMsg extends Message:
   static ID ::= 0x01
 
   constructor --msg_class --msg_id --rate:
     super Message.CFG ID #[msg_class, msg_id, rate]
+
+  id_string -> string:
+    return "MSG"
 
 /*
 Spec:
@@ -170,6 +159,9 @@ class CfgGnss extends Message:
       6, glonas_reserved_channels, glonas_max_channels, 0, 1, 0, 1, 1
     ]
     super Message.CFG ID pl
+
+  id_string -> string:
+    return "GNSS"
 
 class CfgNavx5 extends Message:
   static ID ::= 0x23
@@ -208,17 +200,26 @@ class CfgNavx5 extends Message:
       pl[17] = 1
     super Message.CFG ID pl
 
+  id_string -> string:
+    return "NAVX5"
+
 class CfgNav5 extends Message:
   static ID ::= 0x24
 
   constructor.get:
     super Message.CFG ID #[]
 
+  id_string -> string:
+    return "NAV5"
+
 class CfgRate extends Message:
   static ID ::= 0x08
+
   constructor.get:
     super Message.CFG ID #[]
 
+  id_string -> string:
+    return "RATE"
 
 class CfgSbas extends Message:
   static ID ::= 0x16
@@ -233,6 +234,8 @@ class CfgSbas extends Message:
     LITTLE_ENDIAN.put_uint8 payload 3 0
     LITTLE_ENDIAN.put_uint32 payload 4 scanmode
 
+  id_string -> string:
+    return "SBAS"
 
 class MgaIniTimeUtc extends Message:
   static ID ::= 0x40
@@ -257,10 +260,16 @@ class MgaIniTimeUtc extends Message:
     LITTLE_ENDIAN.put_uint16 payload 18 0               // Reserved.
     LITTLE_ENDIAN.put_uint32 payload 20 nanosecond_accuracy
 
+  id_string -> string:
+    return "INI-TIME_UTC"
+
 class NavTimeutcPoll extends Message:
   static ID ::= 0x21
   constructor:
     super Message.NAV ID #[]
+
+  id_string -> string:
+    return "TIMEUTC"
 
 class MgaIniPosLLH extends Message:
   static ID ::= 0x40
@@ -274,20 +283,32 @@ class MgaIniPosLLH extends Message:
     LITTLE_ENDIAN.put_int32 payload 12 altitude
     LITTLE_ENDIAN.put_uint32 payload 16 accuracy_cm
 
-class NavPosLlhPoll extends Message:
+  id_string -> string:
+    return "INI-POS_LLH"
+
+class NavPosLlh extends Message:
   static ID ::= 0x02
-  constructor:
+  constructor.poll:
     super Message.NAV ID #[]
 
-class NavStatusPoll extends Message:
+  id_string -> string:
+    return "POSLLH"
+
+class NavStatus extends Message:
   static ID ::= 0x03
-  constructor:
+  constructor.poll:
     super Message.NAV ID #[]
 
-class NavPvtPoll extends Message:
+  id_string -> string:
+    return "STATUS"
+
+class NavPvt extends Message:
   static ID ::= 0x07
-  constructor:
+  constructor.poll:
     super Message.NAV ID #[]
+
+  id_string -> string:
+    return "PVT"
 
 class CfgRst extends Message:
   static ID ::= 0x04
@@ -298,6 +319,9 @@ class CfgRst extends Message:
     LITTLE_ENDIAN.put_uint8 payload 2 reset_mode
     LITTLE_ENDIAN.put_uint8 payload 3 0
 
+  id_string -> string:
+    return "RST"
+
 class RxmPmreq extends Message:
   static ID ::= 0x41
   // Put the GPS into backup mode.
@@ -307,6 +331,9 @@ class RxmPmreq extends Message:
     LITTLE_ENDIAN.put_int32  payload 8 0b10  // Configuration flag
     LITTLE_ENDIAN.put_int32  payload 12 0  // Configuration flag
 
+  id_string -> string:
+    return "PMREQ"
+
 class CfgPms extends Message:
   static ID ::= 0x86
   constructor.get:
@@ -315,6 +342,9 @@ class CfgPms extends Message:
   // Set settings.
   constructor:
     super Message.CFG ID (ByteArray 8: 0)
+
+  id_string -> string:
+    return "PMS"
 
 class CfgRxm extends Message:
   static ID ::= 0x11
@@ -326,10 +356,16 @@ class CfgRxm extends Message:
   constructor.get:
     super Message.CFG ID #[]
 
+  id_string -> string:
+    return "RXM"
+
 class MonHw extends Message:
   static ID ::= 0x09
   constructor:
     super Message.MON ID #[]
+
+  id_string -> string:
+    return "HW"
 
 class CfgPm2 extends Message:
   static ID ::= 0x3b
@@ -348,11 +384,14 @@ class CfgPm2 extends Message:
     LITTLE_ENDIAN.put_uint16 payload 20 0
     LITTLE_ENDIAN.put_uint16 payload 22 0
 
+  id_string -> string:
+    return "PM2"
+
 /*
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
 */
-class UBXNavPosLLH extends Message:
+class UBXNavPosllh extends Message:
   static ID ::= 0x02
 
   payload_/ByteArray ::= ?
@@ -360,6 +399,9 @@ class UBXNavPosLLH extends Message:
   constructor packet/Message:
     payload_ = packet.payload
     super packet.clazz packet.id packet.payload
+
+  id_string -> string:
+    return "POSLLH"
 
   static is_instance packet/Message -> bool:
     return packet.clazz == Message.NAV and packet.id == ID
@@ -393,6 +435,9 @@ class UbxNavPvt extends Message:
   constructor packet/Message:
     payload_ = packet.payload
     super packet.clazz packet.id packet.payload
+
+  id_string -> string:
+    return "PVT"
 
   static is_instance packet/Message -> bool:
     return packet.clazz == Message.NAV and packet.id == ID
@@ -462,6 +507,9 @@ class UbxNavStatus extends Message:
     payload_ = packet.payload
     super packet.clazz packet.id packet.payload
 
+  id_string -> string:
+    return "STATUS"
+
   static is_instance packet/Message -> bool:
     return packet.clazz == Message.NAV and packet.id == ID
 
@@ -484,6 +532,9 @@ class UbxNavSat extends Message:
   constructor packet/Message:
     payload_ = packet.payload
     super packet.clazz packet.id packet.payload
+
+  id_string -> string:
+    return "SAT"
 
   static is_instance packet/Message -> bool:
     return packet.clazz == Message.NAV and packet.id == ID
@@ -541,6 +592,9 @@ class UbxNavTimeUtc extends Message:
   constructor packet/Message:
     payload_ = packet.payload
     super packet.clazz packet.id packet.payload
+
+  id_string -> string:
+    return "TIMEUTC"
 
   static is_instance packet/Message -> bool:
     return packet.clazz == Message.NAV and packet.id == ID
