@@ -42,7 +42,7 @@ class Message:
       bytes[bytes.size - 1] = ck_b
     return bytes
 
-  class_string -> string:
+  class_string_ -> string:
     PACK_CLASSES.get clazz
       --if_present=:
         return it
@@ -50,11 +50,11 @@ class Message:
         return "0x$(%02x clazz)"
     unreachable
 
-  id_string -> string:
+  id_string_ -> string:
     return "0x$(%02x id)"
 
-  message_type -> string:
-    return "UBX-$class_string-$id_string"
+  stringify -> string:
+    return "UBX-$class_string_-$id_string_"
 
   is_ubx_nav_pos_llh -> bool:
     return NavPosllh.is_instance this
@@ -120,14 +120,13 @@ message r/Reader -> Message?:
   reader.skip length + 8
   return Message msg_class msg_id payload
 
-
 class CfgMsg extends Message:
   static ID ::= 0x01
 
   constructor --msg_class --msg_id --rate:
     super Message.CFG ID #[msg_class, msg_id, rate]
 
-  id_string -> string:
+  id_string__ -> string:
     return "MSG"
 
 /*
@@ -160,7 +159,7 @@ class CfgGnss extends Message:
     ]
     super Message.CFG ID pl
 
-  id_string -> string:
+  id_string_ -> string:
     return "GNSS"
 
 class CfgNavx5 extends Message:
@@ -200,7 +199,7 @@ class CfgNavx5 extends Message:
       pl[17] = 1
     super Message.CFG ID pl
 
-  id_string -> string:
+  id_string_ -> string:
     return "NAVX5"
 
 class CfgNav5 extends Message:
@@ -209,7 +208,7 @@ class CfgNav5 extends Message:
   constructor.get:
     super Message.CFG ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "NAV5"
 
 class CfgRate extends Message:
@@ -218,7 +217,7 @@ class CfgRate extends Message:
   constructor.get:
     super Message.CFG ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "RATE"
 
 class CfgSbas extends Message:
@@ -234,7 +233,7 @@ class CfgSbas extends Message:
     LITTLE_ENDIAN.put_uint8 payload 3 0
     LITTLE_ENDIAN.put_uint32 payload 4 scanmode
 
-  id_string -> string:
+  id_string_ -> string:
     return "SBAS"
 
 class MgaIniTimeUtc extends Message:
@@ -260,7 +259,7 @@ class MgaIniTimeUtc extends Message:
     LITTLE_ENDIAN.put_uint16 payload 18 0               // Reserved.
     LITTLE_ENDIAN.put_uint32 payload 20 nanosecond_accuracy
 
-  id_string -> string:
+  id_string_ -> string:
     return "INI-TIME_UTC"
 
 class NavTimeutcPoll extends Message:
@@ -268,7 +267,7 @@ class NavTimeutcPoll extends Message:
   constructor:
     super Message.NAV ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "TIMEUTC"
 
 class MgaIniPosLLH extends Message:
@@ -283,7 +282,7 @@ class MgaIniPosLLH extends Message:
     LITTLE_ENDIAN.put_int32 payload 12 altitude
     LITTLE_ENDIAN.put_uint32 payload 16 accuracy_cm
 
-  id_string -> string:
+  id_string_ -> string:
     return "INI-POS_LLH"
 
 class NavPosLlh extends Message:
@@ -291,7 +290,7 @@ class NavPosLlh extends Message:
   constructor.poll:
     super Message.NAV ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "POSLLH"
 
 class CfgRst extends Message:
@@ -303,7 +302,7 @@ class CfgRst extends Message:
     LITTLE_ENDIAN.put_uint8 payload 2 reset_mode
     LITTLE_ENDIAN.put_uint8 payload 3 0
 
-  id_string -> string:
+  id_string_ -> string:
     return "RST"
 
 class RxmPmreq extends Message:
@@ -315,7 +314,7 @@ class RxmPmreq extends Message:
     LITTLE_ENDIAN.put_int32  payload 8 0b10  // Configuration flag
     LITTLE_ENDIAN.put_int32  payload 12 0  // Configuration flag
 
-  id_string -> string:
+  id_string_ -> string:
     return "PMREQ"
 
 class CfgPms extends Message:
@@ -327,7 +326,7 @@ class CfgPms extends Message:
   constructor:
     super Message.CFG ID (ByteArray 8: 0)
 
-  id_string -> string:
+  id_string_ -> string:
     return "PMS"
 
 class CfgRxm extends Message:
@@ -340,7 +339,7 @@ class CfgRxm extends Message:
   constructor.get:
     super Message.CFG ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "RXM"
 
 class MonHw extends Message:
@@ -348,7 +347,7 @@ class MonHw extends Message:
   constructor:
     super Message.MON ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "HW"
 
 class CfgPm2 extends Message:
@@ -368,7 +367,7 @@ class CfgPm2 extends Message:
     LITTLE_ENDIAN.put_uint16 payload 20 0
     LITTLE_ENDIAN.put_uint16 payload 22 0
 
-  id_string -> string:
+  id_string_ -> string:
     return "PM2"
 
 /*
@@ -384,7 +383,7 @@ class NavPosllh extends Message:
   constructor:
     super Message.NAV ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "POSLLH"
 
   static is_instance packet/Message -> bool:
@@ -426,7 +425,7 @@ class NavPvt extends Message:
   constructor.poll:
     super Message.NAV ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "PVT"
 
   static is_instance packet/Message -> bool:
@@ -516,7 +515,7 @@ class NavStatus extends Message:
   constructor.poll:
     super Message.NAV ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "STATUS"
 
   static is_instance packet/Message -> bool:
@@ -543,7 +542,7 @@ class NavSat extends Message:
   constructor.poll:
     super Message.NAV ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "SAT"
 
   static is_instance packet/Message -> bool:
@@ -605,7 +604,7 @@ class NavTimeUtc extends Message:
   constructor.poll:
     super Message.NAV ID #[]
 
-  id_string -> string:
+  id_string_ -> string:
     return "TIMEUTC"
 
   static is_instance packet/Message -> bool:
