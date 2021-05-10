@@ -394,11 +394,11 @@ https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3
 class UBXNavPosllh extends Message:
   static ID ::= 0x02
 
-  payload_/ByteArray ::= ?
-
   constructor packet/Message:
-    payload_ = packet.payload
     super packet.clazz packet.id packet.payload
+
+  constructor:
+    super Message.NAV ID #[]
 
   id_string -> string:
     return "POSLLH"
@@ -410,17 +410,23 @@ class UBXNavPosllh extends Message:
     return is_instance this
 
   lon -> int:
-    return LITTLE_ENDIAN.int32 payload_ 4
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.int32 payload 4
   lat -> int:
-    return LITTLE_ENDIAN.int32 payload_ 8
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.int32 payload 8
   height -> int:
-    return LITTLE_ENDIAN.int32 payload_ 12
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.int32 payload 12
   height_msl -> int:
-    return LITTLE_ENDIAN.int32 payload_ 16
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.int32 payload 16
   horizontal_acc -> int:
-    return LITTLE_ENDIAN.uint32 payload_ 20
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint32 payload 20
   vertical_acc -> int:
-    return LITTLE_ENDIAN.uint32 payload_ 24
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint32 payload 24
 
 
 /*
@@ -430,11 +436,11 @@ https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3
 class UbxNavPvt extends Message:
   static ID ::= 0x07
 
-  payload_/ByteArray ::= ?
-
   constructor packet/Message:
-    payload_ = packet.payload
     super packet.clazz packet.id packet.payload
+
+  constructor.poll:
+    super Message.NAV ID #[]
 
   id_string -> string:
     return "PVT"
@@ -456,43 +462,62 @@ class UbxNavPvt extends Message:
   static FIX_TYPE_TIME_ONLY ::= 5
 
   year -> int:
-    return LITTLE_ENDIAN.uint16 payload_ 4
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint16 payload 4
   month -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 6
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 6
   day -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 7
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 7
   hours -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 8
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 8
   minutes -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 9
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 9
   seconds -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 10
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 10
   valid -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 11
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 11
   time_acc -> int:
-    return LITTLE_ENDIAN.uint32 payload_ 12
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint32 payload 12
   nanoseconds -> int:
-    return LITTLE_ENDIAN.int32 payload_ 16
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.int32 payload 16
   fix_type -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 20
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 20
   flags -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 21
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 21
   flags2 -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 22
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 22
   num_sv -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 23
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 23
   lon -> int:
-    return LITTLE_ENDIAN.int32 payload_ 24
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.int32 payload 24
   lat -> int:
-    return LITTLE_ENDIAN.int32 payload_ 28
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.int32 payload 28
   height -> int:
-    return LITTLE_ENDIAN.int32 payload_ 32
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.int32 payload 32
   height_msl -> int:
-    return LITTLE_ENDIAN.int32 payload_ 36
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.int32 payload 36
   horizontal_acc -> int:
-    return LITTLE_ENDIAN.uint32 payload_ 40
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint32 payload 40
   vertical_acc -> int:
-    return LITTLE_ENDIAN.uint32 payload_ 44
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint32 payload 44
 
 /*
 Spec:
@@ -501,11 +526,11 @@ https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1057%2C%22gen%22%3
 class UbxNavStatus extends Message:
   static ID ::= 0x03
 
-  payload_/ByteArray ::= ?
-
   constructor packet/Message:
-    payload_ = packet.payload
     super packet.clazz packet.id packet.payload
+
+  constructor.poll:
+    super Message.NAV ID #[]
 
   id_string -> string:
     return "STATUS"
@@ -517,7 +542,8 @@ class UbxNavStatus extends Message:
     return is_instance this
 
   time_to_first_fix -> int:
-    return LITTLE_ENDIAN.uint32 payload_ 8
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint32 payload 8
 
 
 /*
@@ -527,11 +553,11 @@ https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1039%2C%22gen%22%3
 class UbxNavSat extends Message:
   static ID ::= 0x35
 
-  payload_/ByteArray ::= ?
-
   constructor packet/Message:
-    payload_ = packet.payload
     super packet.clazz packet.id packet.payload
+
+  constructor.poll:
+    super Message.NAV ID #[]
 
   id_string -> string:
     return "SAT"
@@ -543,11 +569,13 @@ class UbxNavSat extends Message:
     return is_instance this
 
   satellite_count -> int:
-    return LITTLE_ENDIAN.uint8 payload_ 5
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 5
 
   satellite_data index -> SatelliteData?:
+    assert: not payload.is_empty
     if not index < satellite_count: return null
-    return SatelliteData index payload_
+    return SatelliteData index payload
 
 class SatelliteData:
   index ::= 0
@@ -603,6 +631,7 @@ class UbxNavTimeUtc extends Message:
     return is_instance this
 
   accuracy -> Duration?:
+    assert: not payload.is_empty
     value := LITTLE_ENDIAN.uint32 payload 4
     if value == UINT32_MAX: return null
     return Duration --ns=value
