@@ -57,34 +57,34 @@ class Message:
     return "UBX-$class_string-$id_string"
 
   is_ubx_nav_pos_llh -> bool:
-    return UBXNavPosllh.is_instance this
+    return NavPosllh.is_instance this
 
-  ubx_nav_pos_llh -> UBXNavPosllh:
-    return UBXNavPosllh this
+  ubx_nav_pos_llh -> NavPosllh:
+    return NavPosllh this
 
   is_ubx_nav_pvt -> bool:
-    return UbxNavPvt.is_instance this
+    return NavPvt.is_instance this
 
-  ubx_nav_pvt -> UbxNavPvt:
-    return UbxNavPvt this
+  ubx_nav_pvt -> NavPvt:
+    return NavPvt this
 
   is_ubx_nav_status -> bool:
-    return UbxNavStatus.is_instance this
+    return NavStatus.is_instance this
 
-  ubx_nav_status -> UbxNavStatus:
-    return UbxNavStatus this
+  ubx_nav_status -> NavStatus:
+    return NavStatus this
 
   is_ubx_nav_sat -> bool:
-    return UbxNavSat.is_instance this
+    return NavSat.is_instance this
 
-  ubx_nav_sat -> UbxNavSat:
-    return UbxNavSat this
+  ubx_nav_sat -> NavSat:
+    return NavSat this
 
   is_ubx_nav_timeutc -> bool:
-    return UbxNavTimeUtc.is_instance this
+    return NavTimeUtc.is_instance this
 
-  ubx_nav_timeutc -> UbxNavTimeUtc:
-    return UbxNavTimeUtc this
+  ubx_nav_timeutc -> NavTimeUtc:
+    return NavTimeUtc this
 
 compute_checksum msg/ByteArray [callback]:
   ck_a := 0
@@ -294,22 +294,6 @@ class NavPosLlh extends Message:
   id_string -> string:
     return "POSLLH"
 
-class NavStatus extends Message:
-  static ID ::= 0x03
-  constructor.poll:
-    super Message.NAV ID #[]
-
-  id_string -> string:
-    return "STATUS"
-
-class NavPvt extends Message:
-  static ID ::= 0x07
-  constructor.poll:
-    super Message.NAV ID #[]
-
-  id_string -> string:
-    return "PVT"
-
 class CfgRst extends Message:
   static ID ::= 0x04
   // Default clear_sections is a cold start, 0xFFFF is a controlled software reset.
@@ -391,7 +375,7 @@ class CfgPm2 extends Message:
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
 */
-class UBXNavPosllh extends Message:
+class NavPosllh extends Message:
   static ID ::= 0x02
 
   constructor packet/Message:
@@ -433,7 +417,7 @@ class UBXNavPosllh extends Message:
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C351.5%2Cnull%5D
 */
-class UbxNavPvt extends Message:
+class NavPvt extends Message:
   static ID ::= 0x07
 
   constructor packet/Message:
@@ -523,7 +507,7 @@ class UbxNavPvt extends Message:
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1057%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
 */
-class UbxNavStatus extends Message:
+class NavStatus extends Message:
   static ID ::= 0x03
 
   constructor packet/Message:
@@ -550,7 +534,7 @@ class UbxNavStatus extends Message:
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1039%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
 */
-class UbxNavSat extends Message:
+class NavSat extends Message:
   static ID ::= 0x35
 
   constructor packet/Message:
@@ -612,7 +596,7 @@ class SatelliteData:
 Spec:
 https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1105%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C683.15%2Cnull%5D
 */
-class UbxNavTimeUtc extends Message:
+class NavTimeUtc extends Message:
   static ID ::= 0x21
 
   constructor packet/Message:
