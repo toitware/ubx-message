@@ -13,19 +13,44 @@ A description of the UBX protocol can be found here: https://www.u-blox.com/site
 import binary show LITTLE_ENDIAN UINT32_MAX
 
 class Message:
+  /** The class of this message. */
   clazz /int
+  /** The ID of this message. */
   id /int
+  /** The Payload of this message. */
   payload /ByteArray ::= #[]
 
+  /** The Navigation result (NAV) class byte. */
   static NAV ::= 0x01
+  /** The Receiver Manager (RXM) class byte. */
   static RXM ::= 0x02
+  /** The Information (INF) class byte. */
   static INF ::= 0x04
+  /** The ack/nak (ACK) class byte. */
   static ACK ::= 0x05
+  /** The Configuration Input (CFG) class byte. */
   static CFG ::= 0x06
+  /** The Firmware Update (UPD) class byte. */
+  static UPD ::= 0x09
+  /** The Monitoring (MON) class byte. */
   static MON ::= 0x0A
+  /** The AssistNow Aiding (AID) class byte. */
+  static AID ::= 0x0B
+  /** The Time (TIM) class byte. */
+  static TIM ::= 0x0D
+  /** The External Sensor Fusion class byte. */
+  static ESF ::= 0x10
+  /** The Multiple GNSS Assistance (MGA) class byte.*/
   static MGA ::= 0x13
+  /** The Logging (LOG) class byte. */
+  static LOG ::= 0x21
+  /** The Security Feature (SEC) class byte. */
+  static SEC ::= 0x27
+  /** The High-Rate Navigation Result (HNR) class byte. */
+  static HNR ::= 0x28
 
-  static PACK_CLASSES ::= {NAV: "NAV", RXM: "RXM", INF: "INF", ACK: "ACK", CFG: "CFG", MON: "MON", MGA: "MGA"}
+  /** Map from class bytes to their string representations. */
+  static PACK_CLASSES ::= {NAV: "NAV", RXM: "RXM", INF: "INF", ACK: "ACK", CFG: "CFG", UPD: "UPD", MON: "MON", AID: "AID", TIM: "TIM", ESF: "ESF", MGA: "MGA", LOG: "LOG", SEC: "SEC", HNR: "HNR"}
 
   constructor .clazz .id .payload:
 
