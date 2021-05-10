@@ -12,6 +12,9 @@ A description of the UBX protocol can be found here: https://www.u-blox.com/site
 
 import binary show LITTLE_ENDIAN UINT32_MAX
 
+/**
+A UBX message.
+*/
 class Message:
   /** The class of this message. */
   clazz /int
@@ -52,8 +55,28 @@ class Message:
   /** Map from class bytes to their string representations. */
   static PACK_CLASSES ::= {NAV: "NAV", RXM: "RXM", INF: "INF", ACK: "ACK", CFG: "CFG", UPD: "UPD", MON: "MON", AID: "AID", TIM: "TIM", ESF: "ESF", MGA: "MGA", LOG: "LOG", SEC: "SEC", HNR: "HNR"}
 
+  /** Constructs a UBX message with the given $clazz, $id, and $payload. */
   constructor .clazz .id .payload:
 
+  /**
+  Constructs a UBX message from the given $bytes.
+
+  The $bytes must bne a valid UBX message (contain the sync bytes and a
+    valid checksum).
+  */
+  constructor bytes/ByteArray:
+    if not is_valid_frame bytes: throw "INVALID UBX MESSAGE"
+    clazz = bytes[2]
+    id = bytes[3]
+    payload = bytes[4..bytes.size-2]
+
+  /**
+  Transforms this message to a byte array that can be send to a ublox
+    GNSS receiver.
+
+  The byte array contains the starting magic bytes 0xB5 and 0x62 as well as
+    the trailing checksum.
+  */
   to_byte_array -> ByteArray:
     bytes := ByteArray 8 + payload.size
     bytes[0] = 0xB5
