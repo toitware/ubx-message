@@ -171,17 +171,13 @@ class Message:
   /** Whether this is an instance of $NavStatus. */
   is_ubx_nav_status -> bool:
     return NavStatus.is_instance this
-
-  /** This message as a $NavStatus. */
-  ubx_nav_status -> NavStatus:
-    return NavStatus this
-
 /**
 The UBX-ACK-ACK message.
 
 Contains the class ID and message ID of the acknowledged message.
 */
 class AckAck extends Message:
+  /** The UBX-ACK-ACK message ID. */
   static ID ::= 0x01
 
   /** Constructs a dummy acknowledge message. */
@@ -206,6 +202,7 @@ The UBX-ACK-NAK message.
 Contains the class ID and message ID of the not acknowledged message.
 */
 class AckNak extends Message:
+  /** The UBX-ACK-NAK message ID. */
   static ID ::= 0x02
 
   /** Constructs a dummy not acknowledge message. */
@@ -229,6 +226,7 @@ The UBX-CFG-MSG message.
 Configures the rate at which messages are sent by the receiver.
 */
 class CfgMsg extends Message:
+  /** The UBX-CFG-MSG message ID. */
   static ID ::= 0x01
 
   /**
@@ -249,6 +247,7 @@ The UBX-CFG-RST message.
 Resets the receiver.
 */
 class CfgRst extends Message:
+  /** The UBX-CFG-RST message ID. */
   static ID ::= 0x04
 
   /**
@@ -272,7 +271,21 @@ The UBX-NAV-PVT message.
 Navigation, position, velocity, and time solution.
 */
 class NavPvt extends Message:
+  /** The UBX-NAV-PVT message ID. */
   static ID ::= 0x07
+
+  /** Unknown GNSS fix. */
+  static FIX_TYPE_UNKNOWN ::= 0
+  /** Dead reckoning only. */
+  static FIX_TYPE_DEAD ::= 1
+  /** 2D fix. */
+  static FIX_TYPE_2D ::= 2
+  /** 3D fix. */
+  static FIX_TYPE_3D ::= 3
+  /** GNSS and dead reckoning. */
+  static FIX_TYPE_GNNS_DEAD ::= 4
+  /** Time only fix. */
+  static FIX_TYPE_TIME_ONLY ::= 5
 
   /** Constructs a poll UBX-NAV-PVT message. */
   constructor.poll:
@@ -288,19 +301,6 @@ class NavPvt extends Message:
   /** Whether this is a GNSS fix. */
   is_gnss_fix -> bool:
     return (flags & 0b00000001) != 0
-
-  /** Unknown GNSS fix. */
-  static FIX_TYPE_UNKNOWN ::= 0
-  /** Dead reckoning only. */
-  static FIX_TYPE_DEAD ::= 1
-  /** 2D fix. */
-  static FIX_TYPE_2D ::= 2
-  /** 3D fix. */
-  static FIX_TYPE_3D ::= 3
-  /** GNSS and dead reckoning. */
-  static FIX_TYPE_GNNS_DEAD ::= 4
-  /** Time only fix. */
-  static FIX_TYPE_TIME_ONLY ::= 5
 
   /** The time un UTC. */
   utc_time -> Time:
@@ -475,33 +475,85 @@ class NavPvt extends Message:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int16 payload 88
   /**
-  Accuracy of magnetic delination.
+  Accuracy of magnetic   delination.
   See receiver specification for details.
   */
   magnetic_acc -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint16 payload 90
 
-/** The UBX-NAV-STATUS message. */
+/**
+The UBX-NAV-STATUS message.
+
+The receiver navigation status.
+*/
 // https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1057%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
 class NavStatus extends Message:
+  /** The UBX-NAV-STATUS message ID. */
   static ID ::= 0x03
 
-  constructor packet/Message:
-    super packet.clazz packet.id packet.payload
-
+  /** Unknown GNSS fix. */
+  static NO_FIX ::= 0
+  /** Dead reckoning only. */
+  static DEAD_RECKONING_ONLY ::= 1
+  /** 2D fix. */
+  static FIX_2D ::= 2
+  /** 3D fix. */
+  static FIX_3D ::= 3
+  /** GPS and dead reckoning. */
+  static GPS_DEAD_FIX ::= 4
+  /** Time only fix. */
+  static TIME_ONLY ::= 5
+  /** Constructs a poll UBX-NAV-STATUS message. */
   constructor.poll:
     super Message.NAV ID #[]
 
   id_string_ -> string:
     return "STATUS"
 
-  static is_instance packet/Message -> bool:
-    return packet.clazz == Message.NAV and packet.id == ID
+  /** Whether the given $message is a $NavStatus. */
+  static is_instance message/Message -> bool:
+    return message.clazz == Message.NAV and message.id == ID
 
-  is_valid -> bool:
-    return is_instance this
+  /** The GPS time of week of the navigation epoch. */
+  itow -> int:
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint32 payload 0
+  /**
+  The type of fix.
+  One of $NO_FIX, $DEAD_RECKONING_ONLY, $FIX_2D, $FIX_3D, $GPS_DEAD_FIX, $TIME_ONLY.
+  */
+  gps_fix -> int:
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 4
+  /**
+  Navigation status flags.
+  See receiver specification for details.
+  */
+  flags -> int:
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 5
+  /**
+  Fix status information
+  See receiver specification for details.
+  */
+  fix_stat -> int:
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 6
+  /**
+  Additional status information.
+  See receiver specification for details.
+  */
+  flags2 -> int:
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 7
 
+  /** Time to first fix in millieseconds. */
   time_to_first_fix -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 8
+
+  /** Millieseonds since startup or reset. */
+  msss -> int:
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint32 payload 12
