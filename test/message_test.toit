@@ -4,7 +4,10 @@ import ..src.ubx_message as ubx
 import expect show *
 
 main:
-  message := ubx.AckAck 0x06 0x013
+  test_message
+
+test_message:
+  message := ubx.AckAck.private_ 0x06 0x013
 
   bytes := message.to_byte_array
 
@@ -16,3 +19,5 @@ main:
   bytes[2] = 0
   expect_throw "INVALID UBX MESSAGE":
     ubx.Message.from_bytes bytes
+
+  expect_equals "UBX-ACK-ACK" message.stringify
