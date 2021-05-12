@@ -1,6 +1,6 @@
 // Copyright (C) 2019 Toitware ApS. All rights reserved.
 
-import ..src.ubx_message as ubx
+import ubx.ubx_message
 import expect show *
 
 main:
