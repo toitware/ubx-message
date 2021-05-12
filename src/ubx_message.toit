@@ -4,16 +4,21 @@
 
 import reader show *
 /**
-UBX messages from the UBX protocol for communicating with the GNSS receivers
-  in the ublox Max-M* series.
+Support for the UBX messages from the UBX data protocol.
 
-A description of the UBX protocol can be found here: https://www.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_UBX-13003221.pdf
+The UBX data protocol is used by the ublox GNSS receivers in the Max-M*
+  series. Some messages are deprecated between versions.
+
+The receiver description for each receiver describes the supported UBX
+  message.
+- Max-M8: https://www.u-blox.com/en/docs/UBX-13003221
+- Max-M9: https://www.u-blox.com/en/docs/UBX-19035940
 */
 
 import binary show LITTLE_ENDIAN UINT32_MAX
 
 /**
-A UBX message.
+A UBX message from the UBX data protocol.
 */
 class Message:
   /** The class of this message. */
@@ -55,20 +60,73 @@ class Message:
   /** Map from class bytes to their string representations. */
   static PACK_CLASSES ::= {NAV: "NAV", RXM: "RXM", INF: "INF", ACK: "ACK", CFG: "CFG", UPD: "UPD", MON: "MON", AID: "AID", TIM: "TIM", ESF: "ESF", MGA: "MGA", LOG: "LOG", SEC: "SEC", HNR: "HNR"}
 
+  static INVALID_UBX_MESSAGE_ ::= "INVALID UBX MESSAGE"
+
   /** Constructs a UBX message with the given $clazz, $id, and $payload. */
   constructor .clazz .id .payload:
 
   /**
   Constructs a UBX message from the given $bytes.
 
-  The $bytes must bne a valid UBX message (contain the sync bytes and a
+  The $bytes must be a valid UBX message (contain the sync bytes and a
     valid checksum).
   */
-  constructor bytes/ByteArray:
-    if not is_valid_frame bytes: throw "INVALID UBX MESSAGE"
+  constructor.from_bytes bytes/ByteArray:
+    if not is_valid_frame_ bytes: throw INVALID_UBX_MESSAGE_
     clazz = bytes[2]
     id = bytes[3]
     payload = bytes[4..bytes.size-2]
+
+  /**
+  Constructs a UBX message from the given $reader.
+
+  The $reader must be able to provide a valid UBX frame.
+  */
+  constructor.from_reader reader/BufferedReader:
+    if (reader.byte 0) != 0xb5 or (reader.byte 1) != 0x62: throw INVALID_UBX_MESSAGE_
+
+    // Verify the length and get full the packet.
+    length ::= (reader.byte 4) | (((reader.byte 5) & 0xff) << 8)
+    if not (0 <= length and length <= 512): throw INVALID_UBX_MESSAGE_
+    frame ::= reader.bytes length + 8
+
+    // Verify the checksum.
+    if not is_valid_frame_ frame: throw INVALID_UBX_MESSAGE_
+
+    msg_class ::= frame[2]
+    msg_id    ::= frame[3]
+    payload   ::= frame[6..length + 6]
+    reader.skip length + 8
+    return Message msg_class msg_id payload
+
+  static is_valid_frame_ frame/ByteArray -> bool:
+    // Check the sync bytes.
+    if frame[0] != 0xb5 or frame[1] != 0x62: throw INVALID_UBX_MESSAGE_
+
+    // Check the payload length.
+    length ::= LITTLE_ENDIAN.uint16 frame 4
+    if not (0 <= length and length <= 512): return false
+
+    ck_a ::= frame[frame.size - 2]
+    ck_b ::= frame[frame.size - 1]
+    compute_checksum_ frame: | a b |
+      return ck_a == a and ck_b == b
+    return false
+
+  /**
+  Computes the checksum of the given $bytes.
+
+  Calls the $callback with the computed checksum values ck_a and ck_b as
+    arguments.
+  */
+  static compute_checksum_ bytes/ByteArray [callback]:
+    ck_a := 0
+    ck_b := 0
+    bytes = bytes[2..bytes.size - 2]
+    bytes.size.repeat: | i |
+      ck_a = (ck_a + bytes[i]) & 0xff
+      ck_b = (ck_b + ck_a) & 0xff
+    callback.call ck_a ck_b
 
   /**
   Transforms this message to a byte array that can be send to a ublox
@@ -85,7 +143,7 @@ class Message:
     bytes[3] = id
     LITTLE_ENDIAN.put_uint16 bytes 4 payload.size
     bytes.replace 6 payload
-    compute_checksum bytes: | ck_a ck_b |
+    compute_checksum_ bytes: | ck_a ck_b |
       bytes[bytes.size - 2] = ck_a
       bytes[bytes.size - 1] = ck_b
     return bytes
@@ -101,73 +159,65 @@ class Message:
   id_string_ -> string:
     return "0x$(%02x id)"
 
+  /** See $super. */
   stringify -> string:
     return "UBX-$class_string_-$id_string_"
 
-  is_ubx_nav_pos_llh -> bool:
+  /** Whether this is an instance of $NavPosllh. */
+  is_ubx_nav_posllh -> bool:
     return NavPosllh.is_instance this
 
-  ubx_nav_pos_llh -> NavPosllh:
+  /** This message as a $NavPosllh. */
+  ubx_nav_posllh -> NavPosllh:
     return NavPosllh this
 
+  /** Whether this is an instance of $NavPvt. */
   is_ubx_nav_pvt -> bool:
     return NavPvt.is_instance this
 
+  /** This message as a $NavPvt. */
   ubx_nav_pvt -> NavPvt:
     return NavPvt this
 
+  /** Whether this is an instance of $NavStatus. */
   is_ubx_nav_status -> bool:
     return NavStatus.is_instance this
 
+  /** This message as a $NavStatus. */
   ubx_nav_status -> NavStatus:
     return NavStatus this
 
+  /** Whether this is an instance of $NavSat. */
   is_ubx_nav_sat -> bool:
     return NavSat.is_instance this
 
+  /** This message as a $NavSat. */
   ubx_nav_sat -> NavSat:
     return NavSat this
 
+  /** Whether this is an instance of $NavTimeutc. */
   is_ubx_nav_timeutc -> bool:
-    return NavTimeUtc.is_instance this
+    return NavTimeutc.is_instance this
 
-  ubx_nav_timeutc -> NavTimeUtc:
-    return NavTimeUtc this
+  /** This message as a $NavTimeutc. */
+  ubx_nav_timeutc -> NavTimeutc:
+    return NavTimeutc this
 
-compute_checksum msg/ByteArray [callback]:
-  ck_a := 0
-  ck_b := 0
-  msg = msg[2..msg.size - 2]
-  msg.size.repeat: | i |
-    ck_a = (ck_a + msg[i]) & 0xff
-    ck_b = (ck_b + ck_a) & 0xff
-  callback.call ck_a ck_b
+/** The UBX-ACK-ACK message. */
+class AckAck extends Message:
+  static ID ::= 0x01
 
-is_valid_frame frame/ByteArray -> bool:
-  ck_a ::= frame[frame.size - 2]
-  ck_b ::= frame[frame.size - 1]
-  compute_checksum frame: | a b |
-    return ck_a == a and ck_b == b
-  return false
+  constructor cls id:
+    super Message.ACK ID #[cls, id]
 
-message r/Reader -> Message?:
-  reader := BufferedReader r
-  if (reader.byte 0) != 0xb5 or (reader.byte 1) != 0x62: return null
+/** The UBX-ACK-NAK message. */
+class AckNak extends Message:
+  static ID ::= 0x02
 
-  // Verify length and get full the packet.
-  length ::= (reader.byte 4) | (((reader.byte 5) & 0xff) << 8)
-  if length < 0 or length > 512: return null
-  frame ::= reader.bytes length + 8
+  constructor cls id:
+    super Message.ACK ID #[cls, id]
 
-  // Verify the checksum.
-  if not is_valid_frame frame: return null
-
-  msg_class ::= frame[2]
-  msg_id    ::= frame[3]
-  payload   ::= frame[6..length + 6]
-  reader.skip length + 8
-  return Message msg_class msg_id payload
-
+/** The UBX-CFG-MSG message. */
 class CfgMsg extends Message:
   static ID ::= 0x01
 
@@ -177,22 +227,29 @@ class CfgMsg extends Message:
   id_string__ -> string:
     return "MSG"
 
-/*
-Spec:
-https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A667%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C379.84%2Cnull%5D
+/**
+The UBX-CFG-GNSS message.
 */
+// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A667%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C379.84%2Cnull%5D
 class CfgGnss extends Message:
   static ID ::= 0x3e
 
+  /** Constructs the get version of the message. */
   constructor.get:
     super Message.CFG ID #[]
 
+  /**
+  Constructs a message with the given parameters.
+  The "reserved" parameters are the amount of channels the receiver will
+    use for each system.
+  The "max" parameters are the maximum amount of channels the receiver will
+    use for each system.
+  */
   constructor
       --gps_reserved_channels=8 --gps_max_channels=16
       --sbas_reserved_channels=1 --sbas_max_channels=3
       --qzss_reserved_channels=0 --qzss_max_channels=3
       --glonas_reserved_channels=8 --glonas_max_channels=14:
-
 
     // U-blox recommend using QZSS whenever GPS is active at the same time.
     pl := #[
@@ -210,6 +267,7 @@ class CfgGnss extends Message:
   id_string_ -> string:
     return "GNSS"
 
+/** The UBX-CFG-NAVX5 message. */
 class CfgNavx5 extends Message:
   static ID ::= 0x23
 
@@ -250,6 +308,7 @@ class CfgNavx5 extends Message:
   id_string_ -> string:
     return "NAVX5"
 
+/** The UBX-CFG-NAV5 message. */
 class CfgNav5 extends Message:
   static ID ::= 0x24
 
@@ -259,6 +318,7 @@ class CfgNav5 extends Message:
   id_string_ -> string:
     return "NAV5"
 
+/** The UBX-CFG-RATE message. */
 class CfgRate extends Message:
   static ID ::= 0x08
 
@@ -268,6 +328,7 @@ class CfgRate extends Message:
   id_string_ -> string:
     return "RATE"
 
+/** The UBX-CFG-SBAS message. */
 class CfgSbas extends Message:
   static ID ::= 0x16
   constructor.get:
@@ -284,6 +345,7 @@ class CfgSbas extends Message:
   id_string_ -> string:
     return "SBAS"
 
+/** The UBX-MGA-INI-TIME-UTC message. */
 class MgaIniTimeUtc extends Message:
   static ID ::= 0x40
   constructor --time/Time=Time.now --second_accuracy=0 --nanosecond_accuracy=200_000_000:
@@ -310,15 +372,8 @@ class MgaIniTimeUtc extends Message:
   id_string_ -> string:
     return "INI-TIME_UTC"
 
-class NavTimeutcPoll extends Message:
-  static ID ::= 0x21
-  constructor:
-    super Message.NAV ID #[]
-
-  id_string_ -> string:
-    return "TIMEUTC"
-
-class MgaIniPosLLH extends Message:
+/** The UBX-MGA-INI-POS-LLH message. */
+class MgaIniPosLlh extends Message:
   static ID ::= 0x40
   constructor --latitude/int --longitude/int --altitude/int --accuracy_cm/int:
     super Message.MGA ID (ByteArray 20: 0)
@@ -333,14 +388,8 @@ class MgaIniPosLLH extends Message:
   id_string_ -> string:
     return "INI-POS_LLH"
 
-class NavPosLlh extends Message:
-  static ID ::= 0x02
-  constructor.poll:
-    super Message.NAV ID #[]
 
-  id_string_ -> string:
-    return "POSLLH"
-
+/** The UBX-CFG-RST message. */
 class CfgRst extends Message:
   static ID ::= 0x04
   // Default clear_sections is a cold start, 0xFFFF is a controlled software reset.
@@ -353,6 +402,7 @@ class CfgRst extends Message:
   id_string_ -> string:
     return "RST"
 
+/** The UBX-RXM-PMREQ message. */
 class RxmPmreq extends Message:
   static ID ::= 0x41
   // Put the GPS into backup mode.
@@ -365,6 +415,7 @@ class RxmPmreq extends Message:
   id_string_ -> string:
     return "PMREQ"
 
+/** The UBX-CFG-PMS message. */
 class CfgPms extends Message:
   static ID ::= 0x86
   constructor.get:
@@ -377,6 +428,7 @@ class CfgPms extends Message:
   id_string_ -> string:
     return "PMS"
 
+/** The UBX-CFG-RXM message. */
 class CfgRxm extends Message:
   static ID ::= 0x11
   // Set power mode.
@@ -390,6 +442,7 @@ class CfgRxm extends Message:
   id_string_ -> string:
     return "RXM"
 
+/** The UBX-MON-HW message. */
 class MonHw extends Message:
   static ID ::= 0x09
   constructor:
@@ -398,6 +451,7 @@ class MonHw extends Message:
   id_string_ -> string:
     return "HW"
 
+/** The UBX-CFG-PM2 message. */
 class CfgPm2 extends Message:
   static ID ::= 0x3b
   constructor.get:
@@ -418,17 +472,15 @@ class CfgPm2 extends Message:
   id_string_ -> string:
     return "PM2"
 
-/*
-Spec:
-https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
-*/
+/** The UBX-NAV-POSLLH message. */
+// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C748.35%2Cnull%5D
 class NavPosllh extends Message:
   static ID ::= 0x02
 
   constructor packet/Message:
     super packet.clazz packet.id packet.payload
 
-  constructor:
+  constructor.poll:
     super Message.NAV ID #[]
 
   id_string_ -> string:
@@ -460,10 +512,8 @@ class NavPosllh extends Message:
     return LITTLE_ENDIAN.uint32 payload 24
 
 
-/*
-Spec:
-https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C351.5%2Cnull%5D
-*/
+/** The UBX-NAV-PBT message. */
+// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1021%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C351.5%2Cnull%5D
 class NavPvt extends Message:
   static ID ::= 0x07
 
@@ -491,6 +541,9 @@ class NavPvt extends Message:
   static FIX_TYPE_3D ::= 3
   static FIX_TYPE_GNNS_DEAD ::= 4
   static FIX_TYPE_TIME_ONLY ::= 5
+
+  utc_time -> Time:
+    return Time.utc year month day hours minutes seconds --ns=nanoseconds
 
   year -> int:
     assert: not payload.is_empty
@@ -550,10 +603,8 @@ class NavPvt extends Message:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 44
 
-/*
-Spec:
-https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1057%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
-*/
+/** The UBX-NAV-STATUS message. */
+// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1057%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
 class NavStatus extends Message:
   static ID ::= 0x03
 
@@ -576,11 +627,8 @@ class NavStatus extends Message:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 8
 
-
-/*
-Spec:
-https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1039%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
-*/
+/** The UBX-NAV-SAT message. */
+// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1039%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
 class NavSat extends Message:
   static ID ::= 0x35
 
@@ -608,17 +656,18 @@ class NavSat extends Message:
     if not index < satellite_count: return null
     return SatelliteData index payload
 
+/** The satellite data produced by the $NavSat messages. */
 class SatelliteData:
-  index ::= 0
+  index/int
 
-  gnss_id ::= 0
-  sv_id ::= 0
-  cno ::= 0
+  gnss_id/int
+  sv_id/int
+  cno/int
 
-  quality ::= 0
-  orbit_source ::= 0
-  alm_avail ::= 0
-  ano_avail ::= 0
+  quality/int
+  orbit_source/int
+  alm_avail/bool
+  ano_avail/bool
 
   constructor .index payload/ByteArray:
     offset ::= index * 12
@@ -629,21 +678,18 @@ class SatelliteData:
     flags ::= LITTLE_ENDIAN.uint32 payload offset + 16
     quality = flags & 0x003
     orbit_source = (flags & 0x700)  >> 8
-    alm_avail = (flags & 0x800)  >> 11
-    ano_avail = (flags & 0x1000) >> 12
+    alm_avail = (flags & 0x800)  >> 11 == 1
+    ano_avail = (flags & 0x1000) >> 12 == 1
 
   stringify -> string:
     codes := ""
     if alm_avail: codes += "A"
     if ano_avail: codes += "N"
-    // TODO(kasper): Make this output a whole lot prettier and easier to parse.
     return "$index|$gnss_id|$sv_id|$cno|$quality|$orbit_source|$codes"
 
-/*
-Spec:
-https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1105%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C683.15%2Cnull%5D
-*/
-class NavTimeUtc extends Message:
+/** The UBX-NAV-TIMEUTC message. */
+// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1105%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C683.15%2Cnull%5D
+class NavTimeutc extends Message:
   static ID ::= 0x21
 
   constructor packet/Message:
