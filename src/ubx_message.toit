@@ -8,8 +8,7 @@ Support for the UBX messages from the UBX data protocol.
 The UBX data protocol is used by the ublox GNSS receivers in the Max-M*
   series. Some messages are deprecated between versions.
 
-The receiver description for each receiver describes the supported UBX
-  message.
+The description for each receiver describes the supported UBX message.
 - Max-M8: https://www.u-blox.com/en/docs/UBX-13003221
 - Max-M9: https://www.u-blox.com/en/docs/UBX-19035940
 */
@@ -58,7 +57,9 @@ class Message:
   static HNR ::= 0x28
 
   /** Map from class bytes to their string representations. */
-  static PACK_CLASSES ::= {NAV: "NAV", RXM: "RXM", INF: "INF", ACK: "ACK", CFG: "CFG", UPD: "UPD", MON: "MON", AID: "AID", TIM: "TIM", ESF: "ESF", MGA: "MGA", LOG: "LOG", SEC: "SEC", HNR: "HNR"}
+  static PACK_CLASSES ::= {NAV: "NAV", RXM: "RXM", INF: "INF", ACK: "ACK", \
+    CFG: "CFG", UPD: "UPD", MON: "MON", AID: "AID", TIM: "TIM", ESF: "ESF", \
+    MGA: "MGA", LOG: "LOG", SEC: "SEC", HNR: "HNR"}
 
   static INVALID_UBX_MESSAGE_ ::= "INVALID UBX MESSAGE"
   static RESERVED_ ::= 0
@@ -88,7 +89,7 @@ class Message:
 
     // Verify the length and get full the packet.
     length ::= (reader.byte 4) | (((reader.byte 5) & 0xff) << 8)
-    if not (0 <= length and length <= 512): throw INVALID_UBX_MESSAGE_
+    if not 0 <= length <= 512: throw INVALID_UBX_MESSAGE_
     frame ::= reader.bytes length + 8
 
     // Verify the checksum.
@@ -106,7 +107,7 @@ class Message:
 
     // Check the payload length.
     length ::= LITTLE_ENDIAN.uint16 frame 4
-    if not (0 <= length and length <= 512): return false
+    if not 0 <= length <= 512: return false
 
     ck_a ::= frame[frame.size - 2]
     ck_b ::= frame[frame.size - 1]
@@ -150,12 +151,8 @@ class Message:
     return bytes
 
   class_string_ -> string:
-    PACK_CLASSES.get clazz
-      --if_present=:
-        return it
-      --if_absent=:
-        return "0x$(%02x clazz)"
-    unreachable
+    return PACK_CLASSES.get clazz --if_absent=:
+      return "0x$(%02x clazz)"
 
   id_string_ -> string:
     return "0x$(%02x id)"
@@ -171,6 +168,7 @@ class Message:
   /** Whether this is an instance of $NavStatus. */
   is_ubx_nav_status -> bool:
     return NavStatus.is_instance this
+
 /**
 The UBX-ACK-ACK message.
 
@@ -199,21 +197,21 @@ class AckAck extends Message:
 /**
 The UBX-ACK-NAK message.
 
-Contains the class ID and message ID of the not acknowledged message.
+Contains the class ID and message ID of the NAK (not acknowledged) message.
 */
 class AckNak extends Message:
   /** The UBX-ACK-NAK message ID. */
   static ID ::= 0x02
 
-  /** Constructs a dummy not acknowledge message. */
+  /** Constructs a dummy NAK message. */
   constructor.private_ cls id:
     super Message.ACK ID #[cls, id]
 
-  /** The class ID of the not acknowlegede message. */
+  /** The class ID of the NAK message. */
   class_id -> int:
     return LITTLE_ENDIAN.uint8 payload 0
 
-  /** The message ID of the not acknowleged message. */
+  /** The message ID of the NAK message. */
   message_id -> int:
     return LITTLE_ENDIAN.uint8 payload 1
 
@@ -230,7 +228,7 @@ class CfgMsg extends Message:
   static ID ::= 0x01
 
   /**
-  Constructs a coniguration message.
+  Constructs a configuration message.
 
   When sent to the receiver, the message with the given $msg_class and
     $msg_id will be sent at the given $rate.
@@ -302,18 +300,20 @@ class NavPvt extends Message:
   is_gnss_fix -> bool:
     return (flags & 0b00000001) != 0
 
-  /** The time un UTC. */
+  /** The time in UTC. */
   utc_time -> Time:
     return Time.utc year month day hours minutes seconds --ns=nanoseconds
 
-  /** The GPS time of week of the navigation epoch. */
+  /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 0
+
   /** The year (UTC). */
   year -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint16 payload 4
+
   /**
   The month (UTC).
   In the range [1..12].
@@ -321,6 +321,7 @@ class NavPvt extends Message:
   month -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 6
+
   /**
   The day (UTC).
   In the range [1..31].
@@ -328,27 +329,31 @@ class NavPvt extends Message:
   day -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 7
+
   /**
   The hours (UTC).
   In the range [0..23].
   */
-  hours -> int:
+  h -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 8
+
   /**
   The minutes (UTC).
   In the range [0..59].
   */
-  minutes -> int:
+  m -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 9
+
   /**
   The seconds (UTC).
   In the range [0..60].
   */
-  seconds -> int:
+  s -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 10
+
   /**
   Validity flag.
   See receiver specification for details.
@@ -356,17 +361,20 @@ class NavPvt extends Message:
   valid -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 11
+
   /** Time accuracy estimate in nanoseconds */
   time_acc -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 12
+
   /**
   Fraction of second in nano seconds.
   The fraction may be negative.
   */
-  nanoseconds -> int:
+  ns -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 16
+
   /**
   The type of fix.
   One of $FIX_TYPE_UNKNOWN, $FIX_TYPE_DEAD, $FIX_TYPE_2D, $FIX_TYPE_3D, $FIX_TYPE_GNNS_DEAD, $FIX_TYPE_TIME_ONLY.
@@ -374,6 +382,7 @@ class NavPvt extends Message:
   fix_type -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 20
+
   /**
   Fix status flags.
   See receiver specification for details.
@@ -381,6 +390,7 @@ class NavPvt extends Message:
   flags -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 21
+
   /**
   Additional fix status flags.
   See receiver specification for details.
@@ -388,71 +398,87 @@ class NavPvt extends Message:
   flags2 -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 22
+
   /** Number of satellites used for fix. */
   num_sv -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 23
+
   /** Longitude. */
   lon -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 24
+
   /** Latitude. */
   lat -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 28
+
   /** Height above ellipsoid in millimeter. */
   height -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 32
+
   /** Height above mean sea level in millimeter. */
   height_msl -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 36
+
   /** Horizontal accuracy in millimeter. */
   horizontal_acc -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 40
+
   /** Vertical accuracty in millimeter. */
   vertical_acc -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 44
+
   /** NED north velocity in millimeters per second. */
   north_vel -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 48
+
   /** NED east velocity in millimeters per second. */
   east_vel -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 52
+
   /** NED down velocity in millimeters per second. */
   down_vel -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 56
+
   /** Ground speed (2D) in millimeters per second. */
   ground_speed -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 60
+
   /** Heading of motion (2D). */
   heading_of_motion -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 64
+
   /** Speed accuracy in millimeters per second. */
   speed_acc -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 68
+
   /** Hading accuracy. */
   heading_acc -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 72
+
   /**
   Position DOP.
 
-  Describes how many satellites are directly above the receiver (and not on '
+  Describes how many satellites are directly above the receiver (and not on
     the horizon).
   */
   position_dop -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint16 payload 76
+
   /**
   Additional flags.
   See receiver specification for details.
@@ -460,6 +486,7 @@ class NavPvt extends Message:
   flags3 -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 78
+
   /**
   The heading of the vehicle.
   See receiver specification for details.
@@ -467,15 +494,17 @@ class NavPvt extends Message:
   heading_vehicle -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int32 payload 84
+
   /**
-  Magnetic delination.
+  Magnetic declination.
   See receiver specification for details.
   */
   magnetic_declination -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.int16 payload 88
+
   /**
-  Accuracy of magnetic   delination.
+  Accuracy of magnetic declination.
   See receiver specification for details.
   */
   magnetic_acc -> int:
@@ -487,7 +516,7 @@ The UBX-NAV-STATUS message.
 
 The receiver navigation status.
 */
-// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1057%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
+// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1204%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C559.1%2Cnull%5D
 class NavStatus extends Message:
   /** The UBX-NAV-STATUS message ID. */
   static ID ::= 0x03
@@ -515,10 +544,11 @@ class NavStatus extends Message:
   static is_instance message/Message -> bool:
     return message.clazz == Message.NAV and message.id == ID
 
-  /** The GPS time of week of the navigation epoch. */
+  /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 0
+
   /**
   The type of fix.
   One of $NO_FIX, $DEAD_RECKONING_ONLY, $FIX_2D, $FIX_3D, $GPS_DEAD_FIX, $TIME_ONLY.
@@ -526,6 +556,7 @@ class NavStatus extends Message:
   gps_fix -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 4
+
   /**
   Navigation status flags.
   See receiver specification for details.
@@ -533,6 +564,7 @@ class NavStatus extends Message:
   flags -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 5
+
   /**
   Fix status information
   See receiver specification for details.
@@ -540,6 +572,7 @@ class NavStatus extends Message:
   fix_stat -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 6
+
   /**
   Additional status information.
   See receiver specification for details.
@@ -548,12 +581,12 @@ class NavStatus extends Message:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint8 payload 7
 
-  /** Time to first fix in millieseconds. */
+  /** Time to first fix in milliseconds. */
   time_to_first_fix -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 8
 
-  /** Millieseonds since startup or reset. */
+  /** Milliseconds since startup or reset. */
   msss -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 12
