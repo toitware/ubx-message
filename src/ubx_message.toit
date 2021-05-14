@@ -2,7 +2,6 @@
 // Use of this source code is governed by a MIT-style license that can be found
 // in the LICENSE file.
 
-import reader show *
 /**
 Support for the UBX messages from the UBX data protocol.
 
@@ -15,6 +14,7 @@ The receiver description for each receiver describes the supported UBX
 - Max-M9: https://www.u-blox.com/en/docs/UBX-19035940
 */
 
+import reader show *
 import binary show LITTLE_ENDIAN UINT32_MAX
 
 /**
