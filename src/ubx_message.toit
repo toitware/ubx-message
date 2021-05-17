@@ -21,7 +21,7 @@ A UBX message from the UBX data protocol.
 */
 class Message:
   /** The class of this message. */
-  clazz /int
+  cls /int
   /** The ID of this message. */
   id /int
   /** The Payload of this message. */
@@ -64,8 +64,8 @@ class Message:
   static INVALID_UBX_MESSAGE_ ::= "INVALID UBX MESSAGE"
   static RESERVED_ ::= 0
 
-  /** Constructs a UBX message with the given $clazz, $id, and $payload. */
-  constructor .clazz .id .payload:
+  /** Constructs a UBX message with the given $cls, $id, and $payload. */
+  constructor .cls .id .payload:
 
   /**
   Constructs a UBX message from the given $bytes.
@@ -75,7 +75,7 @@ class Message:
   */
   constructor.from_bytes bytes/ByteArray:
     if not is_valid_frame_ bytes: throw INVALID_UBX_MESSAGE_
-    clazz = bytes[2]
+    cls = bytes[2]
     id = bytes[3]
     payload = bytes[4..bytes.size-2]
 
@@ -141,7 +141,7 @@ class Message:
     bytes := ByteArray 8 + payload.size
     bytes[0] = 0xB5
     bytes[1] = 0x62
-    bytes[2] = clazz
+    bytes[2] = cls
     bytes[3] = id
     LITTLE_ENDIAN.put_uint16 bytes 4 payload.size
     bytes.replace 6 payload
@@ -151,8 +151,8 @@ class Message:
     return bytes
 
   class_string_ -> string:
-    return PACK_CLASSES.get clazz --if_absent=:
-      return "0x$(%02x clazz)"
+    return PACK_CLASSES.get cls --if_absent=:
+      return "0x$(%02x cls)"
 
   id_string_ -> string:
     return "0x$(%02x id)"
@@ -294,7 +294,7 @@ class NavPvt extends Message:
 
   /** Whether the give $message is a UBX-NAV-PVT message. */
   static is_instance message/Message -> bool:
-    return message.clazz == Message.NAV and message.id == ID
+    return message.cls == Message.NAV and message.id == ID
 
   /** Whether this is a GNSS fix. */
   is_gnss_fix -> bool:
@@ -542,7 +542,7 @@ class NavStatus extends Message:
 
   /** Whether the given $message is a $NavStatus. */
   static is_instance message/Message -> bool:
-    return message.clazz == Message.NAV and message.id == ID
+    return message.cls == Message.NAV and message.id == ID
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
