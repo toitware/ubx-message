@@ -21,7 +21,7 @@ A UBX message from the UBX data protocol.
 */
 class Message:
   /** The class of this message. */
-  clazz /int
+  cls /int
   /** The ID of this message. */
   id /int
   /** The Payload of this message. */
@@ -64,8 +64,23 @@ class Message:
   static INVALID_UBX_MESSAGE_ ::= "INVALID UBX MESSAGE"
   static RESERVED_ ::= 0
 
-  /** Constructs a UBX message with the given $clazz, $id, and $payload. */
-  constructor .clazz .id .payload:
+  /** Constructs a UBX message with the given $cls, $id, and $payload. */
+  constructor.private_ .cls .id .payload:
+
+  /**
+  Constructs a UBX message with the given $cls, $id, and $payload.
+
+  If message is implemented in this package, then it returns the appropriate
+    sub-class.
+  */
+  constructor cls id payload:
+    if cls == Message.NAV:
+      if id == NavPvt.ID:
+        return NavPvt.private_ payload
+      else if id == NavStatus.ID:
+        return NavStatus.private_ payload
+
+    return Message.private_ cls id payload
 
   /**
   Constructs a UBX message from the given $bytes.
@@ -75,7 +90,7 @@ class Message:
   */
   constructor.from_bytes bytes/ByteArray:
     if not is_valid_frame_ bytes: throw INVALID_UBX_MESSAGE_
-    clazz = bytes[2]
+    cls = bytes[2]
     id = bytes[3]
     payload = bytes[4..bytes.size-2]
 
@@ -83,6 +98,9 @@ class Message:
   Constructs a UBX message from the given $reader.
 
   The $reader must be able to provide a valid UBX frame.
+
+  If message is implemented in this package, then it returns the appropriate
+    sub-class.
   */
   constructor.from_reader reader/BufferedReader:
     if (reader.byte 0) != 0xb5 or (reader.byte 1) != 0x62: throw INVALID_UBX_MESSAGE_
@@ -141,7 +159,7 @@ class Message:
     bytes := ByteArray 8 + payload.size
     bytes[0] = 0xB5
     bytes[1] = 0x62
-    bytes[2] = clazz
+    bytes[2] = cls
     bytes[3] = id
     LITTLE_ENDIAN.put_uint16 bytes 4 payload.size
     bytes.replace 6 payload
@@ -151,8 +169,8 @@ class Message:
     return bytes
 
   class_string_ -> string:
-    return PACK_CLASSES.get clazz --if_absent=:
-      return "0x$(%02x clazz)"
+    return PACK_CLASSES.get cls --if_absent=:
+      return "0x$(%02x cls)"
 
   id_string_ -> string:
     return "0x$(%02x id)"
@@ -160,14 +178,6 @@ class Message:
   /** See $super. */
   stringify -> string:
     return "UBX-$class_string_-$id_string_"
-
-  /** Whether this is an instance of $NavPvt. */
-  is_ubx_nav_pvt -> bool:
-    return NavPvt.is_instance this
-
-  /** Whether this is an instance of $NavStatus. */
-  is_ubx_nav_status -> bool:
-    return NavStatus.is_instance this
 
 /**
 The UBX-ACK-ACK message.
@@ -180,13 +190,13 @@ class AckAck extends Message:
 
   /** Constructs a dummy acknowledge message. */
   constructor.private_ cls id:
-    super Message.ACK ID #[cls, id]
+    super.private_ Message.ACK ID #[cls, id]
 
-  /** The class ID of the acknowleged message. */
+  /** The class ID of the acknowledged message. */
   class_id -> int:
     return LITTLE_ENDIAN.uint8 payload 0
 
-  /** The message ID  of the acknowleged message. */
+  /** The message ID  of the acknowledged message. */
   message_id -> int:
     return LITTLE_ENDIAN.uint8 payload 1
 
@@ -205,7 +215,7 @@ class AckNak extends Message:
 
   /** Constructs a dummy NAK message. */
   constructor.private_ cls id:
-    super Message.ACK ID #[cls, id]
+    super.private_ Message.ACK ID #[cls, id]
 
   /** The class ID of the NAK message. */
   class_id -> int:
@@ -234,7 +244,7 @@ class CfgMsg extends Message:
     $msg_id will be sent at the given $rate.
   */
   constructor.message_rate --msg_class --msg_id --rate:
-    super Message.CFG ID #[msg_class, msg_id, rate]
+    super.private_ Message.CFG ID #[msg_class, msg_id, rate]
 
   id_string_ -> string:
     return "MSG"
@@ -255,7 +265,7 @@ class CfgRst extends Message:
   See the description for other parameter options.
   */
   constructor --clear_sections=0xFFFF --reset_mode=2:
-    super Message.CFG ID (ByteArray 4)
+    super.private_ Message.CFG ID (ByteArray 4)
     LITTLE_ENDIAN.put_uint16 payload 0 clear_sections
     LITTLE_ENDIAN.put_uint8  payload 2 reset_mode
     LITTLE_ENDIAN.put_uint8  payload 3 Message.RESERVED_
@@ -287,14 +297,13 @@ class NavPvt extends Message:
 
   /** Constructs a poll UBX-NAV-PVT message. */
   constructor.poll:
-    super Message.NAV ID #[]
+    super.private_ Message.NAV ID #[]
+
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.NAV ID payload
 
   id_string_ -> string:
     return "PVT"
-
-  /** Whether the give $message is a UBX-NAV-PVT message. */
-  static is_instance message/Message -> bool:
-    return message.clazz == Message.NAV and message.id == ID
 
   /** Whether this is a GNSS fix. */
   is_gnss_fix -> bool:
@@ -535,14 +544,13 @@ class NavStatus extends Message:
   static TIME_ONLY ::= 5
   /** Constructs a poll UBX-NAV-STATUS message. */
   constructor.poll:
-    super Message.NAV ID #[]
+    super.private_ Message.NAV ID #[]
+
+  constructor.private_ payload:
+    super.private_ Message.NAV ID payload
 
   id_string_ -> string:
     return "STATUS"
-
-  /** Whether the given $message is a $NavStatus. */
-  static is_instance message/Message -> bool:
-    return message.clazz == Message.NAV and message.id == ID
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
