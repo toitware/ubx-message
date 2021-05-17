@@ -69,6 +69,12 @@ class Message:
 
   /** Constructs a UBX message with the given $cls, $id, and $payload. */
   constructor cls id payload:
+    if cls == Message.NAV:
+      if id == NavPvt.ID:
+        return NavPvt.private_ payload
+      else if id == NavStatus.ID:
+        return NavStatus.private_ payload
+
     return Message.private_ cls id payload
 
   /**
@@ -292,6 +298,9 @@ class NavPvt extends Message:
   /** Constructs a poll UBX-NAV-PVT message. */
   constructor.poll:
     super.private_ Message.NAV ID #[]
+
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.NAV ID payload
 
   id_string_ -> string:
     return "PVT"
@@ -540,6 +549,9 @@ class NavStatus extends Message:
   /** Constructs a poll UBX-NAV-STATUS message. */
   constructor.poll:
     super.private_ Message.NAV ID #[]
+
+  constructor.private_ payload:
+    super.private_ Message.NAV ID payload
 
   id_string_ -> string:
     return "STATUS"
