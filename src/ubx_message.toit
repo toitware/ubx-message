@@ -179,14 +179,6 @@ class Message:
   stringify -> string:
     return "UBX-$class_string_-$id_string_"
 
-  /** Whether this is an instance of $NavPvt. */
-  is_ubx_nav_pvt -> bool:
-    return NavPvt.is_instance this
-
-  /** Whether this is an instance of $NavStatus. */
-  is_ubx_nav_status -> bool:
-    return NavStatus.is_instance this
-
 /**
 The UBX-ACK-ACK message.
 
@@ -312,10 +304,6 @@ class NavPvt extends Message:
 
   id_string_ -> string:
     return "PVT"
-
-  /** Whether the give $message is a UBX-NAV-PVT message. */
-  static is_instance message/Message -> bool:
-    return message.cls == Message.NAV and message.id == ID
 
   /** Whether this is a GNSS fix. */
   is_gnss_fix -> bool:
@@ -563,10 +551,6 @@ class NavStatus extends Message:
 
   id_string_ -> string:
     return "STATUS"
-
-  /** Whether the given $message is a $NavStatus. */
-  static is_instance message/Message -> bool:
-    return message.cls == Message.NAV and message.id == ID
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
