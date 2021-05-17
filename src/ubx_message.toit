@@ -281,7 +281,7 @@ class NavPvt extends Message:
   /** 3D fix. */
   static FIX_TYPE_3D ::= 3
   /** GNSS and dead reckoning. */
-  static FIX_TYPE_GNNS_DEAD ::= 4
+  static FIX_TYPE_GNSS_DEAD ::= 4
   /** Time only fix. */
   static FIX_TYPE_TIME_ONLY ::= 5
 
@@ -302,7 +302,7 @@ class NavPvt extends Message:
 
   /** The time in UTC. */
   utc_time -> Time:
-    return Time.utc year month day hours minutes seconds --ns=nanoseconds
+    return Time.utc year month day h m s --ns=ns
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
@@ -377,7 +377,7 @@ class NavPvt extends Message:
 
   /**
   The type of fix.
-  One of $FIX_TYPE_UNKNOWN, $FIX_TYPE_DEAD, $FIX_TYPE_2D, $FIX_TYPE_3D, $FIX_TYPE_GNNS_DEAD, $FIX_TYPE_TIME_ONLY.
+  One of $FIX_TYPE_UNKNOWN, $FIX_TYPE_DEAD, $FIX_TYPE_2D, $FIX_TYPE_3D, $FIX_TYPE_GNSS_DEAD, $FIX_TYPE_TIME_ONLY.
   */
   fix_type -> int:
     assert: not payload.is_empty
