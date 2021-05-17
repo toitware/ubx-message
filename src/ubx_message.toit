@@ -161,13 +161,13 @@ class Message:
   stringify -> string:
     return "UBX-$class_string_-$id_string_"
 
-  /** Whether this is an instance of $NavPvt. */
+  /** Whether this instance semantically is of class $NavPvt. */
   is_ubx_nav_pvt -> bool:
-    return NavPvt.is_instance this
+    return NavPvt.is_of_class this
 
-  /** Whether this is an instance of $NavStatus. */
+  /** Whether this instance semantically is of class $NavStatus. */
   is_ubx_nav_status -> bool:
-    return NavStatus.is_instance this
+    return NavStatus.is_of_class this
 
 /**
 The UBX-ACK-ACK message.
@@ -281,7 +281,7 @@ class NavPvt extends Message:
   /** 3D fix. */
   static FIX_TYPE_3D ::= 3
   /** GNSS and dead reckoning. */
-  static FIX_TYPE_GNNS_DEAD ::= 4
+  static FIX_TYPE_GNSS_DEAD ::= 4
   /** Time only fix. */
   static FIX_TYPE_TIME_ONLY ::= 5
 
@@ -292,8 +292,18 @@ class NavPvt extends Message:
   id_string_ -> string:
     return "PVT"
 
-  /** Whether the give $message is a UBX-NAV-PVT message. */
-  static is_instance message/Message -> bool:
+  /**
+  Whether the give $message is a UBX-NAV-PVT message.
+
+  Use `as` to convert an instance of $Message to type $NavPvt.
+
+  # Examples
+  ```
+  if message.is_ubx_nav_pvt:
+    pvt := message as ubx.NavPvt
+  ```
+  */
+  static is_of_class message/Message -> bool:
     return message.clazz == Message.NAV and message.id == ID
 
   /** Whether this is a GNSS fix. */
@@ -302,7 +312,7 @@ class NavPvt extends Message:
 
   /** The time in UTC. */
   utc_time -> Time:
-    return Time.utc year month day hours minutes seconds --ns=nanoseconds
+    return Time.utc year month day h m s --ns=ns
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
@@ -377,7 +387,7 @@ class NavPvt extends Message:
 
   /**
   The type of fix.
-  One of $FIX_TYPE_UNKNOWN, $FIX_TYPE_DEAD, $FIX_TYPE_2D, $FIX_TYPE_3D, $FIX_TYPE_GNNS_DEAD, $FIX_TYPE_TIME_ONLY.
+  One of $FIX_TYPE_UNKNOWN, $FIX_TYPE_DEAD, $FIX_TYPE_2D, $FIX_TYPE_3D, $FIX_TYPE_GNSS_DEAD, $FIX_TYPE_TIME_ONLY.
   */
   fix_type -> int:
     assert: not payload.is_empty
@@ -540,8 +550,18 @@ class NavStatus extends Message:
   id_string_ -> string:
     return "STATUS"
 
-  /** Whether the given $message is a $NavStatus. */
-  static is_instance message/Message -> bool:
+  /**
+  Whether the given $message is a $NavStatus.
+
+  Use `as` to convert an instance of $Message to type $NavPvt.
+
+  # Examples
+  ```
+  if message.is_ubx_nav_status:
+    pvt := message as ubx.NavStatus
+  ```
+  */
+  static is_of_class message/Message -> bool:
     return message.clazz == Message.NAV and message.id == ID
 
   /** The GPS interval time of week of the navigation epoch. */
