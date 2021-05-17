@@ -65,7 +65,11 @@ class Message:
   static RESERVED_ ::= 0
 
   /** Constructs a UBX message with the given $cls, $id, and $payload. */
-  constructor .cls .id .payload:
+  constructor.private_ .cls .id .payload:
+
+  /** Constructs a UBX message with the given $cls, $id, and $payload. */
+  constructor cls id payload:
+    return Message.private_ cls id payload
 
   /**
   Constructs a UBX message from the given $bytes.
@@ -99,7 +103,7 @@ class Message:
     msg_id    ::= frame[3]
     payload   ::= frame[6..length + 6]
     reader.skip length + 8
-    return Message msg_class msg_id payload
+    return Message.private_ msg_class msg_id payload
 
   static is_valid_frame_ frame/ByteArray -> bool:
     // Check the sync bytes.
@@ -180,7 +184,7 @@ class AckAck extends Message:
 
   /** Constructs a dummy acknowledge message. */
   constructor.private_ cls id:
-    super Message.ACK ID #[cls, id]
+    super.private_ Message.ACK ID #[cls, id]
 
   /** The class ID of the acknowledged message. */
   class_id -> int:
@@ -205,7 +209,7 @@ class AckNak extends Message:
 
   /** Constructs a dummy NAK message. */
   constructor.private_ cls id:
-    super Message.ACK ID #[cls, id]
+    super.private_ Message.ACK ID #[cls, id]
 
   /** The class ID of the NAK message. */
   class_id -> int:
@@ -234,7 +238,7 @@ class CfgMsg extends Message:
     $msg_id will be sent at the given $rate.
   */
   constructor.message_rate --msg_class --msg_id --rate:
-    super Message.CFG ID #[msg_class, msg_id, rate]
+    super.private_ Message.CFG ID #[msg_class, msg_id, rate]
 
   id_string_ -> string:
     return "MSG"
@@ -255,7 +259,7 @@ class CfgRst extends Message:
   See the description for other parameter options.
   */
   constructor --clear_sections=0xFFFF --reset_mode=2:
-    super Message.CFG ID (ByteArray 4)
+    super.private_ Message.CFG ID (ByteArray 4)
     LITTLE_ENDIAN.put_uint16 payload 0 clear_sections
     LITTLE_ENDIAN.put_uint8  payload 2 reset_mode
     LITTLE_ENDIAN.put_uint8  payload 3 Message.RESERVED_
@@ -287,7 +291,7 @@ class NavPvt extends Message:
 
   /** Constructs a poll UBX-NAV-PVT message. */
   constructor.poll:
-    super Message.NAV ID #[]
+    super.private_ Message.NAV ID #[]
 
   id_string_ -> string:
     return "PVT"
@@ -535,7 +539,7 @@ class NavStatus extends Message:
   static TIME_ONLY ::= 5
   /** Constructs a poll UBX-NAV-STATUS message. */
   constructor.poll:
-    super Message.NAV ID #[]
+    super.private_ Message.NAV ID #[]
 
   id_string_ -> string:
     return "STATUS"
