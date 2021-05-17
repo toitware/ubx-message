@@ -182,11 +182,11 @@ class AckAck extends Message:
   constructor.private_ cls id:
     super Message.ACK ID #[cls, id]
 
-  /** The class ID of the acknowleged message. */
+  /** The class ID of the acknowledged message. */
   class_id -> int:
     return LITTLE_ENDIAN.uint8 payload 0
 
-  /** The message ID  of the acknowleged message. */
+  /** The message ID  of the acknowledged message. */
   message_id -> int:
     return LITTLE_ENDIAN.uint8 payload 1
 
