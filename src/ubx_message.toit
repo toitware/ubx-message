@@ -67,7 +67,12 @@ class Message:
   /** Constructs a UBX message with the given $cls, $id, and $payload. */
   constructor.private_ .cls .id .payload:
 
-  /** Constructs a UBX message with the given $cls, $id, and $payload. */
+  /**
+  Constructs a UBX message with the given $cls, $id, and $payload.
+
+  If message is implemented in this package, then it returns the appropriate
+    sub-class.
+  */
   constructor cls id payload:
     if cls == Message.NAV:
       if id == NavPvt.ID:
@@ -93,6 +98,9 @@ class Message:
   Constructs a UBX message from the given $reader.
 
   The $reader must be able to provide a valid UBX frame.
+
+  If message is implemented in this package, then it returns the appropriate
+    sub-class.
   */
   constructor.from_reader reader/BufferedReader:
     if (reader.byte 0) != 0xb5 or (reader.byte 1) != 0x62: throw INVALID_UBX_MESSAGE_
@@ -109,7 +117,7 @@ class Message:
     msg_id    ::= frame[3]
     payload   ::= frame[6..length + 6]
     reader.skip length + 8
-    return Message.private_ msg_class msg_id payload
+    return Message msg_class msg_id payload
 
   static is_valid_frame_ frame/ByteArray -> bool:
     // Check the sync bytes.
