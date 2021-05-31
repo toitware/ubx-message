@@ -25,7 +25,7 @@ class Message:
   /** The ID of this message. */
   id /int
   /** The Payload of this message. */
-  payload /ByteArray ::= #[]
+  payload /ByteArray
 
   /** The Navigation result (NAV) class byte. */
   static NAV ::= 0x01
@@ -79,6 +79,8 @@ class Message:
         return NavPvt.private_ payload
       else if id == NavStatus.ID:
         return NavStatus.private_ payload
+      else if id == NavSat.ID:
+        return NavSat.private_ payload
 
     return Message.private_ cls id payload
 
@@ -598,3 +600,107 @@ class NavStatus extends Message:
   msss -> int:
     assert: not payload.is_empty
     return LITTLE_ENDIAN.uint32 payload 12
+
+/**
+The UBX-NAV-SAT message.
+
+Satellite information.
+*/
+// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1039%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
+class NavSat extends Message:
+  /** The UBX-NAV-SAT message ID. */
+  static ID ::= 0x35
+
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.NAV ID payload
+
+  id_string_ -> string:
+    return "SAT"
+
+  /** The GPS interval time of week of the navigation epoch. */
+  itow -> int:
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 0
+
+  /** Message version. */
+  version -> int:
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 4
+
+  /** Number of satellites. */
+  num_svs -> int:
+    assert: not payload.is_empty
+    return LITTLE_ENDIAN.uint8 payload 5
+
+  /**
+  The satellite data in the package for the given $index.
+
+  The $index must satisfy 0 <= $index < $num_svs.
+  */
+  satellite_data index -> SatelliteData:
+    assert: not payload.is_empty
+    if not 0 <= index < num_svs: throw "INVALID ARGUMENT"
+    return SatelliteData index payload
+
+/**
+Satellite data for a single satellite.
+
+The satellite data is included in the UBX-NAV-SAT message (See $NavSat).
+*/
+class SatelliteData:
+  /** The index os this data in the original message. */
+  index/int
+  /** GNSS identifier. */
+  gnss_id/int
+  /** Satellite identifier. */
+  sv_id/int
+  /** Carrier to noise ratio. */
+  cno/int
+  /** Elevation. */
+  elev/int
+  /** Azimuth. */
+  azim/int
+  /** Pseudorange residual. */
+  pr_res/int
+
+  /**
+  Flags. Includes $quality, $orbit_source, $alm_avail, and $ano_avail.
+  See receiver specification for details.
+  */
+  flags/int
+  /** Quality indicator. */
+  quality/int
+  /** Orbit source. */
+  orbit_source/int
+  /** Almanac available for this satellite. */
+  alm_avail/int
+  /** AssistanceNow Offline data available for this satellite. */
+  ano_avail/int
+
+  /**
+  Constructs the satellite data for the given message $payload and with
+    the given data.
+  */
+  constructor .index payload/ByteArray:
+    offset ::= index * 12
+
+    gnss_id = LITTLE_ENDIAN.uint8 payload offset + 8
+    sv_id = LITTLE_ENDIAN.uint8 payload offset + 9
+    cno = LITTLE_ENDIAN.uint8 payload offset + 10
+    elev = LITTLE_ENDIAN.uint8 payload offset + 11
+    azim = LITTLE_ENDIAN.uint8 payload offset + 12
+    pr_res = LITTLE_ENDIAN.uint8 payload offset + 14
+    flags = LITTLE_ENDIAN.uint32 payload offset + 16
+
+    quality = flags & 0x003
+    orbit_source = (flags & 0x700)  >> 8
+    alm_avail = (flags & 0x800)  >> 11
+    ano_avail = (flags & 0x1000) >> 12
+
+  /** See $super. */
+  stringify -> string:
+    codes := ""
+    if alm_avail == 1: codes += "A"
+    if ano_avail == 1: codes += "N"
+    // TODO(kasper): Make this output a whole lot prettier and easier to parse.
+    return "$index|$gnss_id|$sv_id|$cno|$quality|$orbit_source|$codes"
