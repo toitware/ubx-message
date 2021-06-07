@@ -61,6 +61,9 @@ class Message:
     CFG: "CFG", UPD: "UPD", MON: "MON", AID: "AID", TIM: "TIM", ESF: "ESF", \
     MGA: "MGA", LOG: "LOG", SEC: "SEC", HNR: "HNR"}
 
+  static INVALID_UBX_HEADER_ ::= "INVALID UBX HEADER"
+  static INVALID_UBX_SIZE_ ::= "INVALID UBX SIZE"
+  static INVALID_UBX_CHECKSUM_ ::= "INVALID UBX CHECKSUM"
   static INVALID_UBX_MESSAGE_ ::= "INVALID UBX MESSAGE"
   static RESERVED_ ::= 0
 
@@ -105,15 +108,15 @@ class Message:
     sub-class.
   */
   constructor.from_reader reader/BufferedReader:
-    if (reader.byte 0) != 0xb5 or (reader.byte 1) != 0x62: throw INVALID_UBX_MESSAGE_
+    if (reader.byte 0) != 0xb5 or (reader.byte 1) != 0x62: throw INVALID_UBX_HEADER_
 
     // Verify the length and get full the packet.
     length ::= (reader.byte 4) | (((reader.byte 5) & 0xff) << 8)
-    if not 0 <= length <= 512: throw INVALID_UBX_MESSAGE_
+    if not 0 <= length <= 512: throw INVALID_UBX_SIZE_
     frame ::= reader.bytes length + 8
 
     // Verify the checksum.
-    if not is_valid_frame_ frame: throw INVALID_UBX_MESSAGE_
+    if not is_valid_frame_ frame: throw INVALID_UBX_CHECKSUM_
 
     msg_class ::= frame[2]
     msg_id    ::= frame[3]
@@ -123,7 +126,7 @@ class Message:
 
   static is_valid_frame_ frame/ByteArray -> bool:
     // Check the sync bytes.
-    if frame[0] != 0xb5 or frame[1] != 0x62: throw INVALID_UBX_MESSAGE_
+    if frame[0] != 0xb5 or frame[1] != 0x62: return false
 
     // Check the payload length.
     length ::= LITTLE_ENDIAN.uint16 frame 4
