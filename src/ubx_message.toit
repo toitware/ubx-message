@@ -20,6 +20,9 @@ import binary show LITTLE_ENDIAN UINT32_MAX
 A UBX message from the UBX data protocol.
 */
 class Message:
+  /** Maximum size of an encoded message. */
+  static MAX_MESSAGE_SIZE_ ::= 2048
+
   /** The class of this message. */
   cls /int
   /** The ID of this message. */
@@ -109,7 +112,7 @@ class Message:
 
     // Verify the length and get full the packet.
     length ::= (reader.byte 4) | (((reader.byte 5) & 0xff) << 8)
-    if not 0 <= length <= 512: throw INVALID_UBX_MESSAGE_
+    if not 0 <= length <= MAX_MESSAGE_SIZE_: throw INVALID_UBX_MESSAGE_
     frame ::= reader.bytes length + 8
 
     // Verify the checksum.
@@ -127,7 +130,7 @@ class Message:
 
     // Check the payload length.
     length ::= LITTLE_ENDIAN.uint16 frame 4
-    if not 0 <= length <= 512: return false
+    if not 0 <= length <= MAX_MESSAGE_SIZE_: return false
 
     ck_a ::= frame[frame.size - 2]
     ck_b ::= frame[frame.size - 1]
