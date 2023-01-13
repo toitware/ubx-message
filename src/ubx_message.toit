@@ -97,7 +97,7 @@ class Message:
     if not is_valid_frame_ bytes: throw INVALID_UBX_MESSAGE_
     cls = bytes[2]
     id = bytes[3]
-    payload = bytes[4..bytes.size-2]
+    payload = bytes[4 .. bytes.size - 2]
 
   /**
   Constructs a UBX message from the given $reader.
