@@ -13,8 +13,9 @@ The description for each receiver describes the supported UBX message.
 - Max-M9: https://www.u-blox.com/en/docs/UBX-19035940
 */
 
-import reader show *
-import binary show LITTLE_ENDIAN UINT32_MAX
+import io
+import io show LITTLE_ENDIAN
+import reader as old-reader
 
 /**
 A UBX message from the UBX data protocol.
@@ -106,14 +107,20 @@ class Message:
 
   If message is implemented in this package, then it returns the appropriate
     sub-class.
+
+  The $reader should be an $io.Reader, but an $old-reader.Reader is also accepted
+    for backwards compatibility. The use of $old-reader.Reader is deprecated and
+    will be removed in a future release.
   */
-  constructor.from_reader reader/BufferedReader:
-    if (reader.byte 0) != 0xb5 or (reader.byte 1) != 0x62: throw INVALID_UBX_MESSAGE_
+  constructor.from_reader reader/old-reader.Reader:
+    io-reader/io.Reader := reader is io.Reader ? reader as io.Reader : io.Reader.adapt reader
+
+    if (io-reader.peek-byte 0) != 0xb5 or (io-reader.peek-byte 1) != 0x62: throw INVALID_UBX_MESSAGE_
 
     // Verify the length and get full the packet.
-    length ::= (reader.byte 4) | (((reader.byte 5) & 0xff) << 8)
+    length ::= (io-reader.peek-byte 4) | (((io-reader.peek-byte 5) & 0xff) << 8)
     if not 0 <= length <= MAX_MESSAGE_SIZE_: throw INVALID_UBX_MESSAGE_
-    frame ::= reader.bytes length + 8
+    frame ::= io-reader.peek-bytes length + 8
 
     // Verify the checksum.
     if not is_valid_frame_ frame: throw INVALID_UBX_MESSAGE_
@@ -121,7 +128,7 @@ class Message:
     msg_class ::= frame[2]
     msg_id    ::= frame[3]
     payload   ::= frame[6..length + 6]
-    reader.skip length + 8
+    io-reader.skip length + 8
     return Message msg_class msg_id payload
 
   static is_valid_frame_ frame/ByteArray -> bool:
