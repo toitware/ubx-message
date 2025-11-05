@@ -86,6 +86,10 @@ class Message:
       else if id == NavSat.ID:
         return NavSat.private_ payload
 
+    if cls == Message.MON:
+      if id == MonVer.ID:
+        return MonVer.private_ payload
+
     return Message.private_ cls id payload
 
   /**
@@ -714,3 +718,60 @@ class SatelliteData:
     if ano-avail == 1: codes += "N"
     // TODO(kasper): Make this output a whole lot prettier and easier to parse.
     return "$index|$gnss-id|$sv-id|$cno|$quality|$orbit-source|$codes"
+
+/**
+The UBX-MON-VER message.
+
+Handles receiver/software/hardware version information.
+*/
+// Poll request: class MON (0x0A), id 0x04, payload length 0
+// Reply: payload = swVersion[30], hwVersion[10], then 0..N extension
+//        strings each 30 bytes. All are NULL terminated ASCII.
+// Note:  M8 and M9 (and later versions of 6M have extra data returned
+//        in extensions.
+class MonVer extends Message:
+  /** The UBX-MON-VER message ID. */
+  static ID ::= 0x04
+
+  /** Construct a poll-request UBX-MON-VER. */
+  constructor.poll:
+    super.private_ Message.MON ID #[]
+
+  /** Construct from an incoming payload. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.MON ID payload
+
+  /** See $super. */
+  id-string_ -> string:
+    return "VER"
+
+  /** Software version string (NULL-terminated inside 30 bytes). */
+  sw-version -> string:
+    return convert-string_ 0 30
+
+  /** Hardware version string (NULL-terminated inside 10 bytes). */
+  hw-version -> string:
+    return convert-string_ 30 10
+
+  /**
+  Extension strings. Each entry is a NUL-terminated ASCII string of 30 bytes.
+  Common examples: "PROTVER=...","EXTCORE=...","ROM BASE=...","GNSS=...".
+  */
+  extensions -> List:
+    exts := []
+    offset := 40
+    while offset + 30 <= payload.size:
+      exts.add (convert-string_ offset 30)
+      offset += 30
+    return exts
+
+  /** Helper: read a NULL-terminated string from a fixed-size field. */
+  convert-string_ start length -> string:
+    // Find first NUL within [start .. start+length).
+    end := start
+    limit := start + length
+    while (end < limit) and (LITTLE_ENDIAN.uint8 payload end) != 0:
+      end += 1
+
+    // Slice bytes [start .. end) and convert to a Toit string.
+    return (payload[start..end]).to-string
