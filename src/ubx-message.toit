@@ -78,6 +78,12 @@ class Message:
     sub-class.
   */
   constructor cls id payload:
+    if cls == Message.ACK:
+      if id == AckAck.ID:
+        return AckAck.private_ payload
+      else:
+        return AckNak.private_ payload
+
     if cls == Message.NAV:
       if id == NavPvt.ID:
         return NavPvt.private_ payload
@@ -208,9 +214,17 @@ class AckAck extends Message:
   constructor.private_ cls id:
     super.private_ Message.ACK ID #[cls, id]
 
+  /** Constructs a dummy acknowledge message. */
+  constructor.private_ payload:
+    super.private_ Message.ACK ID payload
+
   /** The class ID of the acknowledged message. */
   class-id -> int:
     return LITTLE-ENDIAN.uint8 payload 0
+
+  /** The class ID (converted to text) of the acknowledged message. */
+  class-id-text -> string:
+    return Message.PACK-CLASSES[class-id]
 
   /** The message ID  of the acknowledged message. */
   message-id -> int:
@@ -219,23 +233,36 @@ class AckAck extends Message:
   id-string_ -> string:
     return "ACK"
 
+  stringify -> string:
+    return  "UBX-$class-string_-$id-string_: [$(class-id):$(class-id-text),$(message-id):$(message-id)]"
 
 /**
 The UBX-ACK-NAK message.
 
 Contains the class ID and message ID of the NAK (not acknowledged) message.
 */
+
 class AckNak extends Message:
   /** The UBX-ACK-NAK message ID. */
-  static ID ::= 0x02
+
+  // NAK messages are 0x00 not 0x02
+  //static ID ::= 0x02
+  static ID ::= 0x00
 
   /** Constructs a dummy NAK message. */
   constructor.private_ cls id:
     super.private_ Message.ACK ID #[cls, id]
 
+  constructor.private_ bytearray/ByteArray:
+    super.private_ Message.ACK ID bytearray
+
   /** The class ID of the NAK message. */
   class-id -> int:
     return LITTLE-ENDIAN.uint8 payload 0
+
+  /** The class ID (converted to text) of the negative-acknowledge message. */
+  class-id-text -> string:
+    return Message.PACK-CLASSES[class-id]
 
   /** The message ID of the NAK message. */
   message-id -> int:
@@ -243,6 +270,10 @@ class AckNak extends Message:
 
   id-string_ -> string:
     return "NAK"
+
+  stringify -> string:
+    return  "UBX-$class-string_-$id-string_: [$(class-id):$(class-id-text),$(message-id):$(message-id)]"
+
 
 /**
 The UBX-CFG-MSG message.
@@ -559,6 +590,15 @@ class NavStatus extends Message:
   /** Time only fix. */
   static TIME-ONLY ::= 5
   /** Constructs a poll UBX-NAV-STATUS message. */
+
+  static PACK-FIX-TYPES ::= {
+    NO-FIX: "NO-FIX",
+    DEAD-RECKONING-ONLY : "DEAD-RECKONING-ONLY",
+    FIX-2D : "FIX-2D",
+    FIX-3D : "FIX-3D",
+    GPS-DEAD-FIX : "GPS-DEAD-FIX",
+    TIME-ONLY : "TIME-ONLY"}
+
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
@@ -580,6 +620,10 @@ class NavStatus extends Message:
   gps-fix -> int:
     assert: not payload.is-empty
     return LITTLE-ENDIAN.uint8 payload 4
+
+  gps-fix-text -> string:
+    assert: not payload.is-empty
+    return PACK-FIX-TYPES[LITTLE-ENDIAN.uint8 payload 4]
 
   /**
   Navigation status flags.
@@ -775,3 +819,47 @@ class MonVer extends Message:
 
     // Slice bytes [start .. end) and convert to a Toit string.
     return (payload[start..end]).to-string
+
+
+/**
+The UBX-NAV-POSLLH message.
+
+Geodetic position solution.  Works on u-blox 6 and M8.
+*/
+class NavPosLlh extends Message:
+  static ID ::= 0x02
+
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.NAV ID payload
+
+  id-string_ -> string:
+    return "POSLLH"
+
+  // Raw fields (spec units)
+  i-tow-ms -> int:
+    return LITTLE_ENDIAN.uint32 payload 0
+
+  lon-raw -> int:
+    return LITTLE_ENDIAN.int32  payload 4    // 1e-7 deg
+
+  lat-raw    -> int:
+    return LITTLE_ENDIAN.int32  payload 8    // 1e-7 deg
+
+  height-mm  -> int:
+    return LITTLE_ENDIAN.int32  payload 12
+
+  h-msl-mm   -> int:
+    return LITTLE_ENDIAN.int32  payload 16
+
+  h-acc-mm   -> int:
+    return LITTLE_ENDIAN.uint32 payload 20
+
+  v-acc-mm   -> int:
+    return LITTLE_ENDIAN.uint32 payload 24
+
+  // Convenience in float degrees
+  lon-deg -> float:
+    return lon-raw / 1e7
+
+  lat-deg -> float:
+    return lat-raw / 1e7
