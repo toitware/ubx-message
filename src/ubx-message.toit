@@ -14,6 +14,7 @@ The description for each receiver describes the supported UBX message.
 */
 
 import io
+import semver
 import io show LITTLE-ENDIAN
 import reader as old-reader
 
@@ -84,7 +85,7 @@ class Message:
 
   Not all messages are handled in this driver, however all message ID's found in
     6M and M8 manuals have been added to help if an information message presents
-    something that needs to be looked at.
+    something that needs to be looked at.  Implemented as nested Maps.
   */
   static PACK-MESSAGE-TYPES := {
     // ACK (0x05)
@@ -241,11 +242,11 @@ class Message:
 
     // ESF (0x10) — external sensor fusion
     ESF: {
-      0x02: "MEAS",     // 6-series LEA-6R / M8 ESF-MEAS (different payloads)
-      0x03: "RAW",      // M8+
-      0x10: "STATUS",   // 6-series LEA-6R / M8 ESF-STATUS
-      0x14: "ALG",      // M8+
-      0x15: "INS",      // M8+
+      0x02: "MEAS",  // 6-series LEA-6R / M8 ESF-MEAS (different payloads)
+      0x03: "RAW",   // M8+
+      0x10: "STATUS",// 6-series LEA-6R / M8 ESF-STATUS
+      0x14: "ALG",   // M8+
+      0x15: "INS",   // M8+
     },
 
     // HNR (0x28) — M8+
@@ -283,6 +284,22 @@ class Message:
 
   static INVALID-UBX-MESSAGE_ ::= "INVALID UBX MESSAGE"
   static RESERVED_ ::= 0
+
+  /**
+  Represents the minimum protocol version for the message type.
+
+  Devices must supporting at least this protocol version to use the message.
+  */
+  min-protocol-version/string := ""
+
+  /**
+  Represents the maximum protocol version for the message type.
+
+  Devices supporting protocol version newer than this may not be able to
+    work with the message type.
+  */
+  max-protocol-version/string := ""
+
 
   /** Constructs a UBX message with the given $cls, $id, and $payload. */
   constructor.private_ .cls .id .payload:
@@ -432,6 +449,8 @@ class Message:
   /** See $super. */
   stringify -> string:
     return "UBX-$class-string_-$id-string_"
+
+
 
 /**
 The UBX-ACK-ACK message.
@@ -976,16 +995,30 @@ class MonVer extends Message:
     return convert-string_ 30 10
 
   /**
-  Extension strings. Each entry is a NUL-terminated ASCII string of 30 bytes.
-  Common examples: "PROTVER=...","EXTCORE=...","ROM BASE=...","GNSS=...".
+  Returns a map of extension strings.
+
+  If provided by the firmware version on the device, it provides a list of n 30
+    byte entries.  Each entry is a NUL-terminated ASCII string with an AVP
+    delimited by '='.  Common examples: "PROTVER=...","EXTCORE=...",
+    "ROM BASE=...","GNSS=...".  This function returns a map of strings with the
+    keyed by the first part, with the value being the remainder past the first
+    instance of "=".
   */
-  extensions -> List:
-    exts := []
+  extensions -> Map:
+    raw-extensions := []
+    output-extensions := {:}
     offset := 40
+    eq-pos := ?
     while offset + 30 <= payload.size:
-      exts.add (convert-string_ offset 30)
+      raw-extensions.add (convert-string_ offset 30)
       offset += 30
-    return exts
+    raw-extensions.do:
+      eq-pos = it.index-of "="
+      if eq-pos > 0:
+        output-extensions[it] = ""
+      else:
+        output-extensions[it[..eq-pos]] = it[..(eq-pos + 1)]
+    return output-extensions
 
   /** Helper: read a NULL-terminated string from a fixed-size field. */
   convert-string_ start length -> string:

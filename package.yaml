@@ -1,5 +1,9 @@
 name: ubx-message
-description: Support for UBX messages from the UBX data protocol used by ublox GNSS receivers in the Max-M* series.
-
+description: Support for UBX messages from the UBX data protocol used by ublox GNSS
+  receivers in the Max-M* series.
 environment:
   sdk: ^2.0.0-alpha.144
+dependencies:
+  semver:
+    url: github.com/toitware/toit-semver
+    version: ^1.1.1
