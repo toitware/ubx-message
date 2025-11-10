@@ -14,7 +14,7 @@ The description for each receiver describes the supported UBX message.
 */
 
 import io
-import semver
+//import semver
 import io show LITTLE-ENDIAN
 import reader as old-reader
 
@@ -31,6 +31,7 @@ class Message:
   id /int
   /** The Payload of this message. */
   payload /ByteArray
+
 
   /** The Navigation result (NAV) class byte. */
   static NAV ::= 0x01
@@ -289,16 +290,20 @@ class Message:
   Represents the minimum protocol version for the message type.
 
   Devices must supporting at least this protocol version to use the message.
+
+  Todo: convert to semver for later ease of use.
   */
-  min-protocol-version/string := ""
+  static MIN-PROTVER ::= "15.0"
 
   /**
   Represents the maximum protocol version for the message type.
 
   Devices supporting protocol version newer than this may not be able to
     work with the message type.
+
+  Todo: convert to semver for later ease of use.
   */
-  max-protocol-version/string := ""
+  max-protver/string := ""
 
 
   /** Constructs a UBX message with the given $cls, $id, and $payload. */
@@ -460,6 +465,7 @@ Contains the class ID and message ID of the acknowledged message.
 class AckAck extends Message:
   /** The UBX-ACK-ACK message ID. */
   static ID ::= 0x01
+  static MIN-PROTVER ::= "12.0"
 
   /** Constructs a dummy acknowledge message. */
   constructor.private_ cls id:
@@ -507,6 +513,7 @@ class AckNak extends Message:
   // NAK messages are 0x00 not 0x02
   //static ID ::= 0x02
   static ID ::= 0x00
+  static MIN-PROTVER ::= "12.0"
 
   /** Constructs a dummy NAK message. */
   constructor.private_ cls id:
@@ -994,31 +1001,44 @@ class MonVer extends Message:
   hw-version -> string:
     return convert-string_ 30 10
 
-  /**
-  Returns a map of extension strings.
+  /** If an extension (AVP) exists with the supplied name. */
+  has-extension extension-name/string -> bool:
+    return (extensions.contains extension-name)
 
-  If provided by the firmware version on the device, it provides a list of n 30
-    byte entries.  Each entry is a NUL-terminated ASCII string with an AVP
-    delimited by '='.  Common examples: "PROTVER=...","EXTCORE=...",
-    "ROM BASE=...","GNSS=...".  This function returns a map of strings with the
-    keyed by the first part, with the value being the remainder past the first
-    instance of "=".
+  /**
+  Returns a map of extension string AVPs.
+
+  This function returns a map of strings with the keyed by the first part, with
+    the value being the remainder past the first instance of "=".
   */
   extensions -> Map:
-    raw-extensions := []
+    raw-extensions := extensions-raw
     output-extensions := {:}
-    offset := 40
-    eq-pos := ?
-    while offset + 30 <= payload.size:
-      raw-extensions.add (convert-string_ offset 30)
-      offset += 30
     raw-extensions.do:
-      eq-pos = it.index-of "="
+      eq-pos := it.index-of "="
       if eq-pos > 0:
         output-extensions[it] = ""
       else:
         output-extensions[it[..eq-pos]] = it[..(eq-pos + 1)]
     return output-extensions
+
+  /**
+  Returns a list of extension strings, if present.
+
+  If provided by the firmware version on the device, it provides a list of n 30
+    byte entries.  Each entry is a NUL-terminated ASCII string with an AVP
+    delimited by '='.  Common examples: "PROTVER=...","EXTCORE=...", "ROM
+    BASE=...","GNSS=...".
+  */
+  extensions-raw -> List:
+    raw-extensions := []
+    offset := 40
+    eq-pos := ?
+    while offset + 30 <= payload.size:
+      raw-extensions.add (convert-string_ offset 30)
+      offset += 30
+    return raw-extensions
+
 
   /** Helper: read a NULL-terminated string from a fixed-size field. */
   convert-string_ start length -> string:

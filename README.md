@@ -33,28 +33,39 @@ will not perform this.  (This will be implmemented with Toit
 [ublox-gnss-driver](https://github.com/toitware/ublox-gnss-driver)).
 
 ### Proposed logic for downlevel devices
-Devices earlier than M8 do not disclose their protocol support.  Therefore some
-assumptions need to be made based on available information:
+Devices earlier than M8 do not refer to the ubx protocol version when
+determining support - they referred to software versions.  Starting with the M8,
+the protocol was given its own versioning, which started with `15.0`.  Devices released before this are referred to as 'legacy', and some assumptions are made about the
+equivalent protocol version they support
+
+The following logic is proposed for the supported protocol version, if the
+device itself does not return the information specifically in its version
+extensions:
 ```Toit
-if UBX-MON-VER.has-protver:
-  protver = monver.protver        // e.g. extracted an exact value 15.00
-else if monver.sw-version.starts_with("7."):
-  protver = 14.5                  // Assume a u-blox 7
-else if monver.sw-version.starts_with("6."):
-  protver = 14.0                  // Assume a u-blox 6
-else if monver.sw-version.starts_with("5."):
-  protver = 13.0                  // Assume a u-blox 5
+if monver-message.has-extension "PROTVER":
+  // Extracted protocol version
+  protver = monver-message.extension["PROTVER"]
+
+// fallback options where no protocol version exists:
+else if monver-message.sw-version.starts-with "7.":
+  // Assume a u-blox 7
+  protver = 14.5
+else if monver-message.sw-version.starts-with "6.":
+  // Assume a u-blox 6
+  protver = 14.0
+else if monver-message.sw-version.starts-with "5.":
+  // Assume a u-blox 5
+  protver = 13.0
 else:
-  protver = 12.0                  // Anything older = minimal UBX core
+  // Anything older = minimal UBX core
+  protver = 12.0
 ```
 
-Some messages have had new fields added at a later time. (eg the Extensions
-definition on the `UBX-MON-VER` message which would hold the `PROTVER`
-extension)  In later documentation the minimum version requirement was lifted to
-the new field definition.  In this implementation, the number attempts to be the
-minimum supported version that knows about the message type, not the latest
-revision of that message type.  Newer fields will exist where possible, but if
-the driver does not provide information, they will be left blank, etc.
+As this parser was originally written for the M8, the default protocol version
+for all message types is `15.0`.   As they are tested and found working with
+earlier chipsets, these numbers will be updated and reduced to reflect it.  It
+is up to the driver/user to compare these and take action on a mismatch - this
+parser provides these as information only.
 
 ## Message Types Supported
 > [!IMPORTANT] While the groundwork for the framework of message types and
@@ -90,6 +101,48 @@ representation. Consequently, most GNSS receivers use this representation
 internally, only converting to a more "conventional form" at external
 interfaces. The iTOW field is the most obvious externally visible consequence of
 this internal representation.
+
+# Usage
+While different drivers might do this differently (especially if I2c vs. SPI vs.
+Serial) the messages operate in the following broad way:
+#### Sending a message
+To send a message, first create the message using the appropriate constructor,
+and then send it to the device:
+```Toit
+  // Import this library.  (Other driver setup omitted.)
+  import ubx-message
+
+  // Instantiate a ubx-mon-ver poll message (no arguments)
+  poll-message := ubx-message.MonVer.poll
+
+  // Convert to a byte array, and send to the device:
+  adapter.send-packet poll-message.to-byte-array
+```
+If the message type has an argument, this is specified on the different constructors.
+Almost all possible variable names and types are exposed:
+```Toit
+  // Library/driver setup omitted.
+
+  // Instantiate a ubx-cfg-msg message to request class-id/message-id messages
+  // at the rate of xxxx
+  classid := ubx-message.Message.NAV
+  msgid := ubx-message.NavStatus.ID
+  rate := 1
+  rate-message := ubx-message.CfgMsg.message-rate --msg-class=classid--msg-id=msgid --rate=rate
+
+  // Convert to a byte array, and send to the device:
+  adapter.send-packet rate-message.to-byte-array
+```
+
+#### Recieving/Parsing a message
+In the background, the parser creates a message using a private constructor
+
+```Toit
+
+
+```
+
+
 
 # Documentation
 Note that different documents may exist for your exact version of device (eg differing precisions and feature sets etc).
