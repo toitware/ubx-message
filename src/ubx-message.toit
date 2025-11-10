@@ -1001,34 +1001,51 @@ class MonVer extends Message:
   hw-version -> string:
     return convert-string_ 30 10
 
-  /** If an extension (AVP) exists with the supplied name. */
-  has-extension extension-name/string -> bool:
-    return (extensions.contains extension-name)
+  /** Returns true if an extension row exists containing the supplied string. */
+  has-extension str/string -> bool:
+    //return (extensions-raw.contains extension-name)
+    return (extensions-raw.any: (it.index-of str) > -1)
+
+  /** If a string exists in the extensions with the supplied text, return the
+  entire line . */
+  extension str/string -> string?:
+    //return (extensions-raw.contains extension-name)
+    extensions-raw.any:
+      if (it.index-of str) > -1:
+        return it
+    return null
 
   /**
   Returns a map of extension string AVPs.
 
   This function returns a map of strings with the keyed by the first part, with
     the value being the remainder past the first instance of "=".
-  */
+
+  DISABLED: Originally it looked like the extensions would be AVPs delimited by
+    '='.  This is not true in all device generations. In addition, the sets of
+    tags shown in the extensions aren't grouped, and can be split across more
+    than one extension 'row'.  So for now, this is disabled in favor of the
+    driver doing what is required for parsing of these messages.
+
   extensions -> Map:
     raw-extensions := extensions-raw
     output-extensions := {:}
+    print "TESTING $(extensions-raw)"
     raw-extensions.do:
       eq-pos := it.index-of "="
-      if eq-pos > 0:
-        output-extensions[it] = ""
-      else:
+      if eq-pos > -1:
         output-extensions[it[..eq-pos]] = it[..(eq-pos + 1)]
+      else:
+        output-extensions[it] = ""
     return output-extensions
+  */
 
   /**
   Returns a list of extension strings, if present.
 
   If provided by the firmware version on the device, it provides a list of n 30
     byte entries.  Each entry is a NUL-terminated ASCII string with an AVP
-    delimited by '='.  Common examples: "PROTVER=...","EXTCORE=...", "ROM
-    BASE=...","GNSS=...".
+    delimited by '='.
   */
   extensions-raw -> List:
     raw-extensions := []
@@ -1049,7 +1066,7 @@ class MonVer extends Message:
       end += 1
 
     // Slice bytes [start .. end) and convert to a Toit string.
-    return (payload[start..end]).to-string
+    return (payload[start..end]).to-string.trim
 
 
 /**
