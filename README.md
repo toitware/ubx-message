@@ -73,11 +73,12 @@ else:
 > this parser provides these as information only.**
 
 
-> [!WARNING] While the groundwork for the framework of message types and
-> parsing is complete, the exact message types you might need may not yet be
-> implemented.  This is most often largely due to a lack of hardware available
-> to testers...  Please create an
-> [issue](https://github.com/toitware/ubx-message/issues) or contact on [discord](https://discord.gg/Q7Y9VQ5nh2).
+> [!WARNING]
+> While the groundwork for the framework of message types and parsing is
+> complete, the exact message types you might need may not yet be implemented.
+> This is most often largely due to a lack of hardware available to testers...
+> Please create an [issue](https://github.com/toitware/ubx-message/issues) or
+> contact on [discord](https://discord.gg/Q7Y9VQ5nh2).
 
 ## Specific Field Information
 
