@@ -85,9 +85,9 @@ else:
 ### Integer Time Of Week (iTOW) / GPS Week
 This is a millisecond time measurement.  A GPS week starts at 00:00:00 GPS time
 on Sunday and lasts exactly 604,800 seconds (7 days).  Week numbering began on
-January 6, 1980, which is GPS time "week 0."  It's continuous, Is continuous (no
-leap seconds), and is offset from UTC by a constant number of seconds (currently
-18 seconds, as of 2025).  It tracks time precisely since 1980-01-06 00:00:00.
+January 6, 1980, which is GPS time "week 0."  It's continuous (no
+leap seconds) and is offset from UTC by a constant number of seconds (currently
+18 seconds as of 2025).  It tracks time precisely since 1980-01-06 00:00:00.
 
 Every new Sunday at midnight starts a new GPS week (week 1, week 2, etc) each
 of which runs for seconds (up to 604,799,999 ms in iTOW).
