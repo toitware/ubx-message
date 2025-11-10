@@ -63,17 +63,21 @@ else:
 
 > [!IMPORTANT]
 > As this parser was originally written for the M8, the default protocol version
-> for all message types is **`15.0`**.   As they are tested and found working with
-> earlier chipsets, these numbers will be updated and reduced to reflect it.  It
-> is up to the driver/user to compare these and take action on a mismatch - this
-> parser provides these as information only.
+> for all message types is **`15.0`**.
+>
+> As the message definitions are tested and found to work with earlier chipsets,
+> (or ratified with documentation) these numbers will be updated and reduced to
+> reflect it.
+>
+> **It is up to the driver/user to compare these and take action on a mismatch -
+> this parser provides these as information only.**
 
-## Message Types Supported
-> [!IMPORTANT] While the groundwork for the framework of message types and
+
+> [!WARNING] While the groundwork for the framework of message types and
 > parsing is complete, the exact message types you might need may not yet be
 > implemented.  This is most often largely due to a lack of hardware available
 > to testers...  Please create an
-> [issue](https://github.com/toitware/ubx-message/issues) or contact on discord.
+> [issue](https://github.com/toitware/ubx-message/issues) or contact on [discord](https://discord.gg/Q7Y9VQ5nh2).
 
 ## Specific Field Information
 
