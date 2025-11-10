@@ -61,11 +61,12 @@ else:
   protver = 12.0
 ```
 
-As this parser was originally written for the M8, the default protocol version
-for all message types is `15.0`.   As they are tested and found working with
-earlier chipsets, these numbers will be updated and reduced to reflect it.  It
-is up to the driver/user to compare these and take action on a mismatch - this
-parser provides these as information only.
+> [!IMPORTANT]
+> As this parser was originally written for the M8, the default protocol version
+> for all message types is **`15.0`**.   As they are tested and found working with
+> earlier chipsets, these numbers will be updated and reduced to reflect it.  It
+> is up to the driver/user to compare these and take action on a mismatch - this
+> parser provides these as information only.
 
 ## Message Types Supported
 > [!IMPORTANT] While the groundwork for the framework of message types and
