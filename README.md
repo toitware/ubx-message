@@ -40,22 +40,18 @@ equivalent protocol version they support
 
 The following logic is proposed for the supported protocol version, if the
 device itself does not return the information specifically in its version
-extensions:
+extensions (Pseudocode):
 ```Toit
 if monver-message.has-extension "PROTVER":
-  // Extracted protocol version
+  // Use extracted protocol version
   protver = monver-message.extension["PROTVER"]
 
 // fallback options where no protocol version exists:
-else if monver-message.sw-version.starts-with "7.":
-  // Assume a u-blox 7
-  protver = 14.5
-else if monver-message.sw-version.starts-with "6.":
+else if UBLOX7-HARDWARE-VERSION == monver-message.hw-version:
+  protver = "14.00"
+else if UBLOX6-HARDWARE-VERSION == monver-message.hw-version:
   // Assume a u-blox 6
-  protver = 14.0
-else if monver-message.sw-version.starts-with "5.":
-  // Assume a u-blox 5
-  protver = 13.0
+  protver = "13.00"
 else:
   // Anything older = minimal UBX core
   protver = 12.0
