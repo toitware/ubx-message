@@ -6,6 +6,7 @@ import ubx.ubx-message as ubx
 import expect show *
 
 main:
+  test-byte-array-conversion
   test-message
   test-nav-pvt
   test-nav-status
@@ -35,3 +36,14 @@ test-nav-pvt:
 test-nav-status:
   status-message := ubx.Message ubx.Message.NAV ubx.NavStatus.ID #[]
   expect status-message is ubx.NavStatus
+
+test-byte-array-conversion:
+  // Create any example message, and convert to byte array.
+  message-ba-before := (ubx.NavStatus.poll).to-byte-array
+
+  // Use the package to parse the message from the byte array.
+  ubx-message := ubx.Message.from-bytes message-ba-before
+  message-ba-after := ubx-message.to-byte-array
+
+  // Compare them.
+  expect-equals message-ba-before message-ba-after
