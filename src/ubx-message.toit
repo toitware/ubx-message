@@ -1,4 +1,4 @@
-// Copyright (C) 2021 Toitware ApS. All rights reserved.
+// Copyright (C) 2025 Toit contributors.
 // Use of this source code is governed by a MIT-style license that can be found
 // in the LICENSE file.
 
@@ -289,9 +289,9 @@ class Message:
   /**
   Represents the minimum protocol version for the message type.
 
-  Devices must supporting at least this protocol version to use the message.
+  Devices must support at least this protocol version to use the message.
 
-  Todo: convert to semver for later ease of use.
+  Todo: convert to semver for later ease of use...?
   */
   static MIN-PROTVER ::= "15.0"
 
@@ -467,6 +467,8 @@ Contains the class ID and message ID of the acknowledged message.
 class AckAck extends Message:
   /** The UBX-ACK-ACK message ID. */
   static ID ::= 0x01
+
+  /** Lowest protocol version with this message type. */
   static MIN-PROTVER ::= "12.0"
 
   /** Constructs a dummy acknowledge message. */
@@ -511,10 +513,9 @@ Contains the class ID and message ID of the NAK (not acknowledged) message.
 
 class AckNak extends Message:
   /** The UBX-ACK-NAK message ID. */
-
-  // NAK messages are 0x00 not 0x02
-  //static ID ::= 0x02
   static ID ::= 0x00
+
+  /** Lowest protocol version with this message type. */
   static MIN-PROTVER ::= "12.0"
 
   /** Constructs a dummy NAK message. */
@@ -666,7 +667,7 @@ class NavStatus extends Message:
   // Thinking to remove this and have the user/driver do it via the PACK... static.
   gps-fix-text -> string:
     assert: not payload.is-empty
-    return PACK-FIX-TYPES[LITTLE-ENDIAN.uint8 payload 4]
+    return PACK-FIX-TYPES[gps-fix]
 
   /**
   Navigation status flags.
@@ -1468,7 +1469,7 @@ class NavSol extends Message:
 
   /** The time in UTC.
 
-  Time is not included in the legacy Message type.  It can be obtained using
+  Time is not included in this legacy Message type.  It can be obtained using
     other messages however.  Need to think what to do with this one.  Take out
     for both, or leave in?  Perhaps remove custom properties (made for human
     consumption) on the message types, and have the driver worry about
