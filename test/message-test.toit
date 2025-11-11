@@ -11,6 +11,18 @@ main:
   test-nav-pvt
   test-nav-status
 
+test-byte-array-conversion:
+  // Create any example message, and convert to byte array.
+  message-ba-before := (ubx.NavStatus.poll).to-byte-array
+
+  // Use the package to parse the byte array message version back to a message
+  // again (using the driver code).
+  ubx-message := ubx.Message.from-bytes message-ba-before
+  message-ba-after := ubx-message.to-byte-array
+
+  // See that the message came back as expected.
+  expect-equals message-ba-before message-ba-after
+
 test-message:
   message := ubx.AckAck.private_ 0x06 0x13
 
@@ -27,23 +39,33 @@ test-message:
   expect-throw "INVALID UBX MESSAGE":
     ubx.Message.from-bytes bytes
 
-  expect-equals "UBX-ACK-ACK" message.stringify
+  // This test adjusted when editing the stringify to be more informative
+  // for testing purposes.
+  expect-equals "UBX-ACK-ACK: [6:CFG,19:ANT]" message.stringify
+
+  // Message is an object of the base class.
+  expect message is ubx.Message
+
+  // Message is still the expected message type.
+  expect message is ubx.AckAck
+
+  // Message is not some other arbitrary sibling message type.
+  expect message is not ubx.NavTimeUtc
 
 test-nav-pvt:
   pvt-message := ubx.Message ubx.Message.NAV ubx.NavPvt.ID #[]
   expect pvt-message is ubx.NavPvt
 
 test-nav-status:
-  status-message := ubx.Message ubx.Message.NAV ubx.NavStatus.ID #[]
-  expect status-message is ubx.NavStatus
+  // Get values out of class statics.
+  msg-nav-type-id/int := ubx.Message.NAV
+  msg-nav-status-id/int := ubx.NavStatus.ID
+  msg-payload/ByteArray := #[]
 
-test-byte-array-conversion:
-  // Create any example message, and convert to byte array.
-  message-ba-before := (ubx.NavStatus.poll).to-byte-array
+  // Construct using generic constructor, using specified types, with empty payload
+  status-message := (ubx.Message msg-nav-type-id msg-nav-status-id msg-payload) as ubx.NavStatus
 
-  // Use the package to parse the message from the byte array.
-  ubx-message := ubx.Message.from-bytes message-ba-before
-  message-ba-after := ubx-message.to-byte-array
-
-  // Compare them.
-  expect-equals message-ba-before message-ba-after
+  // Do the tests:
+  expect status-message is ubx.Message     // Message is an object of the base class.
+  expect status-message is ubx.NavStatus   // Message is the specific message type we made. (Generic constructor succeeded.)
+  expect status-message is not ubx.AckAck  // Message is not an (arbitrary) other sibling message type.

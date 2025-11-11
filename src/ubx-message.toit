@@ -499,7 +499,7 @@ class AckAck extends Message:
     return "ACK"
 
   stringify -> string:
-    return  "UBX-$class-string_-$id-string_: [$(class-id):$(class-id-text),$(message-id):$(message-id)]"
+    return  "$(super.stringify): [$(class-id):$(class-id-text),$(message-id):$(message-id-text)]"
 
 /**
 The UBX-ACK-NAK message.
@@ -546,7 +546,7 @@ class AckNak extends Message:
     return "NAK"
 
   stringify -> string:
-    return  "UBX-$class-string_-$id-string_: [$(class-id):$(class-id-text),$(message-id):$(message-id)]"
+    return  "$(super.stringify): [$(class-id):$(class-id-text),$(message-id):$(message-id-text)]"
 
 
 /**
@@ -653,13 +653,15 @@ class NavStatus extends Message:
     return LITTLE-ENDIAN.uint32 payload 0
 
   /**
-  The type of fix.
+  Returns the type of fix.
+
   One of $NO-FIX, $DEAD-RECKONING-ONLY, $FIX-2D, $FIX-3D, $GPS-DEAD-FIX, $TIME-ONLY.
   */
   gps-fix -> int:
     assert: not payload.is-empty
     return LITTLE-ENDIAN.uint8 payload 4
 
+  // Thinking to remove this and have the user/driver do it via the PACK... static.
   gps-fix-text -> string:
     assert: not payload.is-empty
     return PACK-FIX-TYPES[LITTLE-ENDIAN.uint8 payload 4]
@@ -964,8 +966,11 @@ class SatelliteData:
     codes := ""
     if alm-avail == 1: codes += "A"
     if ano-avail == 1: codes += "N"
+
     // TODO(kasper): Make this output a whole lot prettier and easier to parse.
-    return "$index|$gnss-id|$sv-id|$cno|$quality|$orbit-source|$codes"
+    //          ian: Added class/id type string from $super to assist with
+    //               tests.  Would be cool to standardise them somehow...?
+    return "$(super.stringify): $index|$gnss-id|$sv-id|$cno|$quality|$orbit-source|$codes"
 
 /**
 The UBX-MON-VER message.
