@@ -455,7 +455,9 @@ class Message:
   stringify -> string:
     return "UBX-$class-string_-$id-string_"
 
-
+  /** Hash Code for use as an identifier in a Map. */
+  hash-code:
+    return #[cls, id]
 
 /**
 The UBX-ACK-ACK message.
@@ -1464,8 +1466,14 @@ class NavSol extends Message:
   is-gnss-fix -> bool:
     return (flags & 0b00000001) != 0
 
-
   /** The time in UTC.
+
+  Time is not included in the legacy Message type.  It can be obtained using
+    other messages however.  Need to think what to do with this one.  Take out
+    for both, or leave in?  Perhaps remove custom properties (made for human
+    consumption) on the message types, and have the driver worry about
+    presentation of message data...
+
   utc-time -> Time:
     return Time.utc year month day h m s --ns=ns
   */
