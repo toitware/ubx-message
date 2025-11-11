@@ -18,14 +18,14 @@ same protocol/parser, minimum protocol information has been added to each
 message type.  Older devices that don't advertise what protocol version they
 support will be assumed this way:
 
-| Device Generation | Example module | SW-Ver (Observed) | Rough UBX protocol equivalent | Notes
+| Device Generation | Example module | SW-Ver (Observed) | UBX protocol equiv. | Notes |
 |-|-|-|-|-|
-u-blox 5| `NEO-5Q` / `LEA-5H` | 5.00–5.03 | 13.00 | Earliest unified UBX message set.  Has `UBX-NAV-SOL`, `UBX-NAV-POSLLH`, `UBX-TIMEUTC`, `UBX-NAV-SVINFO`, `UBX-NAV-STATUS`
-u-blox 6 | `NEO-6M-0-001` / `LEA-6` | 7.00-7.03 | 14.00	| Adds `UBX-NAV-SVINFO`, `UBX-TIMEUTC`, `UBX-NAV-SOL`.  (still no PROTVER field).
-u-blox 7 | `NEO-7M-0-000` | 1.00 | 14.5 - 14.9 | Transitional—message formats same as 6-series, still no PROTVER string.
-u-blox 8/M8 | NEO-M8N	| 3.01+ | 15.00 - 18.xx | First to advertise PROTVER in `UBX-MON-VER` messages.  Adds `NAV-SAT`, `NAT-PVT`, `MON-PATCH` etc.
-u-blox 9/M9 | NEO-M9N	| 4.xx  | 19.xx - 23.xx | Current numbered line.
-u-blox 10 (M10 Family) | MIA-M10Q, NEO-M10S, MAX-M10S, M10M | 5.xx+ | 27.00 - 27.11 (as of 2025) | Same message framing and checksum; new GNSS, low power, and timing modes.  New high precisions types such as `NAV-HPPOSECEF` and `NAV-HPPOSLLH`.
+| u-blox 5| `NEO-5Q` / `LEA-5H` | 5.00–5.03 | `13.00` (Assumed) | Earliest unified UBX message set.  Has `UBX-NAV-SOL`, `UBX-NAV-POSLLH`, `UBX-TIMEUTC`, `UBX-NAV-SVINFO`, `UBX-NAV-STATUS` |
+| u-blox 6 | `NEO-6M-0-001` / `LEA-6` | 7.00-7.03 | `13.00` (Assumed)	| Adds `UBX-NAV-SVINFO`, `UBX-TIMEUTC`, `UBX-NAV-SOL`.  (still no PROTVER field). |
+| u-blox 7 | `NEO-7M-0-000` | 1.00 | `14.00` | Transitional—message formats same as 6-series.  PROTVER string present in observed devices. |
+| u-blox 8/M8 | NEO-M8N	| 3.01+ | > `15.00` | First to advertise PROTVER in `UBX-MON-VER` messages.  Adds `NAV-SAT`, `NAT-PVT`, `MON-PATCH` etc. |
+| u-blox 9/M9 | NEO-M9N	| 4.xx  | `19.xx` - `23.xx` | Current numbered line. |
+| u-blox 10 (M10 Family) | MIA-M10Q, NEO-M10S, MAX-M10S, M10M | 5.xx+ | `27.00` - `27.11` (as of 2025) | Same message framing and checksum; new GNSS, low power, and timing modes.  New high precisions types such as `NAV-HPPOSECEF` and `NAV-HPPOSLLH`. |
 
 The implemented driver will need to determine/assume a suitable protocol version
 for the device, and provide any guardrails necessary.  The ubx-message library
