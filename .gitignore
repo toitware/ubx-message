@@ -1,7 +1,8 @@
 ## For more: https://github.com/github/gitignore
 
-## This Package - so I can keep reference material with source:
+## To keep reference material and backups with source:
 .reference/
+.backups/
 
 ## Toit 
 .packages/

@@ -11,6 +11,11 @@ The UBX data protocol is used by the ublox GNSS receivers in the Max-M*
 The description for each receiver describes the supported UBX message.
 - Max-M8: https://www.u-blox.com/en/docs/UBX-13003221
 - Max-M9: https://www.u-blox.com/en/docs/UBX-19035940
+
+To do list:
+- MGA-* (AssistNow) messages: Assisted GNSS injection (time, eph/almanac) for
+  fast TTFF.  A path for MGA-INI-TIME_UTC at minimum.
+- ESF-* for combination with DR/ADR/IMU fusion
 */
 
 import io
@@ -347,6 +352,8 @@ class Message:
     if cls == Message.CFG:
       if id == CfgPrt.ID:
         return CfgPrt.private_ payload
+      if id == CfgTp5.ID:
+        return CfgTp5.private_ payload
 
     return Message.private_ cls id payload
 
@@ -776,6 +783,7 @@ class NavStatus extends Message:
   */
   gps-fix -> int:
     assert: not payload.is-empty
+    //return LITTLE-ENDIAN.uint8 payload 4
     return LITTLE-ENDIAN.uint8 payload 4
 
   // Thinking to remove this and have the user/driver do it via the PACK... static.
@@ -1796,3 +1804,108 @@ class NavTimeUtc extends Message:
   */
   utc-standard -> int:
     return (validflags >> 4) & 0x0F
+
+/**
+The UBX-NAV-TP5 message.
+
+Payload (32 bytes):
+  0  : tpIdx (U1)       // 0=TIMEPULSE, 1=TIMEPULSE2 (if available)
+  1  : version (U1)     // 1
+  2..3 : reserved
+  4..5 : antCableDelay (I2, ns)
+  6..7 : rfGroupDelay  (I2, ns)
+  8..11 : freqPeriod (U4)         // Hz if !isLength; period in us if isLength
+  12..15: freqPeriodLock (U4)
+  16..19: pulseLenRatio (U4)      // duty × 1e-9 if isLength=0; length in ns if isLength=1
+  20..23: pulseLenRatioLock (U4)
+  24..27: userConfigDelay (I4, ns)
+  28..31: flags (U4)
+Key flag bits (common):
+  bit0: active (1=on)
+  bit1: lockGnssFreq
+  bit2: lockedOtherSet
+  bit5: isFreq (else period)
+  bit6: isLength (else ratio)
+  bit10: alignToTow
+  bit11: polarity (1=active high)
+  bit14: timeGridUtc (vs. GNSS time)  [chip-specific]
+*/
+class CfgTp5 extends Message:
+  static ID ::= 0x31
+
+  // Index
+  static TP-IDX-0 ::= 0
+  static TP-IDX-1 ::= 1
+
+  // Flags helpers
+  static FLAG-ACTIVE       ::= 1 << 0
+  static FLAG-IS-FREQ      ::= 1 << 5
+  static FLAG-IS-LENGTH    ::= 1 << 6
+  static FLAG-ALIGN-TOW    ::= 1 << 10
+  static FLAG-POLARITY-HI  ::= 1 << 11
+  static FLAG-UTC-GRID     ::= 1 << 14
+
+  /** Poll the TP5 configuration for tpIdx (0 or 1). */
+  constructor.poll --tp-idx/int=TP-IDX-0:
+    new-payload := ByteArray 2
+    LITTLE-ENDIAN.put-uint8 new-payload 0 tp-idx
+    LITTLE-ENDIAN.put-uint8 new-payload 1 1  // version
+    super.private_ Message.CFG ID new-payload
+
+  /** Construct an instance with bytes from a retrieved message. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.NAV ID payload
+
+  /**
+  Set TP5 with common defaults:
+    - active, align to TOW, UTC grid off by default
+    - frequency mode at 1 Hz, 50% duty, active-high
+  */
+  constructor.set
+      --tp-idx/int=TP-IDX-0
+      --ant-cable-ns/int=0
+      --rf-group-ns/int=0
+      --freq-hz/int=1
+      --duty-permille/int=500
+      --use-utc/bool=false
+      --active/bool=true
+      --polarity-high/bool=true:
+    new-payload := ByteArray 32
+    LITTLE-ENDIAN.put-uint8  new-payload 0 tp-idx
+    LITTLE-ENDIAN.put-uint8  new-payload 1 1  // version
+    LITTLE-ENDIAN.put-uint16 new-payload 2 0
+    LITTLE-ENDIAN.put-int16  new-payload 4 ant-cable-ns
+    LITTLE-ENDIAN.put-int16  new-payload 6 rf-group-ns
+    // Frequency mode: set freqPeriod=freq, isFreq=1; pulseLenRatio = duty * 1e-9
+    LITTLE-ENDIAN.put-uint32 new-payload 8  freq-hz
+    LITTLE-ENDIAN.put-uint32 new-payload 12 freq-hz
+    dutyRatioNano := duty-permille * 1_000_000  // permille → nanos of 1e9
+    LITTLE-ENDIAN.put-uint32 new-payload 16 dutyRatioNano
+    LITTLE-ENDIAN.put-uint32 new-payload 20 dutyRatioNano
+    LITTLE-ENDIAN.put-int32  new-payload 24 0
+
+    flags := 0
+    if active:        flags |= FLAG-ACTIVE
+    flags |= FLAG-IS-FREQ                  // frequency mode
+    // we used ratio (not length), so FLAG-IS-LENGTH stays 0
+    flags |= FLAG-ALIGN-TOW
+    if polarity-high: flags |= FLAG-POLARITY-HI
+    if use-utc:       flags |= FLAG-UTC-GRID
+    LITTLE-ENDIAN.put-uint32 new-payload 28 flags
+
+    super.private_ Message.CFG ID new-payload
+
+  tp-idx -> int:
+    return LITTLE-ENDIAN.uint8 payload 0
+
+  flags  -> int:
+    return LITTLE-ENDIAN.uint32 payload 28
+
+  freq   -> int:
+    return LITTLE-ENDIAN.uint32 payload 8
+
+  duty-nano -> int:
+    return LITTLE-ENDIAN.uint32 payload 16
+
+  id-string_ -> string:
+    return "TP5"
