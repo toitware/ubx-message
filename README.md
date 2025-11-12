@@ -35,8 +35,9 @@ will not perform this.  (This will be implmemented with Toit
 ### Proposed logic for downlevel devices
 Devices earlier than M8 do not refer to the ubx protocol version when
 determining support - they referred to software versions.  Starting with the M8,
-the protocol was given its own versioning, which started with `15.0`.  Devices released before this are referred to as 'legacy', and some assumptions are made about the
-equivalent protocol version they support
+the protocol was given its own versioning, which started with `15.0`.  Devices
+released before this are referred to as 'legacy', and some assumptions are made
+about the equivalent protocol version they support
 
 The following logic is proposed for the supported protocol version, if the
 device itself does not return the information specifically in its version
@@ -58,12 +59,15 @@ else:
 ```
 
 > [!IMPORTANT]
-> As this parser was originally written for the M8, the default protocol version
-> for all message types is **`15.0`**.
+> The minimum protocol version requried is stored in `MIN-PROTVER` (string) for
+> each message.  As this parser was originally written for the M8, the default
+> protocol version for all message types is **`15.0`**.
 >
-> As the message definitions are tested and found to work with earlier chipsets,
-> (or ratified with documentation) these numbers will be updated and reduced to
-> reflect it.
+> As message definitions are tested and found to work with earlier chipsets, (or
+> ratified with documentation) these numbers will be updated and reduced to
+> reflect it.  The documentation states that support will be dropped for some of
+> the older messages in later versions.  Where this is known, it is recorded in
+> `MAX-PROTVER`.
 >
 > **It is up to the driver/user to compare these and take action on a mismatch -
 > this parser provides these as information only.**
@@ -120,8 +124,8 @@ and then send it to the device:
   // Convert to a byte array, and send to the device:
   adapter.send-packet poll-message.to-byte-array
 ```
-If the message type has an argument, this is specified on the different constructors.
-Almost all possible variable names and types are exposed:
+If the message type has an argument, this is used on the message specific
+constructors:
 ```Toit
   // Library/driver setup omitted.
 
@@ -132,7 +136,8 @@ Almost all possible variable names and types are exposed:
   rate := 1
   rate-message := ubx-message.CfgMsg.message-rate --msg-class=classid--msg-id=msgid --rate=rate
 
-  // Convert to a byte array, and send to the device:
+  // Convert to a byte array, and send to the device (functions provided in the
+  // driver not in this parser library):
   adapter.send-packet rate-message.to-byte-array
 ```
 

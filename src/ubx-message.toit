@@ -27,8 +27,15 @@ import reader as old-reader
 A UBX message from the UBX data protocol.
 */
 class Message:
-  /** Maximum size of an encoded message. */
+  /** Maximum size of an encoded message.
+
+  The protocol allows length up to 65535 (2-byte field), though most real
+  messages are far smaller. 2 KB is sensible safety cap, but some messages
+  (e.g., MGA assistance blocks, large MON dumps) can exceed that on newer
+  firmware.  May need to set this differently later, possibly 8K/16K.
+  */
   static MAX-MESSAGE-SIZE_ ::= 2048
+
 
   /** The class of this message. */
   cls /int
@@ -410,7 +417,11 @@ class Message:
 
   static is-valid-frame_ frame/ByteArray -> bool:
     // Check the sync bytes.
-    if frame[0] != 0xb5 or frame[1] != 0x62: throw INVALID-UBX-MESSAGE_
+    //if frame[0] != 0xb5 or frame[1] != 0x62: throw INVALID-UBX-MESSAGE_
+    // Don't throw here- let this function do as designed and allow
+    // the specific constructors etc determine what to do.  In some cases
+    // 'false' shouldn't throw (eg 15 lines above.)
+    if frame[0] != 0xb5 or frame[1] != 0x62: return false
 
     // Check the payload length.
     length ::= LITTLE-ENDIAN.uint16 frame 4
@@ -419,9 +430,10 @@ class Message:
 
     ck-a ::= frame[frame.size - 2]
     ck-b ::= frame[frame.size - 1]
+    ok := false
     compute-checksum_ frame: | a b |
-      return ck-a == a and ck-b == b
-    return false
+      ok = (ck-a == a) and (ck-b == b)
+    return ok
 
   /**
   Computes the checksum of the given $bytes.
