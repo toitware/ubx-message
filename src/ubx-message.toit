@@ -402,7 +402,9 @@ class Message:
     if (io-reader.peek-byte 0) != 0xb5 or (io-reader.peek-byte 1) != 0x62: throw INVALID-UBX-MESSAGE_
 
     // Verify the length and get full the packet.
-    length ::= (io-reader.peek-byte 4) | (((io-reader.peek-byte 5) & 0xff) << 8)
+    // AI suggested we need to mask both byte 4 *and* 5 in case of signed values
+    //length ::= (io-reader.peek-byte 4) | (((io-reader.peek-byte 5) & 0xff) << 8)
+    length ::= ((io-reader.peek-byte 4) & 0xff) | (((io-reader.peek-byte 5) & 0xff) << 8)
     if not 0 <= length <= MAX-MESSAGE-SIZE_: throw INVALID-UBX-MESSAGE_
     frame ::= io-reader.peek-bytes length + 8
 
@@ -419,8 +421,8 @@ class Message:
     // Check the sync bytes.
     //if frame[0] != 0xb5 or frame[1] != 0x62: throw INVALID-UBX-MESSAGE_
     // Don't throw here- let this function do as designed and allow
-    // the specific constructors etc determine what to do.  In some cases
-    // 'false' shouldn't throw (eg 15 lines above.)
+    // the specific constructors etc determine what to do.  In every call of
+    // is-valid-frame_, it is thrown on false.
     if frame[0] != 0xb5 or frame[1] != 0x62: return false
 
     // Check the payload length.
@@ -432,15 +434,15 @@ class Message:
     ck-b ::= frame[frame.size - 1]
 
     // AI suggested this close was bad:
-    compute-checksum_ frame: | a b |
-      return ck-a == a and ck-b == b
-    return false
+    //compute-checksum_ frame: | a b |
+    //  return ck-a == a and ck-b == b
+    //return false
 
     // And suggested this replacement.  (Want to discuss)
-    //ok := false
-    //compute-checksum_ frame: | a b |
-    //  ok = (ck-a == a) and (ck-b == b)
-    //return ok
+    ok := false
+    compute-checksum_ frame: | a b |
+      ok = (ck-a == a) and (ck-b == b)
+    return ok
 
   /**
   Computes the checksum of the given $bytes.
