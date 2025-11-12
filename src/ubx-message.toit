@@ -430,10 +430,17 @@ class Message:
 
     ck-a ::= frame[frame.size - 2]
     ck-b ::= frame[frame.size - 1]
-    ok := false
+
+    // AI suggested this close was bad:
     compute-checksum_ frame: | a b |
-      ok = (ck-a == a) and (ck-b == b)
-    return ok
+      return ck-a == a and ck-b == b
+    return false
+
+    // And suggested this replacement.  (Want to discuss)
+    //ok := false
+    //compute-checksum_ frame: | a b |
+    //  ok = (ck-a == a) and (ck-b == b)
+    //return ok
 
   /**
   Computes the checksum of the given $bytes.
