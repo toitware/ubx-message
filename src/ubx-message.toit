@@ -354,6 +354,10 @@ class Message:
         return CfgPrt.private_ payload
       if id == CfgTp5.ID:
         return CfgTp5.private_ payload
+      if id == CfgNav5.ID:
+        return CfgNav5.private_ payload
+      if id == CfgGnss.ID:
+        return CfgGnss.private_ payload
 
     return Message.private_ cls id payload
 
@@ -1808,6 +1812,9 @@ class NavTimeUtc extends Message:
 /**
 The UBX-NAV-TP5 message.
 
+Used to configure the TIMEPULSE/PPS pin for time synchronisation.
+*/
+/*
 Payload (32 bytes):
   0  : tpIdx (U1)       // 0=TIMEPULSE, 1=TIMEPULSE2 (if available)
   1  : version (U1)     // 1
@@ -1838,12 +1845,12 @@ class CfgTp5 extends Message:
   static TP-IDX-1 ::= 1
 
   // Flags helpers
-  static FLAG-ACTIVE       ::= 1 << 0
-  static FLAG-IS-FREQ      ::= 1 << 5
-  static FLAG-IS-LENGTH    ::= 1 << 6
-  static FLAG-ALIGN-TOW    ::= 1 << 10
-  static FLAG-POLARITY-HI  ::= 1 << 11
-  static FLAG-UTC-GRID     ::= 1 << 14
+  static FLAG-ACTIVE       ::= 0b00000001
+  static FLAG-IS-FREQ      ::= 0b00100000
+  static FLAG-IS-LENGTH    ::= 0b01000000
+  static FLAG-ALIGN-TOW    ::= 0b00000100_00000000
+  static FLAG-POLARITY-HI  ::= 0b00001000_00000000
+  static FLAG-UTC-GRID     ::= 0b01000000_00000000
 
   /** Poll the TP5 configuration for tpIdx (0 or 1). */
   constructor.poll --tp-idx/int=TP-IDX-0:
@@ -1854,10 +1861,10 @@ class CfgTp5 extends Message:
 
   /** Construct an instance with bytes from a retrieved message. */
   constructor.private_ payload/ByteArray:
-    super.private_ Message.NAV ID payload
+    super.private_ Message.CFG ID payload
 
   /**
-  Set TP5 with common defaults:
+  Set TP5, starting with common defaults:
     - active, align to TOW, UTC grid off by default
     - frequency mode at 1 Hz, 50% duty, active-high
   */
@@ -1876,9 +1883,11 @@ class CfgTp5 extends Message:
     LITTLE-ENDIAN.put-uint16 new-payload 2 0
     LITTLE-ENDIAN.put-int16  new-payload 4 ant-cable-ns
     LITTLE-ENDIAN.put-int16  new-payload 6 rf-group-ns
+
     // Frequency mode: set freqPeriod=freq, isFreq=1; pulseLenRatio = duty * 1e-9
     LITTLE-ENDIAN.put-uint32 new-payload 8  freq-hz
     LITTLE-ENDIAN.put-uint32 new-payload 12 freq-hz
+
     dutyRatioNano := duty-permille * 1_000_000  // permille → nanos of 1e9
     LITTLE-ENDIAN.put-uint32 new-payload 16 dutyRatioNano
     LITTLE-ENDIAN.put-uint32 new-payload 20 dutyRatioNano
@@ -1898,10 +1907,10 @@ class CfgTp5 extends Message:
   tp-idx -> int:
     return LITTLE-ENDIAN.uint8 payload 0
 
-  flags  -> int:
+  flags -> int:
     return LITTLE-ENDIAN.uint32 payload 28
 
-  freq   -> int:
+  freq -> int:
     return LITTLE-ENDIAN.uint32 payload 8
 
   duty-nano -> int:
@@ -1909,3 +1918,277 @@ class CfgTp5 extends Message:
 
   id-string_ -> string:
     return "TP5"
+
+
+/**
+The UBX-CFG-NAV5 message.
+
+Classic navigation engine settings (legacy but still widely used).
+*/
+/*
+Payload (36 bytes):
+  0..1  mask (U2)             // which fields to apply
+  2     dynModel (U1)         // 0=portable, 2=stationary, 3=pede, 4=auto, 6=sea, 7=air1g, 8=air2g, 9=air4g
+  3     fixMode (U1)          // 1=2D only, 2=3D only, 3=auto 2D/3D
+  4..7  fixedAlt (I4, cm)     // for 2D mode if used
+  8..11 fixedAltVar (U4, cm^2)
+  12    minElev (I1, deg)
+  13    drLimit (U1)          // dead reckoning limit (s)
+  14..15 pDop (U2, 0.1)
+  16..17 tDop (U2, 0.1)
+  18..19 pAcc (U2, m)
+  20..21 tAcc (U2, m)
+  22    staticHoldThresh (U1, cm/s)
+  23    dgnssTimeout (U1, s)
+  24    cnoThreshNumSVs (U1)
+  25    cnoThresh (U1, dBHz)
+  26..27 reserved1
+  28..29 staticHoldMaxDist (U2, m)
+  30    utcStandard (U1)
+  31..35 reserved2
+*/
+class CfgNav5 extends Message:
+  static ID ::= 0x24
+
+  // Mask bits (subset)
+  static DYN-MASK_      ::= 0b00000000_00000001
+  static FIXMODE-MASK_  ::= 0b00000000_00000010
+  static OUTLYING-MASK_ ::= 0b00000000_00000100
+  static ALT-MASK_      ::= 0b00000000_00001000
+  static DGPS-MASK_     ::= 0b00000000_00010000
+  static TDOP-MASK_     ::= 0b00000000_00100000
+  static PDOP-MASK_     ::= 0b00000000_01000000
+  static PACC-MASK_     ::= 0b00000000_10000000
+  static TACC-MASK_     ::= 0b00000001_00000000
+  static STATIC-MASK_   ::= 0b00000010_00000000
+  static UTC-MASK_      ::= 0b00000100_00000000
+
+  // Dynamic models (subset)
+  static DYN-PORTABLE   ::= 0
+  static DYN-STATIONARY ::= 2
+  static DYN-PEDESTRIAN ::= 3
+  static DYN-AUTOMOTIVE ::= 4
+  static DYN-SEA        ::= 6
+  static DYN-AIR1G      ::= 7
+  static DYN-AIR2G      ::= 8
+  static DYN-AIR4G      ::= 9
+
+  // Fix mode
+  static FIX-2D   ::= 1
+  static FIX-3D   ::= 2
+  static FIX-AUTO ::= 3
+
+  static PACK-MODELS ::= {
+    DYN-PORTABLE: "PORTABLE",
+    DYN-STATIONARY: "STATIONARY",
+    DYN-PEDESTRIAN: "PEDESTRIAN",
+    DYN-AUTOMOTIVE: "AUTOMOTIVE",
+    DYN-SEA: "SEA",
+    DYN-AIR1G: "AIR1G",
+    DYN-AIR2G: "AIR2G",
+    DYN-AIR4G: "AIR4G"
+  }
+
+
+  /** Poll current NAV5. */
+  constructor.poll:
+    super.private_ Message.CFG ID (ByteArray 0)
+
+  /** Construct an instance with bytes from a retrieved message. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.CFG ID payload
+
+  /** Minimal setter: set dyn model + auto 2D/3D, leave others default. */
+  constructor.set-basic
+      --dyn/int=DYN-AUTOMOTIVE
+      --fix/int=FIX-AUTO:
+    new-payload := ByteArray 36
+    LITTLE-ENDIAN.put-uint16 new-payload 0 (DYN-MASK_ | FIXMODE-MASK_)
+    LITTLE-ENDIAN.put-uint8  new-payload 2 dyn
+    LITTLE-ENDIAN.put-uint8  new-payload 3 fix
+    // sensible defaults / zeros elsewhere
+    super.private_ Message.CFG ID new-payload
+
+  /** Full setter for advanced control (pass null to skip a field & mask). */
+  constructor.set-advanced
+      --dyn/int?=null
+      --fix/int?=null
+      --fixed-alt-cm/int?=null
+      --fixed-alt-var-cm2/int?=null
+      --min-elev-deg/int?=null
+      --dr-limit-s/int?=null
+      --p-dop-x10/int?=null
+      --t-dop-x10/int?=null
+      --p-acc-m/int?=null
+      --t-acc-m/int?=null
+      --static-hold-thresh-cmps/int?=null
+      --dgnss-timeout-s/int?=null
+      --cno-thresh-num-sv/int?=null
+      --cno-thresh-dbHz/int?=null
+      --static-hold-max-dist-m/int?=null
+      --utc-standard/int?=null:
+    new-payload := ByteArray 36
+    mask := 0
+
+    if dyn != null:
+      mask |= DYN-MASK_
+      LITTLE-ENDIAN.put-uint8 new-payload 2 dyn
+    if fix != null:
+      mask |= FIXMODE-MASK_
+      LITTLE-ENDIAN.put-uint8 new-payload 3 fix
+    if fixed-alt-cm != null:
+      mask |= ALT-MASK_
+      LITTLE-ENDIAN.put-int32 new-payload 4 fixed-alt-cm
+    if fixed-alt-var-cm2 != null:
+      mask |= ALT-MASK_
+      LITTLE-ENDIAN.put-uint32 new-payload 8 fixed-alt-var-cm2
+    if min-elev-deg != null:
+      mask |= OUTLYING-MASK_
+      LITTLE-ENDIAN.put-int8 new-payload 12 min-elev-deg
+    if dr-limit-s != null:
+      mask |= OUTLYING-MASK_
+      LITTLE-ENDIAN.put-uint8 new-payload 13 dr-limit-s
+    if p-dop-x10 != null:
+      mask |= PDOP-MASK_
+      LITTLE-ENDIAN.put-uint16 new-payload 14 p-dop-x10
+    if t-dop-x10 != null:
+      mask |= TDOP-MASK_
+      LITTLE-ENDIAN.put-uint16 new-payload 16 t-dop-x10
+    if p-acc-m != null:
+      mask |= PACC-MASK_
+      LITTLE-ENDIAN.put-uint16 new-payload 18 p-acc-m
+    if t-acc-m != null:
+      mask |= TACC-MASK_
+      LITTLE-ENDIAN.put-uint16 new-payload 20 t-acc-m
+    if static-hold-thresh-cmps != null:
+      mask |= STATIC-MASK_
+      LITTLE-ENDIAN.put-uint8 new-payload 22 static-hold-thresh-cmps
+    if dgnss-timeout-s != null:
+      mask |= DGPS-MASK_
+      LITTLE-ENDIAN.put-uint8 new-payload 23 dgnss-timeout-s
+    if cno-thresh-num-sv != null:
+      mask |= OUTLYING-MASK_
+      LITTLE-ENDIAN.put-uint8 new-payload 24 cno-thresh-num-sv
+    if cno-thresh-dbHz != null:
+      mask |= OUTLYING-MASK_
+      LITTLE-ENDIAN.put-uint8 new-payload 25 cno-thresh-dbHz
+    if static-hold-max-dist-m != null:
+      mask |= STATIC-MASK_
+      LITTLE-ENDIAN.put-uint16 new-payload 28 static-hold-max-dist-m
+    if utc-standard != null:
+      mask |= UTC-MASK_
+      LITTLE-ENDIAN.put-uint8 new-payload 30 utc-standard
+
+    LITTLE-ENDIAN.put-uint16 new-payload 0 mask
+    super.private_ Message.CFG ID new-payload
+
+  dyn-model -> int:
+    return LITTLE-ENDIAN.uint8 payload 2
+
+  dyn-model-text -> string:
+    return PACK-MODELS[dyn-model]
+
+  fix-mode -> int:
+    return LITTLE-ENDIAN.uint8 payload 3
+
+  mask -> int:
+    return LITTLE-ENDIAN.uint16 payload 0
+
+  id-string_ -> string:
+    return "NAV5"
+
+/**
+The UBX-CFG-GNSS message.
+
+Configuring constellations/signals.  Note: Signal bitmasks inside flags are
+  chip-family specific (M8 vs M9/M10).  Keeping signals-mask=0 lets firmware
+  choose defaults, or bits can be set as needed for advanced use.
+
+Each block is a map with 5 keys, each with:
+  block["gnssId"]:   gnssId (1 byte)   - 0=GPS, 1=SBAS, 2=Galileo, 3=BeiDou, 5=QZSS, 6=GLONASS, etc.
+  block["resTrkCh"]: resTrkCh (1 byte) - reserved tracking channels
+  block["maxTrkCh"]: maxTrkCh (1 byte) - max tracking channels to use
+  block["flags"]:    4 byte value      - bit0 enable; higher bits = signal bitmask (chip-depend
+
+Multiple blocks can be created, use the convenience builder for these.
+*/
+class CfgGnss extends Message:
+  static ID ::= 0x3E
+
+  // Common gnssId values
+  static GNSS-GPS      ::= 0
+  static GNSS-SBAS     ::= 1
+  static GNSS-GALILEO  ::= 2
+  static GNSS-BEIDOU   ::= 3
+  static GNSS-QZSS     ::= 5
+  static GNSS-GLONASS  ::= 6
+
+  // Block field numbers
+  static BLOCK-GNSSID_    ::= 0
+  static BLOCK-RESTRKCH_  ::= 1
+  static BLOCK-MAXTRKCH_  ::= 2
+  static BLOCK-RESERVED1_ ::= 3
+  static BLOCK-FLAGS_     ::= 4
+
+  // Flags helpers
+  static FLAG-ENABLE ::= 1
+
+  /** Construct a poll message to get current GNSS configuration. */
+  constructor.poll:
+    // Empty payload poll (some firmwares accept either empty or msgVer=0)
+    super.private_ Message.CFG ID (ByteArray 0)
+
+  /** Construct an instance with bytes from a retrieved message. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.CFG ID payload
+
+  /** Build from a list of 8-byte blocks. numTrkChHw/Use are advisory. */
+  constructor.set
+      --msg-ver/int=0
+      --num-trk-ch-hw/int=0
+      --num-trk-ch-use/int=0
+      --blocks/List=[]:
+    num := blocks.size
+    new-payload := ByteArray (4 + 8 * num)
+    LITTLE-ENDIAN.put-uint8 new-payload 0 msg-ver
+    LITTLE-ENDIAN.put-uint8 new-payload 1 num-trk-ch-hw
+    LITTLE-ENDIAN.put-uint8 new-payload 2 num-trk-ch-use
+    LITTLE-ENDIAN.put-uint8 new-payload 3 num
+    i := 0
+    while i < num:
+      block := blocks[i]  // Expect map with fields: "gnssId", "resTrkCh", "maxTrkCh", "flags"
+      assert: block.size = 5
+      base := 4 + 8 * i
+      LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-GNSSID_) block["gnssId"]
+      LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-RESTRKCH_) block["resTrkCh"]
+      LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-MAXTRKCH_) block["maxTrkCh"]
+      LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-RESERVED1_) 0
+      LITTLE-ENDIAN.put-uint32 new-payload (base + BLOCK-FLAGS_) block["flags"]
+      i += 1
+    super.private_ Message.CFG ID new-payload
+
+  // Convenience builder for one block, many can be supplied
+  static create-block
+      gnss-id/int
+      --enable/bool=true
+      --signals-mask/int=0
+      --res-trk/int=0
+      --max-trk/int=0
+      -> Map:
+    flags := (enable ? FLAG-ENABLE : 0) | signals-mask
+    block/Map := {"gnssId": gnss-id, "resTrkCh": res-trk, "maxTrkCh": max-trk, "flags": flags}
+    return block
+
+  msg-ver -> int:
+    return LITTLE-ENDIAN.uint8 payload 0
+
+  num-config-blocks -> int:
+    return LITTLE-ENDIAN.uint8 payload 3
+
+  block-gnss-id i/int -> int:
+    return LITTLE-ENDIAN.uint8 payload (4 + 8*i)
+
+  block-flags i/int -> int:
+    return LITTLE-ENDIAN.uint32 payload (4 + 8*i + 4)
+
+  id-string_ -> string: return "GNSS"
