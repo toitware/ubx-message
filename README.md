@@ -4,7 +4,7 @@ in the Max-M* series.
 
 
 ## History
-This library is a parser of messages from these recievers. The protocol was
+This library is a parser of messages from these receivers. The protocol was
 developed and improved over time.  The parser was first written for Toit for M8
 devices.  Support for 6M (legacy) devices has been added later.
 
@@ -136,7 +136,7 @@ Almost all possible variable names and types are exposed:
   adapter.send-packet rate-message.to-byte-array
 ```
 
-#### Recieving/Parsing a message
+#### Receiving/Parsing a message
 In the background, the parser creates a message using a private constructor
 
 ```Toit
