@@ -32,7 +32,6 @@ class Message:
   /** The Payload of this message. */
   payload /ByteArray
 
-
   /** The Navigation result (NAV) class byte. */
   static NAV ::= 0x01
   /** The Receiver Manager (RXM) class byte. */
@@ -293,7 +292,7 @@ class Message:
 
   Todo: convert to semver for later ease of use...?
   */
-  static MIN-PROTVER ::= "15.0"
+  static MIN-PROTVER/string := "15.0"
 
   /**
   Represents the maximum protocol version for the message type.
@@ -303,7 +302,7 @@ class Message:
 
   Todo: convert to semver for later ease of use.
   */
-  max-protver/string := ""
+  static MAX-PROTVER/string := ""
 
 
   /** Constructs a UBX message with the given $cls, $id, and $payload. */
@@ -344,6 +343,10 @@ class Message:
     if cls == Message.MON:
       if id == MonVer.ID:
         return MonVer.private_ payload
+
+    if cls == Message.CFG:
+      if id == CfgPrt.ID:
+        return CfgPrt.private_ payload
 
     return Message.private_ cls id payload
 
@@ -574,7 +577,6 @@ class CfgMsg extends Message:
   constructor.poll --msg-class --msg-id:
     super.private_ Message.CFG ID #[msg-class, msg-id]
 
-
   /** Set per-port rates. */
   constructor.per-port --msg-class --msg-id --rates/ByteArray:
     assert: rates.size == 6
@@ -583,6 +585,118 @@ class CfgMsg extends Message:
   id-string_ -> string:
     return "MSG"
 
+
+/**
+The UBX-CFG-PRT message.
+
+Configures a port (most commonly UART1) for baud rate, framing, and protocol masks.
+Also supports polling a port's current configuration.
+
+Payload layout (legacy M8/M9):
+  offset size  field
+  0      1     portID
+  1      1     reserved0
+  2      2     txReady (ignored here)
+  4      4     mode       (bitfield: data bits, parity, stop bits)
+  8      4     baudRate   (uint32, e.g., 115200)
+  12     2     inProtoMask  (bit0=UBX, bit1=NMEA, bit2=RTCM2, bit5=RTCM3...)
+  14     2     outProtoMask (same bit layout)
+  16     2     flags
+  18     2     reserved1
+Total payload length: 20 bytes
+*/
+class CfgPrt extends Message:
+  /** The UBX-CFG-PRT message ID. */
+  static ID ::= 0x00
+
+  static MIN-PROTVER/string := "15.0"
+  static MAX-PROTVER/string := "23.0"   // Manual says not after this version.
+
+  // Common constants (see u-blox docs)
+  static PORT-UART1 ::= 0x01
+  static PORT-UART2 ::= 0x02
+
+  // Todo: expose these on the constructor
+  // mode bitfield shortcut: 8 data bits, no parity, 1 stop (8N1)
+  // (charLen=3 -> bits 6..7 = 0b11; parity=0 -> bits 9..11 = 0; nStop=1 -> bit 12 = 0)
+  // u-blox ref value: 0x000008D0
+  static MODE-BITS-MASK_ := 0b11000000
+  static MODE-PARITY-MASK_ := 0b11000000
+
+  static MODE-8N1 ::= 0x000008D0
+
+  // Protocol mask bits (legacy)
+  static PROTO-UBX  ::= 1 << 0
+  static PROTO-NMEA ::= 1 << 1
+  static PROTO-RTCM2 ::= 1 << 2
+  static PROTO-RTCM3 ::= 1 << 5
+
+  /**
+  Build a configuration to set a UART port.
+
+  Defaults: UART1, 115200 baud, 8N1, UBX-only (in/out).  Explicit proto masks
+    can be specified via --in-proto/--out-proto.
+  */
+  constructor.uart
+      --port-id/int=CfgPrt.PORT-UART1
+      --baud/int=9600
+      --mode/int=CfgPrt.MODE-8N1
+      --in-proto/int=CfgPrt.PROTO-UBX
+      --out-proto/int=CfgPrt.PROTO-UBX
+      --flags/int=0:
+    super.private_ Message.CFG ID (ByteArray 20)
+
+    // portID, reserved0, txReady(2)
+    LITTLE-ENDIAN.put-uint8  payload 0 port-id
+    LITTLE-ENDIAN.put-uint8  payload 1 0
+    LITTLE-ENDIAN.put-uint16 payload 2 0     // txReady off
+
+    // mode (framing)
+    LITTLE-ENDIAN.put-uint32 payload 4 mode
+
+    // baudRate
+    LITTLE-ENDIAN.put-uint32 payload 8 baud
+
+    // in/out proto masks
+    LITTLE-ENDIAN.put-uint16 payload 12 in-proto
+    LITTLE-ENDIAN.put-uint16 payload 14 out-proto
+
+    // flags, reserved1
+    LITTLE-ENDIAN.put-uint16 payload 16 flags
+    LITTLE-ENDIAN.put-uint16 payload 18 0
+
+  /**
+  Poll the configuration for a given port.
+  The poll payload is a single byte: portID.
+  */
+  constructor.poll --port-id/int=CfgPrt.PORT-UART1:
+    super.private_ Message.CFG ID (ByteArray 1)
+    LITTLE-ENDIAN.put-uint8 payload 0 port-id
+
+  /** Construct from an incoming payload. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.CFG ID payload
+
+  port-id -> int:
+    return LITTLE-ENDIAN.uint8 payload 0
+
+  mode -> int:
+    return LITTLE-ENDIAN.uint32 payload 4
+
+  baud-rate -> int:
+    return LITTLE-ENDIAN.uint32 payload 8
+
+  in-proto-mask -> int:
+    return LITTLE-ENDIAN.uint16 payload 12
+
+  out-proto-mask -> int:
+    return LITTLE-ENDIAN.uint16 payload 14
+
+  flags -> int:
+    return LITTLE-ENDIAN.uint16 payload 16
+
+  id-string_ -> string:
+    return "PRT"
 
 
 /**
@@ -1580,7 +1694,7 @@ UTC time solution, and functions on 6M and later devices.
 class NavTimeUtc extends Message:
   static ID ::= 0x21
 
-  /** Constructs a poll UBX-NAV-SOL message. */
+  /** Constructs a poll UBX-NAV-TIMEUTC message. */
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
