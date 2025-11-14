@@ -11,7 +11,8 @@ The UBX data protocol is used by the ublox GNSS receivers in the Max-M*
 The description for each receiver describes the supported UBX message.
 - Max-M8: https://www.u-blox.com/en/docs/UBX-13003221
 - Max-M9: https://www.u-blox.com/en/docs/UBX-19035940
-
+*/
+/*
 To do list:
 - MGA-* (AssistNow) messages: Assisted GNSS injection (time, eph/almanac) for
   fast TTFF.  A path for MGA-INI-TIME_UTC at minimum.
@@ -19,7 +20,6 @@ To do list:
 */
 
 import io
-//import semver
 import io show LITTLE-ENDIAN
 import reader as old-reader
 
@@ -27,12 +27,12 @@ import reader as old-reader
 A UBX message from the UBX data protocol.
 */
 class Message:
-  /** Maximum size of an encoded message.
-
+  /** Maximum size of an encoded message. */
+  /*
   The protocol allows length up to 65535 (2-byte field), though most real
-  messages are far smaller. 2 KB is sensible safety cap, but some messages
-  (e.g., MGA assistance blocks, large MON dumps) can exceed that on newer
-  firmware.  May need to set this differently later, possibly 8K/16K.
+    messages are far smaller. 2 KB is sensible safety cap, but some messages
+    (for example, MGA assistance blocks, large MON dumps) can exceed that on
+    newer firmware.  May need to set this differently later, possibly 8K/16K.
   */
   static MAX-MESSAGE-SIZE_ ::= 2048
 
@@ -301,8 +301,6 @@ class Message:
   Represents the minimum protocol version for the message type.
 
   Devices must support at least this protocol version to use the message.
-
-  Todo: convert to semver for later ease of use...?
   */
   static MIN-PROTVER/string := "15.0"
 
@@ -311,8 +309,6 @@ class Message:
 
   Devices supporting protocol version newer than this may not be able to
     work with the message type.
-
-  Todo: convert to semver for later ease of use.
   */
   static MAX-PROTVER/string := ""
 
@@ -334,7 +330,6 @@ class Message:
         return AckNak.private_ payload
       else:
         Message.private_ cls id payload
-        //throw "Unexpected UBX-ACK-xxx packet payload type."
 
     if cls == Message.NAV:
       if id == NavPvt.ID:
@@ -372,8 +367,7 @@ class Message:
   Constructs a UBX message from the given $bytes.
 
   The $bytes must be a valid UBX message (contain the sync bytes and a valid
-    checksum).  A message created, parsed using .from-bytes and converted back
-    to a byte array with .to-byte-array should end up identical.
+    checksum).
   */
   constructor.from-bytes bytes/ByteArray:
     if not is-valid-frame_ bytes: throw INVALID-UBX-MESSAGE_
@@ -381,7 +375,6 @@ class Message:
     id = bytes[3]
     length := LITTLE-ENDIAN.uint16 bytes 4
     if bytes.size != length + 8: throw INVALID-UBX-MESSAGE_
-    //payload = bytes[4 .. bytes.size - 2] - this did not pass identical test
     payload = bytes[6 .. 6 + length]
 
   /**
@@ -402,9 +395,7 @@ class Message:
     if (io-reader.peek-byte 0) != 0xb5 or (io-reader.peek-byte 1) != 0x62: throw INVALID-UBX-MESSAGE_
 
     // Verify the length and get full the packet.
-    // AI suggested we need to mask both byte 4 *and* 5 in case of signed values
-    //length ::= (io-reader.peek-byte 4) | (((io-reader.peek-byte 5) & 0xff) << 8)
-    length ::= ((io-reader.peek-byte 4) & 0xff) | (((io-reader.peek-byte 5) & 0xff) << 8)
+    length ::= (io-reader.peek-byte 4) | (((io-reader.peek-byte 5) & 0xff) << 8)
     if not 0 <= length <= MAX-MESSAGE-SIZE_: throw INVALID-UBX-MESSAGE_
     frame ::= io-reader.peek-bytes length + 8
 
@@ -417,12 +408,9 @@ class Message:
     io-reader.skip length + 8
     return Message msg-class msg-id payload
 
+  // Checks frame is valid - lets callers determine what to do if it fails.
   static is-valid-frame_ frame/ByteArray -> bool:
     // Check the sync bytes.
-    //if frame[0] != 0xb5 or frame[1] != 0x62: throw INVALID-UBX-MESSAGE_
-    // Don't throw here- let this function do as designed and allow
-    // the specific constructors etc determine what to do.  In every call of
-    // is-valid-frame_, it is thrown on false.
     if frame[0] != 0xb5 or frame[1] != 0x62: return false
 
     // Check the payload length.
@@ -433,16 +421,9 @@ class Message:
     ck-a ::= frame[frame.size - 2]
     ck-b ::= frame[frame.size - 1]
 
-    // AI suggested this close was bad:
-    //compute-checksum_ frame: | a b |
-    //  return ck-a == a and ck-b == b
-    //return false
-
-    // And suggested this replacement.  (Want to discuss)
-    ok := false
     compute-checksum_ frame: | a b |
-      ok = (ck-a == a) and (ck-b == b)
-    return ok
+      return ck-a == a and ck-b == b
+    unreachable
 
   /**
   Computes the checksum of the given $bytes.
@@ -545,7 +526,6 @@ The UBX-ACK-NAK message.
 
 Contains the class ID and message ID of the NAK (not acknowledged) message.
 */
-
 class AckNak extends Message:
   /** The UBX-ACK-NAK message ID. */
   static ID ::= 0x00
@@ -623,7 +603,8 @@ The UBX-CFG-PRT message.
 
 Configures a port (most commonly UART1) for baud rate, framing, and protocol masks.
 Also supports polling a port's current configuration.
-
+*/
+/*
 Payload layout (legacy M8/M9):
   offset size  field
   0      1     portID
@@ -644,24 +625,24 @@ class CfgPrt extends Message:
   static MIN-PROTVER/string := "15.0"
   static MAX-PROTVER/string := "23.0"   // Manual says not after this version.
 
-  // Common constants (see u-blox docs)
+  // Common constants (see u-blox docs).
   static PORT-UART1 ::= 0x01
   static PORT-UART2 ::= 0x02
 
   // Todo: expose these on the constructor
-  // mode bitfield shortcut: 8 data bits, no parity, 1 stop (8N1)
-  // (charLen=3 -> bits 6..7 = 0b11; parity=0 -> bits 9..11 = 0; nStop=1 -> bit 12 = 0)
-  // u-blox ref value: 0x000008D0
+  // mode bitfield shortcut: 8 data bits, no parity, 1 stop (8N1).
+  // (charLen=3 -> bits 6..7 = 0b11; parity=0 -> bits 9..11 = 0; nStop=1 -> bit 12 = 0).
+  // u-blox ref value: 0x000008D0.
   static MODE-DATA-BITS-MASK_ := 0b00000000_01100000
   static MODE-PARITY-MASK_    := 0b00000111_00000000
   static MODE-STOP-BITS-MASK_ := 0b00011000_00000000
 
-  // Common Mode Presets
+  // Common Mode Presets.
   static MODE-8N1 ::= 0x000008D0
   static MODE-7E1 ::= 0x00000080
   static MODE-8O2 :=  0x000000C0
 
-  // Protocol mask bits (legacy)
+  // Protocol mask bits (legacy).
   static PROTO-UBX   ::= 0b00000001
   static PROTO-NMEA  ::= 0b00000010
   static PROTO-RTCM2 ::= 0b00000100
@@ -682,22 +663,22 @@ class CfgPrt extends Message:
       --flags/int=0:
     super.private_ Message.CFG ID (ByteArray 20)
 
-    // portID, reserved0, txReady(2)
+    // PortID, Reserved0, TxReady(2)
     LITTLE-ENDIAN.put-uint8  payload 0 port-id
     LITTLE-ENDIAN.put-uint8  payload 1 0
-    LITTLE-ENDIAN.put-uint16 payload 2 0     // txReady off
+    LITTLE-ENDIAN.put-uint16 payload 2 0     // txReady off.
 
-    // mode (framing)
+    // Mode (framing).
     LITTLE-ENDIAN.put-uint32 payload 4 mode
 
-    // baudRate
+    // BaudRate.
     LITTLE-ENDIAN.put-uint32 payload 8 baud
 
-    // in/out proto masks
+    // In/out proto masks.
     LITTLE-ENDIAN.put-uint16 payload 12 in-proto
     LITTLE-ENDIAN.put-uint16 payload 14 out-proto
 
-    // flags, reserved1
+    // Flags, reserved1.
     LITTLE-ENDIAN.put-uint16 payload 16 flags
     LITTLE-ENDIAN.put-uint16 payload 18 0
 
@@ -706,8 +687,7 @@ class CfgPrt extends Message:
   The poll payload is a single byte: portID.
   */
   constructor.poll --port-id/int=CfgPrt.PORT-UART1:
-    super.private_ Message.CFG ID (ByteArray 1)
-    LITTLE-ENDIAN.put-uint8 payload 0 port-id
+    super.private_ Message.CFG ID #[port-id]
 
   /** Construct from an incoming payload. */
   constructor.private_ payload/ByteArray:
@@ -789,7 +769,8 @@ class NavStatus extends Message:
     FIX-2D : "FIX-2D",
     FIX-3D : "FIX-3D",
     GPS-DEAD-FIX : "GPS-DEAD-FIX",
-    TIME-ONLY : "TIME-ONLY"}
+    TIME-ONLY : "TIME-ONLY",
+  }
 
   constructor.poll:
     super.private_ Message.NAV ID #[]
@@ -873,8 +854,6 @@ class NavSat extends Message:
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
     assert: not payload.is-empty
-    // Correction itow is int32 (as per all other instances in this code)
-    //return LITTLE-ENDIAN.uint8 payload 0
     return LITTLE-ENDIAN.uint32 payload 0
 
   /** Message version. */
@@ -882,16 +861,12 @@ class NavSat extends Message:
     assert: not payload.is-empty
     return LITTLE-ENDIAN.uint8 payload 4
 
-  /** Number of satellites. */
+  /** Number of satellites in the message. */
   num-svs -> int:
     assert: not payload.is-empty
     return LITTLE-ENDIAN.uint8 payload 5
 
-  /**
-  How many satellites in the message.
-
-  Introduced for compatibility with NavSvInfo
-  */
+  /** Number of satellites in the message. */
   satellite-count -> int:
     return num-svs
 
@@ -909,9 +884,11 @@ class NavSat extends Message:
 Satellite data for a single satellite.
 
 The satellite data is included in the UBX-NAV-SAT message (See $NavSat).  Class
-  contains properties for SV's common to both UBX-NAV-SVINFO and UBX-NAV-SAT,
-  and parsers for use with both message types.  Messages are the same length in
-  both cases, but different information and layout.
+  contains properties for satellites (referred to in documentation as a 'Space
+  Vehicle' or 'SV', and used interchangably) common to both UBX-NAV-SVINFO and
+  UBX-NAV-SAT, and parsers for use with both message types.  Messages are the
+  same length in both cases, but different information and layout when coming
+  from each.
 */
 class SatelliteData:
   /** Contains the source of this Satellite entry.
@@ -944,28 +921,29 @@ class SatelliteData:
   /** Pseudorange residual. */
   pr-res/float
 
-  /** Space Vehicle health indicator
-    For compatibility:
-    0: unknown
-    1: healthy
-    2: unhealthy
+  /**
+  Space Vehicle health indicator
+
+  For compatibility: 0=unknown; 1=healthy; 2=unhealthy.
   */
   health/int
+
   /**
   Flags. Includes $quality, $orbit-source, $alm-avail, and $ano-avail.  See
     receiver specification for details.
   */
   flags/int
 
-  /** Signal quality indicator.
+  /**
+  Signal quality indicator.
 
   Signal quality values:
-   - 0: no signal
-   - 1: searching signal
-   - 2: signal acquired
-   - 3: signal detected but unusable
-   - 4: code locked and time synchronized
-   - 5, 6, 7: code and carrier locked and time synchronized
+  - 0: no signal
+  - 1: searching signal
+  - 2: signal acquired
+  - 3: signal detected but unusable
+  - 4: code locked and time synchronized
+  - 5, 6, 7: code and carrier locked and time synchronized
 
   Note: Since IMES signals are not time synchronized, a channel tracking an IMES
     signal can never reach a quality indicator value of higher than 3.
