@@ -17,6 +17,8 @@ To do list:
 - MGA-* (AssistNow) messages: Assisted GNSS injection (time, eph/almanac) for
   fast TTFF.  A path for MGA-INI-TIME_UTC at minimum.
 - ESF-* for combination with DR/ADR/IMU fusion
+- CFG-TP5: Complete so setters and getters match, and avoid PROTVER15-16
+  differences
 */
 
 import io
@@ -883,12 +885,13 @@ class NavSat extends Message:
 /**
 Satellite data for a single satellite.
 
-The satellite data is included in the UBX-NAV-SAT message (See $NavSat).  Class
-  contains properties for satellites (referred to in documentation as a 'Space
-  Vehicle' or 'SV', and used interchangably) common to both UBX-NAV-SVINFO and
-  UBX-NAV-SAT, and parsers for use with both message types.  Messages are the
-  same length in both cases, but different information and layout when coming
-  from each.
+Satellite data can be provided via UBX-NAV-SAT and/or UBX-NAV-SVINFO messages
+  (See $NavSat and $NavSvInfo).  This class is a container for satellite
+  properties.  (Satellites are referred to in documentation as 'Space Vehicles'
+  or 'SV', and the terms are used interchangably.)  It stores/parses properties
+  common to both UBX-NAV-SVINFO and UBX-NAV-SAT message types.  Messages are
+  approximately the same length in both cases, but have different information
+  and layout depending on which message was the source.
 */
 class SatelliteData:
   /** Contains the source of this Satellite entry.
@@ -924,7 +927,9 @@ class SatelliteData:
   /**
   Space Vehicle health indicator
 
-  For compatibility: 0=unknown; 1=healthy; 2=unhealthy.
+  For compatibility: 0=unknown; 1=healthy; 2=unhealthy.  UBX-NAV-SVINFO would
+  normally have 0=healthy and 1=unhealthy, but these values have been shifted to
+  match results from UBX-NAV-SAT.
   */
   health/int
 
@@ -937,6 +942,7 @@ class SatelliteData:
   /**
   Signal quality indicator.
 
+  ```
   Signal quality values:
   - 0: no signal
   - 1: searching signal
@@ -947,19 +953,22 @@ class SatelliteData:
 
   Note: Since IMES signals are not time synchronized, a channel tracking an IMES
     signal can never reach a quality indicator value of higher than 3.
+  ```
   */
   quality/int
 
   /**
   Orbit source.
 
+  ```
   Field Definitions (M8)
-    0: no orbit information is available for this SV
-    1: ephemeris is used
-    2: almanac is used
-    3: AssistNow Offline orbit is used
-    4: AssistNow Autonomous orbit is used
-    5, 6, 7: other orbit information is used
+  - 0: no orbit information is available for this SV
+  - 1: ephemeris is used
+  - 2: almanac is used
+  - 3: AssistNow Offline orbit is used
+  - 4: AssistNow Autonomous orbit is used
+  - 5, 6, 7: other orbit information is used
+  ```
   */
   orbit-source/int
 
@@ -1042,8 +1051,7 @@ class SatelliteData:
       sv-used      = ((flags & sv-used-mask) >> sv-used-mask.count-trailing-zeros) != 0
       smoothed     = ((flags & smoothed-mask) >> smoothed-mask.count-trailing-zeros) != 0
 
-      if (eph-avail != 0) or (alm-avail != 0) or (ano-avail != 0) or (aop-avail != 0):
-        orbit-info-avail = true
+      orbit-info-avail = (eph-avail != 0) or (alm-avail != 0) or (ano-avail != 0) or (aop-avail != 0)
 
     else if src-id == NavSvInfo.ID:
       offset = index * 12
@@ -1074,12 +1082,11 @@ class SatelliteData:
       orbit-info-avail = ((flags & orbit-avail-mask) >> orbit-avail-mask.count-trailing-zeros) != 0
       smoothed         = ((flags & smoothed-mask) >> smoothed-mask.count-trailing-zeros) != 0
 
-      // Translated to return outputs matching the later definition
+      // In the case of NavSvInfo messages, there are only two possibl statuses.
+      // In the case of NavSat, there are 3 possibilities. This binary output is
+      // moved (+1) to convert its outputs to match NavSat definitions.
       unhealthy-raw  := (flags & unhealthy-mask) >> unhealthy-mask.count-trailing-zeros
-      if unhealthy-mask == 1:
-        health = 2
-      else if unhealthy-mask == 0:
-        health = 1
+      health = unhealthy-raw + 1
 
       // Translated to return outputs as close to the M8 definition as possible
       if ((flags & orbit-eph-mask) >> orbit-eph-mask.count-trailing-zeros) == 1:
@@ -1130,11 +1137,13 @@ class MonVer extends Message:
   id-string_ -> string:
     return "VER"
 
-  /** Software version string (NULL-terminated inside 30 bytes). */
+  /** Software version string. */
+  // Null terminated with fixed field size of 30 bytes.
   sw-version -> string:
     return convert-string_ 0 30
 
-  /** Hardware version string (NULL-terminated inside 10 bytes). */
+  /** Hardware version string. */
+  // Null terminated with fixed field size of 10 bytes.
   hw-version -> string:
     return convert-string_ 30 10
 
@@ -1181,8 +1190,7 @@ class MonVer extends Message:
   Returns a list of extension strings, if present.
 
   If provided by the firmware version on the device, it provides a list of n 30
-    byte entries.  Each entry is a NUL-terminated ASCII string with an AVP
-    delimited by '='.
+    byte entries.  Each entry is a NUL-terminated ASCII string.
   */
   extensions-raw -> List:
     raw-extensions := []
@@ -1200,7 +1208,7 @@ class MonVer extends Message:
     end := start
     limit := start + length
     while (end < limit) and (LITTLE-ENDIAN.uint8 payload end) != 0:
-      end += 1
+      end++
 
     // Slice bytes [start .. end) and convert to a Toit string.
     return (payload[start..end]).to-string.trim
@@ -1244,7 +1252,7 @@ class NavPosLlh extends Message:
   horizontal-accuracy-mm   -> int:
     return LITTLE-ENDIAN.uint32 payload 20
 
-  /** Horizontal measurement accuracy estimate. */
+  /** Vertical measurement accuracy estimate. */
   vertical-accuracy-mm   -> int:
     return LITTLE-ENDIAN.uint32 payload 24
 
@@ -1252,6 +1260,7 @@ class NavPosLlh extends Message:
   longitude-deg -> float:
     return longitude-raw / 1e7
 
+  // Convenience in float degrees
   latitude-deg -> float:
     return latitude-raw / 1e7
 
@@ -1284,12 +1293,14 @@ class NavSvInfo extends Message:
 
   /** Global flags bitmask.
 
+  ```
   Mask 0b00000111 contains a number representing chip hardware generation:
    - 0: Antaris, Antaris 4
    - 1: u-blox 5
    - 2: u-blox 6
    - 3: u-blox 7
    - 4: u-blox 8 / u-blox M8
+  ```
   */
   global-flags -> int:
     return LITTLE-ENDIAN.uint8 payload 5
@@ -1297,7 +1308,7 @@ class NavSvInfo extends Message:
   /**
   How many satellites in the message.
 
-  Introduced for compatibility with NavSat
+  Introduced for compatibility with NavSat.
   */
   satellite-count -> int:
     return num-ch
@@ -1513,7 +1524,7 @@ class NavPvt extends Message:
     assert: not payload.is-empty
     return LITTLE-ENDIAN.uint32 payload 68
 
-  /** Hading accuracy. */
+  /** Heading accuracy. */
   heading-acc -> int:
     assert: not payload.is-empty
     return LITTLE-ENDIAN.uint32 payload 72
@@ -1563,8 +1574,9 @@ class NavPvt extends Message:
 /**
 The UBX-NAV-SOL message.
 
-Legacy Navigation solution, in ECEF. Included for backwards compatibility.
-  Works on M8 and later however NAV-PVT messages are preferred).
+Legacy Navigation solution, in ECEF (Earth-Centered, Earth-Fixed cartesian
+  coordinates).  This message is included for backwards compatibility.  Whilst
+  it is available on M8 and later, UBX-NAV-PVT messages are preferred).
 */
 class NavSol extends Message:
   static ID ::= 0x06
@@ -1649,7 +1661,7 @@ class NavSol extends Message:
   //(iTOW * 1e-3) + (fTOW * 1e-9)
 
   /**
-  Returns true if DGPS is used.  (diffSoln)
+  Whether DGPS is used.  (diffSoln)
   */
   dgps-used -> bool:
     dgps-used-mask := 0b00000010
@@ -1687,24 +1699,40 @@ class NavSol extends Message:
     assert: not payload.is-empty
     return (LITTLE-ENDIAN.uint16 payload 44).to-float / 100
 
-  // Raw Fields - try to present so as to be similar to NAV-PVT
-  ecef-x-cm  -> int:   return LITTLE-ENDIAN.int32  payload 12      // I4 cm
-  ecef-y-cm  -> int:   return LITTLE-ENDIAN.int32  payload 16      // I4 cm
-  ecef-z-cm  -> int:   return LITTLE-ENDIAN.int32  payload 20      // I4 cm
-  p-acc-cm   -> int:   return LITTLE-ENDIAN.uint32 payload 24      // U4 cm
+  /** ECEF X coordinate [cm] */
+  ecef-x-cm  -> int:   return LITTLE-ENDIAN.int32  payload 12      // I4 cm.
 
-  ecef-vx-cms -> int:  return LITTLE-ENDIAN.int32  payload 28      // I4 cm/s
-  ecef-vy-cms -> int:  return LITTLE-ENDIAN.int32  payload 32      // I4 cm/s
-  ecef-vz-cms -> int:  return LITTLE-ENDIAN.int32  payload 36      // I4 cm/s
-  s-acc-cms   -> int:  return LITTLE-ENDIAN.uint32 payload 40      // U4 cm/s
+  /** ECEF Y coordinate [cm] */
+  ecef-y-cm  -> int:   return LITTLE-ENDIAN.int32  payload 16      // I4 cm.
 
-  reserved1  -> int:   return LITTLE-ENDIAN.uint8  payload 46      // U1
-  reserved2  -> int:   return LITTLE-ENDIAN.uint32 payload 48      // U4 (M8 doc shows U1[4]; same 4 bytes)
+  /** ECEF Z coordinate [cm] */
+  ecef-z-cm  -> int:   return LITTLE-ENDIAN.int32  payload 20      // I4 cm.
+
+  /** 3D Position Accuracy Estimate [cm] */
+  p-acc-cm   -> int:   return LITTLE-ENDIAN.uint32 payload 24      // U4 cm.
+
+  /** ECEF X velocity [cm/s] */
+  ecef-vx-cms -> int:  return LITTLE-ENDIAN.int32  payload 28      // I4 cm/s.
+
+  /** ECEF Y velocity [cm/s] */
+  ecef-vy-cms -> int:  return LITTLE-ENDIAN.int32  payload 32      // I4 cm/s.
+
+  /** ECEF Z velocity [cm/s] */
+  ecef-vz-cms -> int:  return LITTLE-ENDIAN.int32  payload 36      // I4 cm/s.
+
+  /** Speed Accuracy Estimate [cm/s] */
+  s-acc-cms   -> int:  return LITTLE-ENDIAN.uint32 payload 40      // U4 cm/s.
+
+  /** Reserved 1 */
+  reserved1  -> int:   return LITTLE-ENDIAN.uint8  payload 46      // U1.
+
+  /** Reserved 1 */
+  reserved2  -> int:   return LITTLE-ENDIAN.uint32 payload 48      // U4 (M8 doc shows U1[4]; same 4 bytes).
 
 /**
 The UBX-NAV-TIMEUTC message.
 
-UTC time solution, and functions on 6M and later devices.
+UTC time solution.  Functions on 6M and later devices.
 */
 class NavTimeUtc extends Message:
   static ID ::= 0x21
@@ -1797,25 +1825,31 @@ class NavTimeUtc extends Message:
   /**
   Returns UTC standard code. (Returns 0 on Legacy)
 
+  ```
   Common values:
-    0: Information not available
-    1: Communications Research Labratory (CRL), Tokyo, Japan
-    2: National Institute of Standards and Technology (NIST)
-    3: U.S. Naval Observatory (USNO)
-    4: International Bureau of Weights and Measures (BIPM)
-    5: European laboratories
-    6: Former Soviet Union (SU)
-    7: National Time Service Center (NTSC), China
-    8: National Physics Laboratory India (NPLI)
-    15: Unknown
+  - 0: Information not available.
+  - 1: Communications Research Labratory (CRL), Tokyo, Japan.
+  - 2: National Institute of Standards and Technology (NIST).
+  - 3: U.S. Naval Observatory (USNO).
+  - 4: International Bureau of Weights and Measures (BIPM).
+  - 5: European laboratories.
+  - 6: Former Soviet Union (SU).
+  - 7: National Time Service Center (NTSC), China.
+  - 8: National Physics Laboratory India (NPLI).
+  - 15: Unknown.
+  ```
   */
   utc-standard -> int:
     return (validflags >> 4) & 0x0F
 
 /**
-The UBX-NAV-TP5 message.
+The UBX-CFG-TP5 message.
 
-Used to configure the TIMEPULSE/PPS pin for time synchronisation.
+Used to configure the pulse signal on the TIMEPULSE/PPS pin, used for time
+  synchronisation.  The message controls parameters like the pulse's period
+  and duty cycle.
+
+Parameters and flags are different starting from Protocol version 16.
 */
 /*
 Payload (32 bytes):
@@ -1859,7 +1893,7 @@ class CfgTp5 extends Message:
   constructor.poll --tp-idx/int=TP-IDX-0:
     new-payload := ByteArray 2
     LITTLE-ENDIAN.put-uint8 new-payload 0 tp-idx
-    LITTLE-ENDIAN.put-uint8 new-payload 1 1  // version
+    LITTLE-ENDIAN.put-uint8 new-payload 1 1  // Version.
     super.private_ Message.CFG ID new-payload
 
   /** Construct an instance with bytes from a retrieved message. */
@@ -1907,9 +1941,19 @@ class CfgTp5 extends Message:
 
     super.private_ Message.CFG ID new-payload
 
+  /**
+  Time pulse selection.
+
+  CfgTp5.TP-IDX-0=TIMEPULSE, CfgTp5.TP-IDX-1=TIMEPULSE2
+  */
   tp-idx -> int:
     return LITTLE-ENDIAN.uint8 payload 0
 
+  /**
+  Configuration flags.
+
+  Parameters and flags are different starting from Protocol version 16.
+  */
   flags -> int:
     return LITTLE-ENDIAN.uint32 payload 28
 
@@ -1953,7 +1997,7 @@ Payload (36 bytes):
 class CfgNav5 extends Message:
   static ID ::= 0x24
 
-  // Mask bits (subset)
+  // Mask bits (subset).
   static DYN-MASK_      ::= 0b00000000_00000001
   static FIXMODE-MASK_  ::= 0b00000000_00000010
   static OUTLYING-MASK_ ::= 0b00000000_00000100
@@ -1966,7 +2010,7 @@ class CfgNav5 extends Message:
   static STATIC-MASK_   ::= 0b00000010_00000000
   static UTC-MASK_      ::= 0b00000100_00000000
 
-  // Dynamic models (subset)
+  // Dynamic models (subset).
   static DYN-PORTABLE   ::= 0
   static DYN-STATIONARY ::= 2
   static DYN-PEDESTRIAN ::= 3
@@ -1976,7 +2020,7 @@ class CfgNav5 extends Message:
   static DYN-AIR2G      ::= 8
   static DYN-AIR4G      ::= 9
 
-  // Fix mode
+  // Fix mode.
   static FIX-2D   ::= 1
   static FIX-3D   ::= 2
   static FIX-AUTO ::= 3
@@ -1995,7 +2039,7 @@ class CfgNav5 extends Message:
 
   /** Poll current NAV5. */
   constructor.poll:
-    super.private_ Message.CFG ID (ByteArray 0)
+    super.private_ Message.CFG ID #[]
 
   /** Construct an instance with bytes from a retrieved message. */
   constructor.private_ payload/ByteArray:
@@ -2009,7 +2053,7 @@ class CfgNav5 extends Message:
     LITTLE-ENDIAN.put-uint16 new-payload 0 (DYN-MASK_ | FIXMODE-MASK_)
     LITTLE-ENDIAN.put-uint8  new-payload 2 dyn
     LITTLE-ENDIAN.put-uint8  new-payload 3 fix
-    // sensible defaults / zeros elsewhere
+    // Sensible defaults / zeros elsewhere.
     super.private_ Message.CFG ID new-payload
 
   /** Full setter for advanced control (pass null to skip a field & mask). */
@@ -2033,52 +2077,52 @@ class CfgNav5 extends Message:
     new-payload := ByteArray 36
     mask := 0
 
-    if dyn != null:
+    if dyn:
       mask |= DYN-MASK_
       LITTLE-ENDIAN.put-uint8 new-payload 2 dyn
-    if fix != null:
+    if fix:
       mask |= FIXMODE-MASK_
       LITTLE-ENDIAN.put-uint8 new-payload 3 fix
-    if fixed-alt-cm != null:
+    if fixed-alt-cm:
       mask |= ALT-MASK_
       LITTLE-ENDIAN.put-int32 new-payload 4 fixed-alt-cm
-    if fixed-alt-var-cm2 != null:
+    if fixed-alt-var-cm2:
       mask |= ALT-MASK_
       LITTLE-ENDIAN.put-uint32 new-payload 8 fixed-alt-var-cm2
-    if min-elev-deg != null:
+    if min-elev-deg:
       mask |= OUTLYING-MASK_
       LITTLE-ENDIAN.put-int8 new-payload 12 min-elev-deg
-    if dr-limit-s != null:
+    if dr-limit-s:
       mask |= OUTLYING-MASK_
       LITTLE-ENDIAN.put-uint8 new-payload 13 dr-limit-s
-    if p-dop-x10 != null:
+    if p-dop-x10:
       mask |= PDOP-MASK_
       LITTLE-ENDIAN.put-uint16 new-payload 14 p-dop-x10
-    if t-dop-x10 != null:
+    if t-dop-x10:
       mask |= TDOP-MASK_
       LITTLE-ENDIAN.put-uint16 new-payload 16 t-dop-x10
-    if p-acc-m != null:
+    if p-acc-m:
       mask |= PACC-MASK_
       LITTLE-ENDIAN.put-uint16 new-payload 18 p-acc-m
-    if t-acc-m != null:
+    if t-acc-m:
       mask |= TACC-MASK_
       LITTLE-ENDIAN.put-uint16 new-payload 20 t-acc-m
-    if static-hold-thresh-cmps != null:
+    if static-hold-thresh-cmps:
       mask |= STATIC-MASK_
       LITTLE-ENDIAN.put-uint8 new-payload 22 static-hold-thresh-cmps
-    if dgnss-timeout-s != null:
+    if dgnss-timeout-s:
       mask |= DGPS-MASK_
       LITTLE-ENDIAN.put-uint8 new-payload 23 dgnss-timeout-s
-    if cno-thresh-num-sv != null:
+    if cno-thresh-num-sv:
       mask |= OUTLYING-MASK_
       LITTLE-ENDIAN.put-uint8 new-payload 24 cno-thresh-num-sv
-    if cno-thresh-dbHz != null:
+    if cno-thresh-dbHz:
       mask |= OUTLYING-MASK_
       LITTLE-ENDIAN.put-uint8 new-payload 25 cno-thresh-dbHz
-    if static-hold-max-dist-m != null:
+    if static-hold-max-dist-m:
       mask |= STATIC-MASK_
       LITTLE-ENDIAN.put-uint16 new-payload 28 static-hold-max-dist-m
-    if utc-standard != null:
+    if utc-standard:
       mask |= UTC-MASK_
       LITTLE-ENDIAN.put-uint8 new-payload 30 utc-standard
 
@@ -2107,18 +2151,27 @@ Configuring constellations/signals.  Note: Signal bitmasks inside flags are
   chip-family specific (M8 vs M9/M10).  Keeping signals-mask=0 lets firmware
   choose defaults, or bits can be set as needed for advanced use.
 
-Each block is a map with 5 keys, each with:
+Each block is a map with four keys, each with:
+```
   block["gnssId"]:   gnssId (1 byte)   - 0=GPS, 1=SBAS, 2=Galileo, 3=BeiDou, 5=QZSS, 6=GLONASS, etc.
-  block["resTrkCh"]: resTrkCh (1 byte) - reserved tracking channels
-  block["maxTrkCh"]: maxTrkCh (1 byte) - max tracking channels to use
-  block["flags"]:    4 byte value      - bit0 enable; higher bits = signal bitmask (chip-depend
+  block["resTrkCh"]: resTrkCh (1 byte) - reserved tracking channels.
+  block["maxTrkCh"]: maxTrkCh (1 byte) - max tracking channels to use.
+  block["flags"]:    4 byte value      - bit0 enable; higher bits = signal bitmask**.
+```
+**'Signal Bitmask' bits/masks/meanings are dependent on the chipset in use.  See
+  the manual for your chipset for the UBX-CFG-GNSS signal bitmask definitions.
 
-Multiple blocks can be created, use the convenience builder for these.
+Multiple blocks can be created for each `gnssId` type.  Use the convenience
+  builder $create-config-block for these.
+
+Common `gnssId` values are given by the constants `CfgGnss.GNSS-GPS`,
+  `$CfgGnss.GNSS-SBAS`, `$CfgGnss.GNSS-GALILEO`, `$CfgGnss.GNSS-BEIDOU`,
+  `$CfgGnss.GNSS-QZSS`, and `$CfgGnss.GNSS-GLONASS`
 */
 class CfgGnss extends Message:
   static ID ::= 0x3E
 
-  // Common gnssId values
+  // Common gnssId values.
   static GNSS-GPS      ::= 0
   static GNSS-SBAS     ::= 1
   static GNSS-GALILEO  ::= 2
@@ -2126,20 +2179,20 @@ class CfgGnss extends Message:
   static GNSS-QZSS     ::= 5
   static GNSS-GLONASS  ::= 6
 
-  // Block field numbers
+  // Block field numbers.
   static BLOCK-GNSSID_    ::= 0
   static BLOCK-RESTRKCH_  ::= 1
   static BLOCK-MAXTRKCH_  ::= 2
   static BLOCK-RESERVED1_ ::= 3
   static BLOCK-FLAGS_     ::= 4
 
-  // Flags helpers
+  // Flags helpers.
   static FLAG-ENABLE ::= 1
 
   /** Construct a poll message to get current GNSS configuration. */
   constructor.poll:
-    // Empty payload poll (some firmwares accept either empty or msgVer=0)
-    super.private_ Message.CFG ID (ByteArray 0)
+    // Empty payload poll (some firmwares accept either empty or msgVer=0).
+    super.private_ Message.CFG ID #[]
 
   /** Construct an instance with bytes from a retrieved message. */
   constructor.private_ payload/ByteArray:
@@ -2167,31 +2220,58 @@ class CfgGnss extends Message:
       LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-MAXTRKCH_) block["maxTrkCh"]
       LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-RESERVED1_) 0
       LITTLE-ENDIAN.put-uint32 new-payload (base + BLOCK-FLAGS_) block["flags"]
-      i += 1
+      i++
     super.private_ Message.CFG ID new-payload
 
-  // Convenience builder for one block, many can be supplied
-  static create-block
+  /**
+  Convenience builder for a configuration block.
+
+  One block is a set of 3 properties applying to one `gnssId` (0=GPS, 1=SBAS,
+    2=Galileo, 3=BeiDou, 5=QZSS, 6=GLONASS, etc.).  More than one block can be
+    provided in a single message.
+  */
+  static create-config-block -> Map
       gnss-id/int
-      --enable/bool=true
-      --signals-mask/int=0
+      --enable/bool?=null
       --res-trk/int=0
       --max-trk/int=0
-      -> Map:
-    flags := (enable ? FLAG-ENABLE : 0) | signals-mask
+      --flags/int=0:
+    if enable:
+      flags = (enable ? FLAG-ENABLE : 0) | flags
     block/Map := {"gnssId": gnss-id, "resTrkCh": res-trk, "maxTrkCh": max-trk, "flags": flags}
     return block
 
+  /** Message version for this set of config blocks.  */
   msg-ver -> int:
     return LITTLE-ENDIAN.uint8 payload 0
 
+  /** Number of config blocks in this message.  */
   num-config-blocks -> int:
     return LITTLE-ENDIAN.uint8 payload 3
 
-  block-gnss-id i/int -> int:
+  /** The `gnssId` for the i'th config block. */
+  config-block-gnss-id i/int -> int:
+    assert: 0 < i <= num-config-blocks
     return LITTLE-ENDIAN.uint8 payload (4 + 8*i)
 
-  block-flags i/int -> int:
+  /** The flags for the i'th config block. */
+  config-block-flags i/int -> int:
     return LITTLE-ENDIAN.uint32 payload (4 + 8*i + 4)
+
+  /**
+  The entire config block (map) for the i'th config block.
+
+  A config block can be retrieved using this function for modification, and
+    sending back.
+  */
+  config-block i/int -> Map:
+    assert: 0 < i <= num-config-blocks
+    base := (4 + 8*i)
+    block := {:}
+    block["gnssId"] = LITTLE-ENDIAN.uint8 payload (base + BLOCK-GNSSID_)
+    block["resTrkCh"] = LITTLE-ENDIAN.uint8 payload (base + BLOCK-RESTRKCH_)
+    block["maxTrkCh"] = LITTLE-ENDIAN.uint8 payload (base + BLOCK-MAXTRKCH_)
+    block["flags"] = LITTLE-ENDIAN.uint32 payload (base + BLOCK-FLAGS_)
+    return block
 
   id-string_ -> string: return "GNSS"
