@@ -1669,7 +1669,9 @@ class NavSol extends Message:
 
   /**
   The type of fix.
-  One of $FIX-TYPE-UNKNOWN, $FIX-TYPE-DEAD, $FIX-TYPE-2D, $FIX-TYPE-3D, $FIX-TYPE-GNSS-DEAD, $FIX-TYPE-TIME-ONLY.
+
+  One of $NavSol.FIX-TYPE-UNKNOWN, $NavSol.FIX-TYPE-DEAD, $NavSol.FIX-TYPE-2D,
+    $NavSol.FIX-TYPE-3D, $NavSol.FIX-TYPE-GNSS-DEAD, $NavSol.FIX-TYPE-TIME-ONLY.
   */
   fix-type -> int:
     assert: not payload.is-empty
@@ -1677,6 +1679,7 @@ class NavSol extends Message:
 
   /**
   Fix status flags.
+
   See receiver specification for details.
   */
   flags -> int:
@@ -1699,35 +1702,35 @@ class NavSol extends Message:
     assert: not payload.is-empty
     return (LITTLE-ENDIAN.uint16 payload 44).to-float / 100
 
-  /** ECEF X coordinate [cm] */
-  ecef-x-cm  -> int:   return LITTLE-ENDIAN.int32  payload 12      // I4 cm.
+  /** ECEF X coordinate. [cm] */
+  ecef-x-cm  -> int: return LITTLE-ENDIAN.int32  payload 12      // I4 cm.
 
-  /** ECEF Y coordinate [cm] */
-  ecef-y-cm  -> int:   return LITTLE-ENDIAN.int32  payload 16      // I4 cm.
+  /** ECEF Y coordinate. [cm] */
+  ecef-y-cm  -> int: return LITTLE-ENDIAN.int32  payload 16      // I4 cm.
 
-  /** ECEF Z coordinate [cm] */
-  ecef-z-cm  -> int:   return LITTLE-ENDIAN.int32  payload 20      // I4 cm.
+  /** ECEF Z coordinate. [cm] */
+  ecef-z-cm  -> int: return LITTLE-ENDIAN.int32  payload 20      // I4 cm.
 
-  /** 3D Position Accuracy Estimate [cm] */
-  p-acc-cm   -> int:   return LITTLE-ENDIAN.uint32 payload 24      // U4 cm.
+  /** 3D Position Accuracy Estimate. [cm] */
+  p-acc-cm   -> int: return LITTLE-ENDIAN.uint32 payload 24      // U4 cm.
 
-  /** ECEF X velocity [cm/s] */
-  ecef-vx-cms -> int:  return LITTLE-ENDIAN.int32  payload 28      // I4 cm/s.
+  /** ECEF X velocity. [cm/s] */
+  ecef-vx-cms -> int: return LITTLE-ENDIAN.int32  payload 28      // I4 cm/s.
 
-  /** ECEF Y velocity [cm/s] */
-  ecef-vy-cms -> int:  return LITTLE-ENDIAN.int32  payload 32      // I4 cm/s.
+  /** ECEF Y velocity. [cm/s] */
+  ecef-vy-cms -> int: return LITTLE-ENDIAN.int32  payload 32      // I4 cm/s.
 
-  /** ECEF Z velocity [cm/s] */
-  ecef-vz-cms -> int:  return LITTLE-ENDIAN.int32  payload 36      // I4 cm/s.
+  /** ECEF Z velocity. [cm/s] */
+  ecef-vz-cms -> int: return LITTLE-ENDIAN.int32  payload 36      // I4 cm/s.
 
-  /** Speed Accuracy Estimate [cm/s] */
-  s-acc-cms   -> int:  return LITTLE-ENDIAN.uint32 payload 40      // U4 cm/s.
+  /** Speed Accuracy Estimate. [cm/s] */
+  s-acc-cms   -> int: return LITTLE-ENDIAN.uint32 payload 40      // U4 cm/s.
 
-  /** Reserved 1 */
-  reserved1  -> int:   return LITTLE-ENDIAN.uint8  payload 46      // U1.
+  /** Reserved 1. */
+  reserved1  -> int: return LITTLE-ENDIAN.uint8  payload 46      // U1.
 
-  /** Reserved 1 */
-  reserved2  -> int:   return LITTLE-ENDIAN.uint32 payload 48      // U4 (M8 doc shows U1[4]; same 4 bytes).
+  /** Reserved 2. */
+  reserved2  -> int: return LITTLE-ENDIAN.uint32 payload 48      // U4 (M8 doc shows U1[4]; same 4 bytes).
 
 /**
 The UBX-NAV-TIMEUTC message.
@@ -1756,14 +1759,14 @@ class NavTimeUtc extends Message:
     assert: not payload.is-empty
     return Time.utc year month day h m s --ns=ns
 
-  /** UTC Time accuracy estimate, in nanoseconds */
+  /** UTC Time accuracy estimate, in nanoseconds. */
   time-acc -> int:
     assert: not payload.is-empty
     return LITTLE-ENDIAN.uint32 payload 4
 
   ns -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32  payload 8
+    return LITTLE-ENDIAN.int32 payload 8
 
   year -> int:
     assert: not payload.is-empty
@@ -1771,19 +1774,19 @@ class NavTimeUtc extends Message:
 
   month -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8  payload 14
+    return LITTLE-ENDIAN.uint8 payload 14
 
   day -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8  payload 15
+    return LITTLE-ENDIAN.uint8 payload 15
 
   h -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8  payload 16
+    return LITTLE-ENDIAN.uint8 payload 16
 
   m -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8  payload 17
+    return LITTLE-ENDIAN.uint8 payload 17
 
   /**
   Return UTC Seconds.
@@ -1791,14 +1794,14 @@ class NavTimeUtc extends Message:
   Normally 00..59, but leap second can produce 60.
   */
   s -> int:
-    return LITTLE-ENDIAN.uint8  payload 18
+    return LITTLE-ENDIAN.uint8 payload 18
 
   /**
   Validity of time flags.
 
   M8+: upper bits carry UTC standard
   */
-  validflags -> int:
+  valid-flags-raw -> int:
     return LITTLE-ENDIAN.uint8 payload 19
 
   /**
@@ -1806,27 +1809,27 @@ class NavTimeUtc extends Message:
   */
   valid-week -> bool:
     week-valid-mask := 0b00000010
-    return ((validflags & week-valid-mask) >> week-valid-mask.count-trailing-zeros) != 0
+    return ((valid-flags-raw & week-valid-mask) >> week-valid-mask.count-trailing-zeros) != 0
 
   /**
   Returns if GPS Time of Week number is Valid. (ValidTOW)
   */
   valid-time-of-week -> bool:
     time-of-week-valid-mask := 0b00000001
-    return ((validflags & time-of-week-valid-mask) >> time-of-week-valid-mask.count-trailing-zeros) != 0
+    return ((valid-flags-raw & time-of-week-valid-mask) >> time-of-week-valid-mask.count-trailing-zeros) != 0
 
   /**
   Returns if UTC time is valid. (ValidUTC - If the leap seconds are known.)
   */
   valid-utc -> bool:
     valid-utc-mask := 0b00000100
-    return ((validflags & valid-utc-mask) >> valid-utc-mask.count-trailing-zeros) != 0
+    return ((valid-flags-raw & valid-utc-mask) >> valid-utc-mask.count-trailing-zeros) != 0
 
   /**
-  Returns UTC standard code. (Returns 0 on Legacy)
+  Returns UTC standard code.
 
+  Returns 0 on Legacy. Common values:
   ```
-  Common values:
   - 0: Information not available.
   - 1: Communications Research Labratory (CRL), Tokyo, Japan.
   - 2: National Institute of Standards and Technology (NIST).
@@ -1840,7 +1843,7 @@ class NavTimeUtc extends Message:
   ```
   */
   utc-standard -> int:
-    return (validflags >> 4) & 0x0F
+    return (valid-flags-raw >> 4) & 0x0F
 
 /**
 The UBX-CFG-TP5 message.
