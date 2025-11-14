@@ -22,7 +22,7 @@ support will be assumed this way:
 |-|-|-|-|-|
 | u-blox 5| `NEO-5Q` / `LEA-5H` | 5.00–5.03 | `13.00` (Assumed) | Earliest unified UBX message set.  Has `UBX-NAV-SOL`, `UBX-NAV-POSLLH`, `UBX-TIMEUTC`, `UBX-NAV-SVINFO`, `UBX-NAV-STATUS` |
 | u-blox 6 | `NEO-6M-0-001` / `LEA-6` | 7.00-7.03 | `13.00` (Assumed)	| Adds `UBX-NAV-SVINFO`, `UBX-TIMEUTC`, `UBX-NAV-SOL`.  (still no PROTVER field). |
-| u-blox 7 | `NEO-7M-0-000` | 1.00 | `14.00` | Transitional—message formats same as 6-series.  PROTVER string present in observed devices. |
+| u-blox 7 | `NEO-7M-0-000` | 1.00 | `14.00` | Transitional-message formats same as 6-series.  PROTVER string present in observed devices. |
 | u-blox 8/M8 | NEO-M8N	| 3.01+ | > `15.00` | First to advertise PROTVER in `UBX-MON-VER` messages.  Adds `NAV-SAT`, `NAT-PVT`, `MON-PATCH` etc. |
 | u-blox 9/M9 | NEO-M9N	| 4.xx  | `19.xx` - `23.xx` | Current numbered line. |
 | u-blox 10 (M10 Family) | MIA-M10Q, NEO-M10S, MAX-M10S, M10M | 5.xx+ | `27.00` - `27.11` (as of 2025) | Same message framing and checksum; new GNSS, low power, and timing modes.  New high precisions types such as `NAV-HPPOSECEF` and `NAV-HPPOSLLH`. |
@@ -42,19 +42,20 @@ about the equivalent protocol version they support
 The following logic is proposed for the supported protocol version, if the
 device itself does not return the information specifically in its version
 extensions (Pseudocode):
-```Toit
+```toit
 if monver-message.has-extension "PROTVER":
-  // Use extracted protocol version
+  // Use extracted protocol version.
   protver = monver-message.extension["PROTVER"]
 
-// fallback options where no protocol version exists:
+// Fallback options where no protocol version exists:
 else if UBLOX7-HARDWARE-VERSION == monver-message.hw-version:
+  // Assume a u-blox 7.
   protver = "14.00"
 else if UBLOX6-HARDWARE-VERSION == monver-message.hw-version:
-  // Assume a u-blox 6
+  // Assume a u-blox 6.
   protver = "13.00"
 else:
-  // Anything older = minimal UBX core
+  // Anything older = minimal UBX core.
   protver = 12.0
 ```
 
@@ -78,7 +79,7 @@ else:
 > complete, the exact message types you might need may not yet be implemented.
 > This is most often largely due to a lack of hardware available to testers...
 > Please create an [issue](https://github.com/toitware/ubx-message/issues) or
-> contact on [discord](https://discord.gg/Q7Y9VQ5nh2).
+> contact on [discord](https://chat.toit.io).
 
 ## Specific Field Information
 
@@ -96,7 +97,7 @@ of which runs for seconds (up to 604,799,999 ms in iTOW).
 All the main UBX-NAV messages (and some other messages) contain an iTOW field
 which indicates the GPS time at which the navigation epoch occurred. Messages
 with the same iTOW value can be assumed to have come from the same navigation
-solution.  Note that iTOW values may not be valid (i.e. they may have been
+solution.  Note that iTOW values may not be valid (that is they may have been
 generated with insufficient conversion data) and therefore it is not recommended
 to use the iTOW field for any other purpose.  The original designers of GPS
 chose to express time/date as an integer week number (starting with the first
@@ -114,7 +115,7 @@ Serial) the messages operate in the following broad way:
 #### Sending a message
 To send a message, first create the message using the appropriate constructor,
 and then send it to the device:
-```Toit
+```toit
   // Import this library.  (Other driver setup omitted.)
   import ubx-message
 
@@ -122,15 +123,15 @@ and then send it to the device:
   poll-message := ubx-message.MonVer.poll
 
   // Convert to a byte array, and send to the device:
-  adapter.send-packet poll-message.to-byte-array
+  device.send-packet poll-message.to-byte-array
 ```
 If the message type has an argument, this is used on the message specific
 constructors:
-```Toit
+```toit
   // Library/driver setup omitted.
 
   // Instantiate a ubx-cfg-msg message to request class-id/message-id messages
-  // at the rate of xxxx
+  // at the given rate.
   classid := ubx-message.Message.NAV
   msgid := ubx-message.NavStatus.ID
   rate := 1
@@ -138,17 +139,8 @@ constructors:
 
   // Convert to a byte array, and send to the device (functions provided in the
   // driver not in this parser library):
-  adapter.send-packet rate-message.to-byte-array
+  device.send-packet rate-message.to-byte-array
 ```
-
-#### Receiving/Parsing a message
-In the background, the parser creates a message using a private constructor
-
-```Toit
-
-
-```
-
 
 
 # Documentation

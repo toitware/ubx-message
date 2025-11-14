@@ -652,16 +652,20 @@ class CfgPrt extends Message:
   // mode bitfield shortcut: 8 data bits, no parity, 1 stop (8N1)
   // (charLen=3 -> bits 6..7 = 0b11; parity=0 -> bits 9..11 = 0; nStop=1 -> bit 12 = 0)
   // u-blox ref value: 0x000008D0
-  static MODE-BITS-MASK_ := 0b11000000
-  static MODE-PARITY-MASK_ := 0b11000000
+  static MODE-DATA-BITS-MASK_ := 0b00000000_01100000
+  static MODE-PARITY-MASK_    := 0b00000111_00000000
+  static MODE-STOP-BITS-MASK_ := 0b00011000_00000000
 
+  // Common Mode Presets
   static MODE-8N1 ::= 0x000008D0
+  static MODE-7E1 ::= 0x00000080
+  static MODE-8O2 :=  0x000000C0
 
   // Protocol mask bits (legacy)
-  static PROTO-UBX  ::= 1 << 0
-  static PROTO-NMEA ::= 1 << 1
-  static PROTO-RTCM2 ::= 1 << 2
-  static PROTO-RTCM3 ::= 1 << 5
+  static PROTO-UBX   ::= 0b00000001
+  static PROTO-NMEA  ::= 0b00000010
+  static PROTO-RTCM2 ::= 0b00000100
+  static PROTO-RTCM3 ::= 0b00100000
 
   /**
   Build a configuration to set a UART port.
