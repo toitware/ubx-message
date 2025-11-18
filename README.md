@@ -4,19 +4,18 @@ in the Max-M* series.
 
 
 ## History
-This library is a parser of messages from these receivers. The protocol was
-developed and improved over time.  The parser was first written for Toit for M8
-devices.  Support for 6M (legacy) devices has been added later.
-
+This library is a parser for the UBX messages used with these receivers.  This
+parser library was first written in Toit for M8 devices.  Support for 6M
+(legacy) and other devices has been added later.
 
 ## Devices/Version Support
-Originally Software version numbers were tied to the protocol.  But at some
-point uBlox moved towards maintaining the protocol itself, giving version
-nubmers to it. etc.  Features coming along started to have minimum protocol
-version requirements.  In order to manage support for different devices with the
-same protocol/parser, minimum protocol information has been added to each
-message type.  Older devices that don't advertise what protocol version they
-support will be assumed this way:
+Originally, Protocol functions were tied to firmware releases in GNSS receivers.
+At some point however, uBlox moved towards maintaining the protocol itself,
+giving version nubmers to it. etc.  Features coming along started to have
+minimum protocol version requirements.  In order to manage support for different
+devices with the same protocol/parser, minimum protocol information has been
+added to each message type.  Older devices that don't advertise what protocol
+version they support will be assumed this way:
 
 | Device Generation | Example module | SW-Ver (Observed) | UBX protocol equiv. | Notes |
 |-|-|-|-|-|

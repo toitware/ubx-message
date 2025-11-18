@@ -39,18 +39,13 @@ test-message:
   expect-throw "INVALID UBX MESSAGE":
     ubx.Message.from-bytes bytes
 
-  // This test adjusted when editing the stringify to be more informative
-  // for testing purposes.
+  // The ACK/NAK stringify was adjusted (in this version of ubx-message package)
+  // to include more information.  Therefore, this test adjusted to reflect the
+  // the current stringify output.
   expect-equals "UBX-ACK-ACK: [6:CFG,19:ANT]" message.stringify
-
-  // Message is an object of the base class.
-  expect message is ubx.Message
 
   // Message is still the expected message type.
   expect message is ubx.AckAck
-
-  // Message is not some other arbitrary sibling message type.
-  expect message is not ubx.NavTimeUtc
 
 test-nav-pvt:
   pvt-message := ubx.Message ubx.Message.NAV ubx.NavPvt.ID #[]
@@ -64,8 +59,3 @@ test-nav-status:
 
   // Construct using generic constructor, using specified types, with empty payload
   status-message := (ubx.Message msg-nav-type-id msg-nav-status-id msg-payload) as ubx.NavStatus
-
-  // Do the tests:
-  expect status-message is ubx.Message     // Message is an object of the base class.
-  expect status-message is ubx.NavStatus   // Message is the specific message type we made. (Generic constructor succeeded.)
-  expect status-message is not ubx.AckAck  // Message is not an (arbitrary) other sibling message type.

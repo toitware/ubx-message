@@ -12,13 +12,14 @@ The description for each receiver describes the supported UBX message.
 - Max-M8: https://www.u-blox.com/en/docs/UBX-13003221
 - Max-M9: https://www.u-blox.com/en/docs/UBX-19035940
 */
+
 /*
 To do list:
 - MGA-* (AssistNow) messages: Assisted GNSS injection (time, eph/almanac) for
   fast TTFF.  A path for MGA-INI-TIME_UTC at minimum.
-- ESF-* for combination with DR/ADR/IMU fusion
+- ESF-* for combination with DR/ADR/IMU fusion.
 - CFG-TP5: Complete so setters and getters match, and avoid PROTVER15-16
-  differences
+  differences.
 */
 
 import io
@@ -98,10 +99,62 @@ class Message:
   Map from Message byte/type to its string representation.
 
   Not all messages are handled in this driver, however all message ID's found in
-    6M and M8 manuals have been added to help if an information message presents
-    something that needs to be looked at.  Implemented as nested Maps.
+    6M and M8 manuals have been added.  This is to help where an information
+    message presents itself that may not yet be implemented.  Implemented as
+    nested Maps.
   */
   static PACK-MESSAGE-TYPES := {
+    // NAV (0x01)
+    NAV: {
+      0x01: "POSECEF",
+      0x02: "POSLLH",
+      0x03: "STATUS",
+      0x04: "DOP",
+      0x05: "ATT",        // M8+
+      0x06: "SOL",
+      0x07: "PVT",        // M8+
+      0x09: "ODO",        // M8+
+      0x10: "RESETODO",   // M8+
+      0x11: "VELECEF",
+      0x12: "VELNED",
+      0x13: "HPPOSECEF",  // M8+
+      0x14: "HPPOSLLH",   // M8+
+      0x20: "TIMEGPS",
+      0x21: "TIMEUTC",
+      0x23: "TIMEGLO",    // M8+
+      0x24: "TIMEBDS",    // M8+
+      0x25: "TIMEGAL",    // M8+
+      0x26: "TIMELS",     // M8+
+      0x28: "NMI",        // M8+
+      0x30: "SVINFO",
+      0x31: "DGPS",
+      0x32: "SBAS",
+      0x35: "SAT",        // M8+
+      0x39: "GEOFENCE",   // M8+
+      0x3B: "SVIN",       // M8+
+      0x3C: "RELPOSNED",  // M8+
+      0x3D: "EELL",       // M8+
+      0x42: "SLAS",       // M8+
+      0x60: "AOPSTATUS",
+      0x61: "EOE",        // M8+
+    },
+
+    // RXM (0x02)
+    RXM: {
+      0x10: "RAW",     // 6-series
+      0x11: "SFRB",    // 6-series
+      0x13: "SFRBX",   // M8+
+      0x14: "MEASX",   // M8+
+      0x15: "RAWX",    // M8+
+      0x20: "SVSI",
+      0x30: "ALM",
+      0x31: "EPH",
+      0x32: "RTCM",    // M8+
+      0x41: "PMREQ",
+      0x59: "RLM",     // M8+
+      0x61: "IMES",    // M8+
+    },
+
     // ACK (0x05)
     ACK: {
       0x00: "ACK-NAK",
@@ -172,55 +225,16 @@ class Message:
       0x32: "BATCH",     // M8+
     },
 
-    // NAV (0x01)
-    NAV: {
-      0x01: "POSECEF",
-      0x02: "POSLLH",
-      0x03: "STATUS",
-      0x04: "DOP",
-      0x05: "ATT",        // M8+
-      0x06: "SOL",
-      0x07: "PVT",        // M8+
-      0x09: "ODO",        // M8+
-      0x10: "RESETODO",   // M8+
-      0x11: "VELECEF",
-      0x12: "VELNED",
-      0x13: "HPPOSECEF",  // M8+
-      0x14: "HPPOSLLH",   // M8+
-      0x20: "TIMEGPS",
-      0x21: "TIMEUTC",
-      0x23: "TIMEGLO",    // M8+
-      0x24: "TIMEBDS",    // M8+
-      0x25: "TIMEGAL",    // M8+
-      0x26: "TIMELS",     // M8+
-      0x28: "NMI",        // M8+
-      0x30: "SVINFO",
-      0x31: "DGPS",
-      0x32: "SBAS",
-      0x35: "SAT",        // M8+
-      0x39: "GEOFENCE",   // M8+
-      0x3B: "SVIN",       // M8+
-      0x3C: "RELPOSNED",  // M8+
-      0x3D: "EELL",       // M8+
-      0x42: "SLAS",       // M8+
-      0x60: "AOPSTATUS",
-      0x61: "EOE",        // M8+
-    },
-
-    // RXM (0x02)
-    RXM: {
-      0x10: "RAW",     // 6-series
-      0x11: "SFRB",    // 6-series
-      0x13: "SFRBX",   // M8+
-      0x14: "MEASX",   // M8+
-      0x15: "RAWX",    // M8+
-      0x20: "SVSI",
+    // AID (0x0B) — legacy assistance (6 & M8)
+    AID: {
+      0x01: "INI",
+      0x02: "HUI",
       0x30: "ALM",
       0x31: "EPH",
-      0x32: "RTCM",    // M8+
-      0x41: "PMREQ",
-      0x59: "RLM",     // M8+
-      0x61: "IMES",    // M8+
+      0x33: "AOP",
+      0x50: "ALP",   // 6-series
+      0x10: "DATA",  // 6-series
+      0x32: "ALPSRV" // 6-series
     },
 
     // TIM (0x0D)
@@ -237,23 +251,6 @@ class Message:
       0x17: "HOC",     // M8+
     },
 
-    // SEC (0x27) — M8+
-    SEC: {
-      0x03: "SEC-UNIQID",
-    },
-
-    // AID (0x0B) — legacy assistance (6 & M8)
-    AID: {
-      0x01: "INI",
-      0x02: "HUI",
-      0x30: "ALM",
-      0x31: "EPH",
-      0x33: "AOP",
-      0x50: "ALP",   // 6-series
-      0x10: "DATA",  // 6-series
-      0x32: "ALPSRV" // 6-series
-    },
-
     // ESF (0x10) — external sensor fusion
     ESF: {
       0x02: "MEAS",  // 6-series LEA-6R / M8 ESF-MEAS (different payloads)
@@ -261,25 +258,6 @@ class Message:
       0x10: "STATUS",// 6-series LEA-6R / M8 ESF-STATUS
       0x14: "ALG",   // M8+
       0x15: "INS",   // M8+
-    },
-
-    // HNR (0x28) — M8+
-    HNR: {
-      0x00: "PVT",
-      0x01: "ATT",
-      0x02: "INS",
-    },
-
-    // LOG (0x21) — M8+
-    LOG: {
-      0x03: "ERASE",
-      0x07: "CREATE",
-      0x0B: "INFO",
-      0x0D: "RETRIEVE",
-      0x0E: "RETRIEVEPOS",
-      0x0F: "RETRIEVESTRING",
-      0x10: "FINDTIME",
-      0x11: "BATCH",
     },
 
     // MGA (0x13) — M8+ multi-GNSS assistance (index only; many subtypes)
@@ -294,6 +272,32 @@ class Message:
       0x60: "ACK",
       0x80: "DBD",
     },
+
+    // LOG (0x21) — M8+
+    LOG: {
+      0x03: "ERASE",
+      0x07: "CREATE",
+      0x0B: "INFO",
+      0x0D: "RETRIEVE",
+      0x0E: "RETRIEVEPOS",
+      0x0F: "RETRIEVESTRING",
+      0x10: "FINDTIME",
+      0x11: "BATCH",
+    },
+
+    // SEC (0x27) — M8+
+    SEC: {
+      0x03: "SEC-UNIQID",
+    },
+
+    // HNR (0x28) — M8+
+    HNR: {
+      0x00: "PVT",
+      0x01: "ATT",
+      0x02: "INS",
+    },
+
+
   }
 
   static INVALID-UBX-MESSAGE_ ::= "INVALID UBX MESSAGE"
@@ -304,7 +308,7 @@ class Message:
 
   Devices must support at least this protocol version to use the message.
   */
-  static MIN-PROTVER/string := "15.0"
+  min-protver/string := "15.0"
 
   /**
   Represents the maximum protocol version for the message type.
@@ -312,8 +316,7 @@ class Message:
   Devices supporting protocol version newer than this may not be able to
     work with the message type.
   */
-  static MAX-PROTVER/string := ""
-
+  max-protver/string := ""
 
   /** Constructs a UBX message with the given $cls, $id, and $payload. */
   constructor.private_ .cls .id .payload:
@@ -477,6 +480,27 @@ class Message:
   hash-code:
     return #[cls, id]
 
+  /** Helper to return uint8 from payload index. */
+  int8_ index -> int: return LITTLE-ENDIAN.int8 payload index
+
+  /** Helper to return uint8 from payload index. */
+  uint8_ index -> int: return payload[index]
+
+  /** Helper to return int16 from payload index. */
+  int16_ index -> int: return LITTLE-ENDIAN.int16 payload index
+
+  /** Helper to return uint16 from payload index. */
+  uint16_ index -> int: return LITTLE-ENDIAN.uint16 payload index
+
+  /** Helper to return int32 from payload index. */
+  int32_ index -> int: return LITTLE-ENDIAN.int32 payload index
+
+  /** Helper to return uint32 from payload index. */
+  uint32_ index -> int: return LITTLE-ENDIAN.uint32 payload index
+
+
+
+
 /**
 The UBX-ACK-ACK message.
 
@@ -497,9 +521,12 @@ class AckAck extends Message:
   constructor.private_ payload:
     super.private_ Message.ACK ID payload
 
+  id-string_ -> string:
+    return "ACK"
+
   /** The class ID of the acknowledged message. */
   class-id -> int:
-    return LITTLE-ENDIAN.uint8 payload 0
+    return uint8_ 0
 
   /** The class ID (converted to text) of the acknowledged message. */
   class-id-text -> string:
@@ -507,7 +534,7 @@ class AckAck extends Message:
 
   /** The message ID of the acknowledged message. */
   message-id -> int:
-    return LITTLE-ENDIAN.uint8 payload 1
+    return uint8_ 1
 
   /** The message ID (converted to text, if known) of the acknowledged message. */
   message-id-text -> string:
@@ -516,9 +543,6 @@ class AckAck extends Message:
       if Message.PACK-MESSAGE-TYPES[class-id].contains message-id:
         output = Message.PACK-MESSAGE-TYPES[class-id][message-id]
     return output
-
-  id-string_ -> string:
-    return "ACK"
 
   stringify -> string:
     return  "$(super.stringify): [$(class-id):$(class-id-text),$(message-id):$(message-id-text)]"
@@ -542,9 +566,12 @@ class AckNak extends Message:
   constructor.private_ bytearray/ByteArray:
     super.private_ Message.ACK ID bytearray
 
+  id-string_ -> string:
+    return "NAK"
+
   /** The class ID of the NAK message. */
   class-id -> int:
-    return LITTLE-ENDIAN.uint8 payload 0
+    return uint8_ 0
 
   /** The class ID (converted to text) of the negative-acknowledge message. */
   class-id-text -> string:
@@ -552,7 +579,7 @@ class AckNak extends Message:
 
   /** The message ID of the NAK message. */
   message-id -> int:
-    return LITTLE-ENDIAN.uint8 payload 1
+    return uint8_ 1
 
   /** The message ID (converted to text, if known) of the acknowledged message. */
   message-id-text -> string:
@@ -561,9 +588,6 @@ class AckNak extends Message:
       if Message.PACK-MESSAGE-TYPES[class-id].contains message-id:
         output = Message.PACK-MESSAGE-TYPES[class-id][message-id]
     return output
-
-  id-string_ -> string:
-    return "NAK"
 
   stringify -> string:
     return  "$(super.stringify): [$(class-id):$(class-id-text),$(message-id):$(message-id-text)]"
@@ -624,8 +648,8 @@ class CfgPrt extends Message:
   /** The UBX-CFG-PRT message ID. */
   static ID ::= 0x00
 
-  static MIN-PROTVER/string := "15.0"
-  static MAX-PROTVER/string := "23.0"   // Manual says not after this version.
+  min-protver/string := "15.0"
+  max-protver/string := "23.0"   // Manual says not after this version.
 
   // Common constants (see u-blox docs).
   static PORT-UART1 ::= 0x01
@@ -666,8 +690,8 @@ class CfgPrt extends Message:
     super.private_ Message.CFG ID (ByteArray 20)
 
     // PortID, Reserved0, TxReady(2)
-    LITTLE-ENDIAN.put-uint8  payload 0 port-id
-    LITTLE-ENDIAN.put-uint8  payload 1 0
+    LITTLE-ENDIAN.put-uint8 payload 0 port-id
+    LITTLE-ENDIAN.put-uint8 payload 1 0
     LITTLE-ENDIAN.put-uint16 payload 2 0     // txReady off.
 
     // Mode (framing).
@@ -695,27 +719,33 @@ class CfgPrt extends Message:
   constructor.private_ payload/ByteArray:
     super.private_ Message.CFG ID payload
 
-  port-id -> int:
-    return LITTLE-ENDIAN.uint8 payload 0
-
-  mode -> int:
-    return LITTLE-ENDIAN.uint32 payload 4
-
-  baud-rate -> int:
-    return LITTLE-ENDIAN.uint32 payload 8
-
-  in-proto-mask -> int:
-    return LITTLE-ENDIAN.uint16 payload 12
-
-  out-proto-mask -> int:
-    return LITTLE-ENDIAN.uint16 payload 14
-
-  flags -> int:
-    return LITTLE-ENDIAN.uint16 payload 16
-
   id-string_ -> string:
     return "PRT"
 
+  /**
+  Ublox internal port ID.
+
+  Depending on the device, there can be more than 1 UART, as well as DDC (I2C
+    compatible) USB and SPI types.  See the ublox Integration Manual for all
+    valid UART port IDs.
+  */
+  port-id -> int:
+    return uint8_ 0
+
+  mode -> int:
+    return uint32_ 4
+
+  baud-rate -> int:
+    return uint32_ 8
+
+  in-proto-mask -> int:
+    return uint16_ 12
+
+  out-proto-mask -> int:
+    return uint16_ 14
+
+  flags -> int:
+    return uint16_ 16
 
 /**
 The UBX-CFG-RST message.
@@ -735,8 +765,8 @@ class CfgRst extends Message:
   constructor --clear-sections=0xFFFF --reset-mode=2:
     super.private_ Message.CFG ID (ByteArray 4)
     LITTLE-ENDIAN.put-uint16 payload 0 clear-sections
-    LITTLE-ENDIAN.put-uint8  payload 2 reset-mode
-    LITTLE-ENDIAN.put-uint8  payload 3 Message.RESERVED_
+    LITTLE-ENDIAN.put-uint8 payload 2 reset-mode
+    LITTLE-ENDIAN.put-uint8 payload 3 Message.RESERVED_
 
   id-string_ -> string:
     return "RST"
@@ -746,7 +776,6 @@ The UBX-NAV-STATUS message.
 
 The receiver navigation status.
 */
-// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1204%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C559.1%2Cnull%5D
 class NavStatus extends Message:
   /** The UBX-NAV-STATUS message ID. */
   static ID ::= 0x03
@@ -786,17 +815,17 @@ class NavStatus extends Message:
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 0
+    return uint32_ 0
 
   /**
-  Returns the type of fix.
+  Returns the current fix type.
 
   One of $NO-FIX, $DEAD-RECKONING-ONLY, $FIX-2D, $FIX-3D, $GPS-DEAD-FIX, $TIME-ONLY.
   */
   gps-fix -> int:
     assert: not payload.is-empty
-    //return LITTLE-ENDIAN.uint8 payload 4
-    return LITTLE-ENDIAN.uint8 payload 4
+    //return uint8_ 4
+    return uint8_ 4
 
   // Thinking to remove this and have the user/driver do it via the PACK... static.
   gps-fix-text -> string:
@@ -809,15 +838,15 @@ class NavStatus extends Message:
   */
   flags -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 5
+    return uint8_ 5
 
   /**
-  Fix status information
+  Fix status information.
   See receiver specification for details.
   */
   fix-stat -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 6
+    return uint8_ 6
 
   /**
   Additional status information.
@@ -825,24 +854,30 @@ class NavStatus extends Message:
   */
   flags2 -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 7
+    return uint8_ 7
 
-  /** Time to first fix in milliseconds. */
+  /**
+  Time to first fix in milliseconds.
+
+  Take care when deciding what to do with this value. It is not a live indicator
+  of current signal quality, and the value is not kept up to date or changed
+  when the fix is lost.  It is not a countdown timer for the next expected fix.
+  It is simply a historical value about the most recent acquisition event.
+  */
   time-to-first-fix -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 8
+    return uint32_ 8
 
-  /** Milliseconds since startup or reset. */
-  msss -> int:
+  /** Milliseconds since startup or reset. (msss) */
+  ms-since-startup -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 12
+    return uint32_ 12
 
 /**
 The UBX-NAV-SAT message.
 
 Satellite information.
 */
-// https://www.u-blox.com/en/docs/UBX-13003221#%5B%7B%22num%22%3A1039%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C0%2C841.89%2Cnull%5D
 class NavSat extends Message:
   /** The UBX-NAV-SAT message ID. */
   static ID ::= 0x35
@@ -856,17 +891,17 @@ class NavSat extends Message:
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 0
+    return uint32_ 0
 
   /** Message version. */
   version -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 4
+    return uint8_ 4
 
   /** Number of satellites in the message. */
   num-svs -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 5
+    return uint8_ 5
 
   /** Number of satellites in the message. */
   satellite-count -> int:
@@ -925,7 +960,7 @@ class SatelliteData:
   pr-res/float
 
   /**
-  Space Vehicle health indicator
+  Space Vehicle health indicator.
 
   For compatibility: 0=unknown; 1=healthy; 2=unhealthy.  UBX-NAV-SVINFO would
   normally have 0=healthy and 1=unhealthy, but these values have been shifted to
@@ -1019,14 +1054,14 @@ class SatelliteData:
 
     if src-id == NavSat.ID:
       offset = index * 12
-      gnss-id = LITTLE-ENDIAN.uint8 payload offset + 8
+      gnss-id = LITTLE-ENDIAN.uint8 payload (offset + 8)
 
-      sv-id = LITTLE-ENDIAN.uint8 payload offset + 9
-      cno = LITTLE-ENDIAN.uint8 payload offset + 10
-      elev = LITTLE-ENDIAN.int8 payload offset + 11
-      azim = LITTLE-ENDIAN.int16 payload offset + 12
-      pr-res = (LITTLE-ENDIAN.uint8 payload offset + 14).to-float / 10 // scale 0.1
-      flags = LITTLE-ENDIAN.uint32 payload offset + 16
+      sv-id = LITTLE-ENDIAN.uint8 payload (offset + 9)
+      cno = LITTLE-ENDIAN.uint8 payload (offset + 10)
+      elev = LITTLE-ENDIAN.int8 payload (offset + 11)
+      azim = LITTLE-ENDIAN.int16 payload (offset + 12)
+      pr-res = (LITTLE-ENDIAN.uint8 payload offset + 14) / 10.0 // scale 0.1
+      flags = LITTLE-ENDIAN.uint32 payload (offset + 16)
 
       quality-mask        := 0b00000000_00000111
       sv-used-mask        := 0b00000000_00001000
@@ -1099,6 +1134,23 @@ class SatelliteData:
     else:
       throw "Unknown Space Vehicle Definition Source"
 
+  /** Helper to return uint8 from payload index. */
+  int8_ payload index -> int: return LITTLE-ENDIAN.int8 payload index
+
+  /** Helper to return uint8 from payload index. */
+  uint8_ payload index -> int: return payload[index]
+
+  /** Helper to return int16 from payload index. */
+  int16_ payload index -> int: return LITTLE-ENDIAN.int16 payload index
+
+  /** Helper to return uint16 from payload index. */
+  uint16_ payload index -> int: return LITTLE-ENDIAN.uint16 payload index
+
+  /** Helper to return int32 from payload index. */
+  int32_ payload index -> int: return LITTLE-ENDIAN.int32 payload index
+
+  /** Helper to return uint32 from payload index. */
+  uint32_ payload index -> int: return LITTLE-ENDIAN.uint32 payload index
 
   /** See $super. */
   stringify -> string:
@@ -1116,11 +1168,6 @@ The UBX-MON-VER message.
 
 Handles receiver/software/hardware version information.
 */
-// Poll request: class MON (0x0A), id 0x04, payload length 0
-// Reply: payload = swVersion[30], hwVersion[10], then 0..N extension
-//        strings each 30 bytes. All are NULL terminated ASCII.
-// Note:  M8 and M9 (and later versions of 6M have extra data returned
-//        in extensions.
 class MonVer extends Message:
   /** The UBX-MON-VER message ID. */
   static ID ::= 0x04
@@ -1161,7 +1208,7 @@ class MonVer extends Message:
         return it
     return null
 
-  /**
+  /*
   Returns a map of extension string AVPs.
 
   This function returns a map of strings with the keyed by the first part, with
@@ -1171,7 +1218,7 @@ class MonVer extends Message:
     '='.  This is not true in all device generations. In addition, the sets of
     tags shown in the extensions aren't grouped, and can be split across more
     than one extension 'row'.  So for now, this is disabled in favor of the
-    driver doing what is required for parsing of these messages.
+    driver parsing these messages.
 
   extensions -> Map:
     raw-extensions := extensions-raw
@@ -1207,7 +1254,7 @@ class MonVer extends Message:
     // Find first NUL within [start .. start+length).
     end := start
     limit := start + length
-    while (end < limit) and (LITTLE-ENDIAN.uint8 payload end) != 0:
+    while (end < limit) and (uint8_ end) != 0:
       end++
 
     // Slice bytes [start .. end) and convert to a Toit string.
@@ -1230,31 +1277,31 @@ class NavPosLlh extends Message:
 
   /** GPS time of week of the navigation epoch. */
   itow -> int:
-    return LITTLE-ENDIAN.uint32 payload 0
+    return uint32_ 0
 
   /** longitude. (1e-7 degrees.) */
   longitude-raw -> int:
-    return LITTLE-ENDIAN.int32  payload 4
+    return int32_ 4
 
   /** Latitude. (1e-7 degrees.) */
   latitude-raw    -> int:
-    return LITTLE-ENDIAN.int32  payload 8
+    return int32_ 8
 
   /** Height above ellipsoid. */
   height-mm  -> int:
-    return LITTLE-ENDIAN.int32  payload 12
+    return int32_ 12
 
   /** Height above mean sea level. */
   height-msl-mm   -> int:
-    return LITTLE-ENDIAN.int32  payload 16
+    return int32_ 16
 
   /** Horizontal measurement accuracy estimate. */
   horizontal-accuracy-mm   -> int:
-    return LITTLE-ENDIAN.uint32 payload 20
+    return uint32_ 20
 
   /** Vertical measurement accuracy estimate. */
   vertical-accuracy-mm   -> int:
-    return LITTLE-ENDIAN.uint32 payload 24
+    return uint32_ 24
 
   // Convenience in float degrees
   longitude-deg -> float:
@@ -1285,11 +1332,11 @@ class NavSvInfo extends Message:
 
   /** The GPS interval time of week of the navigation epoch. (ms) */
   itow   -> int:
-    return LITTLE-ENDIAN.uint32 payload 0
+    return uint32_ 0
 
   /** Number of channels. */
   num-ch     -> int:
-    return LITTLE-ENDIAN.uint8 payload 4
+    return uint8_ 4
 
   /** Global flags bitmask.
 
@@ -1303,7 +1350,7 @@ class NavSvInfo extends Message:
   ```
   */
   global-flags -> int:
-    return LITTLE-ENDIAN.uint8 payload 5
+    return uint8_ 5
 
   /**
   How many satellites in the message.
@@ -1367,12 +1414,12 @@ class NavPvt extends Message:
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 0
+    return uint32_ 0
 
   /** The year (UTC). */
   year -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint16 payload 4
+    return uint16_ 4
 
   /**
   The month (UTC).
@@ -1380,7 +1427,7 @@ class NavPvt extends Message:
   */
   month -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 6
+    return uint8_ 6
 
   /**
   The day (UTC).
@@ -1388,7 +1435,7 @@ class NavPvt extends Message:
   */
   day -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 7
+    return uint8_ 7
 
   /**
   The hours (UTC).
@@ -1396,7 +1443,7 @@ class NavPvt extends Message:
   */
   h -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 8
+    return uint8_ 8
 
   /**
   The minutes (UTC).
@@ -1404,7 +1451,7 @@ class NavPvt extends Message:
   */
   m -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 9
+    return uint8_ 9
 
   /**
   The seconds (UTC).
@@ -1412,7 +1459,7 @@ class NavPvt extends Message:
   */
   s -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 10
+    return uint8_ 10
 
   /**
   Validity flag.
@@ -1420,12 +1467,12 @@ class NavPvt extends Message:
   */
   valid -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 11
+    return uint8_ 11
 
   /** Time accuracy estimate in nanoseconds */
   time-acc -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 12
+    return uint32_ 12
 
   /**
   Fraction of second in nano seconds.
@@ -1433,7 +1480,7 @@ class NavPvt extends Message:
   */
   ns -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 16
+    return int32_ 16
 
   /**
   The type of fix.
@@ -1441,7 +1488,7 @@ class NavPvt extends Message:
   */
   fix-type -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 20
+    return uint8_ 20
 
   /**
   Fix status flags.
@@ -1449,7 +1496,7 @@ class NavPvt extends Message:
   */
   flags -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 21
+    return uint8_ 21
 
   /**
   Additional fix status flags.
@@ -1457,77 +1504,77 @@ class NavPvt extends Message:
   */
   flags2 -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 22
+    return uint8_ 22
 
   /** Number of satellites used for fix. */
   num-sv -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 23
+    return uint8_ 23
 
   /** Longitude. */
   lon -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 24
+    return int32_ 24
 
   /** Latitude. */
   lat -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 28
+    return int32_ 28
 
   /** Height above ellipsoid in millimeter. */
   height -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 32
+    return int32_ 32
 
   /** Height above mean sea level in millimeter. */
   height-msl -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 36
+    return int32_ 36
 
   /** Horizontal accuracy in millimeter. */
   horizontal-acc -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 40
+    return uint32_ 40
 
   /** Vertical accuracy in millimeter. */
   vertical-acc -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 44
+    return uint32_ 44
 
   /** NED north velocity in millimeters per second. */
   north-vel -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 48
+    return int32_ 48
 
   /** NED east velocity in millimeters per second. */
   east-vel -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 52
+    return int32_ 52
 
   /** NED down velocity in millimeters per second. */
   down-vel -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 56
+    return int32_ 56
 
   /** Ground speed (2D) in millimeters per second. */
   ground-speed -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 60
+    return int32_ 60
 
   /** Heading of motion (2D). */
   heading-of-motion -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 64
+    return int32_ 64
 
   /** Speed accuracy in millimeters per second. */
   speed-acc -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 68
+    return uint32_ 68
 
   /** Heading accuracy. */
   heading-acc -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 72
+    return uint32_ 72
 
   /**
   Position DOP.
@@ -1536,7 +1583,7 @@ class NavPvt extends Message:
   */
   position-dop -> float:
     assert: not payload.is-empty
-    return (LITTLE-ENDIAN.uint16 payload 76).to-float / 100
+    return (uint16_ 76).to-float / 100
 
   /**
   Additional flags.
@@ -1544,7 +1591,7 @@ class NavPvt extends Message:
   */
   flags3 -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 78
+    return uint32_ 78
 
   /**
   The heading of the vehicle.
@@ -1552,7 +1599,7 @@ class NavPvt extends Message:
   */
   heading-vehicle -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 84
+    return int32_ 84
 
   /**
   Magnetic declination.
@@ -1568,7 +1615,7 @@ class NavPvt extends Message:
   */
   magnetic-acc -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint16 payload 90
+    return uint16_ 90
 
 
 /**
@@ -1608,10 +1655,10 @@ class NavSol extends Message:
   is-gnss-fix -> bool:
     return (flags & 0b00000001) != 0
 
-  /** The time in UTC.
+  /* The time in UTC.
 
-  Time is not included in this legacy Message type.  It can be obtained using
-    other messages however.  Need to think what to do with this one.  Take out
+  Time is not included in this legacy Message type, although it can be obtained
+    using other message types.  Need to think what to do with this one.  Take out
     for both, or leave in?  Perhaps remove custom properties (made for human
     consumption) on the message types, and have the driver worry about
     presentation of message data...
@@ -1623,7 +1670,7 @@ class NavSol extends Message:
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 0
+    return uint32_ 0
 
   /**
   The fractional GPS interval time of week (in ns) of the navigation epoch.
@@ -1632,7 +1679,7 @@ class NavSol extends Message:
   */
   ftow -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 4
+    return int32_ 4
 
   /**
   The GPS Week number.
@@ -1641,7 +1688,7 @@ class NavSol extends Message:
   */
   week -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int16  payload 8
+    return int16_ 8
 
   /**
   Returns if GPS Week number is Valid. (WKNSET)
@@ -1675,7 +1722,7 @@ class NavSol extends Message:
   */
   fix-type -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 10
+    return uint8_ 10
 
   /**
   Fix status flags.
@@ -1684,14 +1731,14 @@ class NavSol extends Message:
   */
   flags -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 11
+    return uint8_ 11
 
   /**
   Number of satellites used for fix.
   */
   num-sv -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 47
+    return uint8_ 47
 
   /**
   Position DOP.
@@ -1700,37 +1747,37 @@ class NavSol extends Message:
   */
   position-dop -> float:
     assert: not payload.is-empty
-    return (LITTLE-ENDIAN.uint16 payload 44).to-float / 100
+    return (uint16_ 44).to-float / 100
 
   /** ECEF X coordinate. [cm] */
-  ecef-x-cm  -> int: return LITTLE-ENDIAN.int32  payload 12      // I4 cm.
+  ecef-x-cm  -> int: return int32_ 12      // I4 cm.
 
   /** ECEF Y coordinate. [cm] */
-  ecef-y-cm  -> int: return LITTLE-ENDIAN.int32  payload 16      // I4 cm.
+  ecef-y-cm  -> int: return int32_ 16      // I4 cm.
 
   /** ECEF Z coordinate. [cm] */
-  ecef-z-cm  -> int: return LITTLE-ENDIAN.int32  payload 20      // I4 cm.
+  ecef-z-cm  -> int: return int32_ 20      // I4 cm.
 
   /** 3D Position Accuracy Estimate. [cm] */
-  p-acc-cm   -> int: return LITTLE-ENDIAN.uint32 payload 24      // U4 cm.
+  p-acc-cm   -> int: return uint32_ 24      // U4 cm.
 
   /** ECEF X velocity. [cm/s] */
-  ecef-vx-cms -> int: return LITTLE-ENDIAN.int32  payload 28      // I4 cm/s.
+  ecef-vx-cms -> int: return int32_ 28      // I4 cm/s.
 
   /** ECEF Y velocity. [cm/s] */
-  ecef-vy-cms -> int: return LITTLE-ENDIAN.int32  payload 32      // I4 cm/s.
+  ecef-vy-cms -> int: return int32_ 32      // I4 cm/s.
 
   /** ECEF Z velocity. [cm/s] */
-  ecef-vz-cms -> int: return LITTLE-ENDIAN.int32  payload 36      // I4 cm/s.
+  ecef-vz-cms -> int: return int32_ 36      // I4 cm/s.
 
   /** Speed Accuracy Estimate. [cm/s] */
-  s-acc-cms   -> int: return LITTLE-ENDIAN.uint32 payload 40      // U4 cm/s.
+  s-acc-cms   -> int: return uint32_ 40      // U4 cm/s.
 
   /** Reserved 1. */
-  reserved1  -> int: return LITTLE-ENDIAN.uint8  payload 46      // U1.
+  reserved1  -> int: return LITTLE-ENDIAN.uint8 payload 46      // U1.
 
   /** Reserved 2. */
-  reserved2  -> int: return LITTLE-ENDIAN.uint32 payload 48      // U4 (M8 doc shows U1[4]; same 4 bytes).
+  reserved2  -> int: return uint32_ 48      // U4 (M8 doc shows U1[4]; same 4 bytes).
 
 /**
 The UBX-NAV-TIMEUTC message.
@@ -1752,7 +1799,7 @@ class NavTimeUtc extends Message:
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 0
+    return uint32_ 0
 
   /** The time in UTC. */
   utc-time -> Time:
@@ -1762,39 +1809,44 @@ class NavTimeUtc extends Message:
   /** UTC Time accuracy estimate, in nanoseconds. */
   time-acc -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint32 payload 4
+    return uint32_ 4
 
   ns -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int32 payload 8
+    return int32_ 8
 
   year -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint16 payload 12
+    return uint16_ 12
 
   month -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 14
+    return uint8_ 14
 
   day -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 15
+    return uint8_ 15
 
   h -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 16
+    return uint8_ 16
 
   m -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.uint8 payload 17
+    return uint8_ 17
 
   /**
   Return UTC Seconds.
 
-  Normally 00..59, but leap second can produce 60.
+  Normally 00..59, but leap seconds can produce between 59 to 61 seconds.  The
+    uBlox manual states "u-blox receivers are designed to handle leap seconds in
+    their UTC output and consequently users processing UTC times from either
+    NMEA and UBX messages should be prepared to handle minutes that are either
+    59 or 61 seconds long." (Section 9.7 "Leap Seconds" - ublox 8 Datasheet, pp
+    27.)
   */
   s -> int:
-    return LITTLE-ENDIAN.uint8 payload 18
+    return uint8_ 18
 
   /**
   Validity of time flags.
@@ -1802,7 +1854,7 @@ class NavTimeUtc extends Message:
   M8+: upper bits carry UTC standard
   */
   valid-flags-raw -> int:
-    return LITTLE-ENDIAN.uint8 payload 19
+    return uint8_ 19
 
   /**
   Returns if GPS Week number is Valid. (ValidWKN)
@@ -1905,8 +1957,8 @@ class CfgTp5 extends Message:
 
   /**
   Set TP5, starting with common defaults:
-    - active, align to TOW, UTC grid off by default
-    - frequency mode at 1 Hz, 50% duty, active-high
+  - active, align to TOW, UTC grid off by default
+  - frequency mode at 1 Hz, 50% duty, active-high
   */
   constructor.set
       --tp-idx/int=TP-IDX-0
@@ -1919,7 +1971,7 @@ class CfgTp5 extends Message:
       --polarity-high/bool=true:
     new-payload := ByteArray 32
     LITTLE-ENDIAN.put-uint8  new-payload 0 tp-idx
-    LITTLE-ENDIAN.put-uint8  new-payload 1 1  // version
+    LITTLE-ENDIAN.put-uint8  new-payload 1 1  // Version.
     LITTLE-ENDIAN.put-uint16 new-payload 2 0
     LITTLE-ENDIAN.put-int16  new-payload 4 ant-cable-ns
     LITTLE-ENDIAN.put-int16  new-payload 6 rf-group-ns
@@ -1928,21 +1980,24 @@ class CfgTp5 extends Message:
     LITTLE-ENDIAN.put-uint32 new-payload 8  freq-hz
     LITTLE-ENDIAN.put-uint32 new-payload 12 freq-hz
 
-    dutyRatioNano := duty-permille * 1_000_000  // permille → nanos of 1e9
-    LITTLE-ENDIAN.put-uint32 new-payload 16 dutyRatioNano
-    LITTLE-ENDIAN.put-uint32 new-payload 20 dutyRatioNano
+    duty-ratio-nano := duty-permille * 1_000_000  // permille -> nanos of 1e9
+    LITTLE-ENDIAN.put-uint32 new-payload 16 duty-ratio-nano
+    LITTLE-ENDIAN.put-uint32 new-payload 20 duty-ratio-nano
     LITTLE-ENDIAN.put-int32  new-payload 24 0
 
     flags := 0
-    if active:        flags |= FLAG-ACTIVE
-    flags |= FLAG-IS-FREQ                  // frequency mode
+    if active: flags |= FLAG-ACTIVE
+    flags |= FLAG-IS-FREQ // frequency mode
     // we used ratio (not length), so FLAG-IS-LENGTH stays 0
     flags |= FLAG-ALIGN-TOW
     if polarity-high: flags |= FLAG-POLARITY-HI
-    if use-utc:       flags |= FLAG-UTC-GRID
+    if use-utc: flags |= FLAG-UTC-GRID
     LITTLE-ENDIAN.put-uint32 new-payload 28 flags
 
     super.private_ Message.CFG ID new-payload
+
+  id-string_ -> string:
+    return "TP5"
 
   /**
   Time pulse selection.
@@ -1950,7 +2005,7 @@ class CfgTp5 extends Message:
   CfgTp5.TP-IDX-0=TIMEPULSE, CfgTp5.TP-IDX-1=TIMEPULSE2
   */
   tp-idx -> int:
-    return LITTLE-ENDIAN.uint8 payload 0
+    return uint8_ 0
 
   /**
   Configuration flags.
@@ -1958,16 +2013,15 @@ class CfgTp5 extends Message:
   Parameters and flags are different starting from Protocol version 16.
   */
   flags -> int:
-    return LITTLE-ENDIAN.uint32 payload 28
+    return uint32_ 28
 
   freq -> int:
-    return LITTLE-ENDIAN.uint32 payload 8
+    return uint32_ 8
 
   duty-nano -> int:
-    return LITTLE-ENDIAN.uint32 payload 16
+    return uint32_ 16
 
-  id-string_ -> string:
-    return "TP5"
+
 
 
 /**
@@ -2132,20 +2186,20 @@ class CfgNav5 extends Message:
     LITTLE-ENDIAN.put-uint16 new-payload 0 mask
     super.private_ Message.CFG ID new-payload
 
+  id-string_ -> string:
+    return "NAV5"
+
   dyn-model -> int:
-    return LITTLE-ENDIAN.uint8 payload 2
+    return uint8_ 2
 
   dyn-model-text -> string:
     return PACK-MODELS[dyn-model]
 
   fix-mode -> int:
-    return LITTLE-ENDIAN.uint8 payload 3
+    return uint8_ 3
 
   mask -> int:
-    return LITTLE-ENDIAN.uint16 payload 0
-
-  id-string_ -> string:
-    return "NAV5"
+    return uint16_ 0
 
 /**
 The UBX-CFG-GNSS message.
@@ -2213,8 +2267,8 @@ class CfgGnss extends Message:
     LITTLE-ENDIAN.put-uint8 new-payload 1 num-trk-ch-hw
     LITTLE-ENDIAN.put-uint8 new-payload 2 num-trk-ch-use
     LITTLE-ENDIAN.put-uint8 new-payload 3 num
-    i := 0
-    while i < num:
+
+    num.repeat: | i/int |
       block := blocks[i]  // Expect map with fields: "gnssId", "resTrkCh", "maxTrkCh", "flags"
       assert: block.size = 5
       base := 4 + 8 * i
@@ -2223,15 +2277,21 @@ class CfgGnss extends Message:
       LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-MAXTRKCH_) block["maxTrkCh"]
       LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-RESERVED1_) 0
       LITTLE-ENDIAN.put-uint32 new-payload (base + BLOCK-FLAGS_) block["flags"]
-      i++
+
     super.private_ Message.CFG ID new-payload
+
+  id-string_ -> string:
+    return "GNSS"
 
   /**
   Convenience builder for a configuration block.
 
-  One block is a set of 3 properties applying to one `gnssId` (0=GPS, 1=SBAS,
-    2=Galileo, 3=BeiDou, 5=QZSS, 6=GLONASS, etc.).  More than one block can be
-    provided in a single message.
+  One block is one `gnssId`, with a set of 3 properties applying to it.  (One
+    `gnssId` is one of 0=GPS, 1=SBAS, 2=Galileo, 3=BeiDou, 5=QZSS, 6=GLONASS,
+    etc.).  More than one block can be provided in a single message.
+
+  `enable` is bit 1 of the flags field.  The content of the `flags` field is
+    different depending on the hardware in question.
   */
   static create-config-block -> Map
       gnss-id/int
@@ -2246,20 +2306,20 @@ class CfgGnss extends Message:
 
   /** Message version for this set of config blocks.  */
   msg-ver -> int:
-    return LITTLE-ENDIAN.uint8 payload 0
+    return uint8_ 0
 
   /** Number of config blocks in this message.  */
   num-config-blocks -> int:
-    return LITTLE-ENDIAN.uint8 payload 3
+    return uint8_ 3
 
   /** The `gnssId` for the i'th config block. */
   config-block-gnss-id i/int -> int:
     assert: 0 < i <= num-config-blocks
-    return LITTLE-ENDIAN.uint8 payload (4 + 8*i)
+    return uint8_ (4 + 8*i)
 
   /** The flags for the i'th config block. */
   config-block-flags i/int -> int:
-    return LITTLE-ENDIAN.uint32 payload (4 + 8*i + 4)
+    return uint32_ (4 + 8*i + 4)
 
   /**
   The entire config block (map) for the i'th config block.
@@ -2271,10 +2331,8 @@ class CfgGnss extends Message:
     assert: 0 < i <= num-config-blocks
     base := (4 + 8*i)
     block := {:}
-    block["gnssId"] = LITTLE-ENDIAN.uint8 payload (base + BLOCK-GNSSID_)
-    block["resTrkCh"] = LITTLE-ENDIAN.uint8 payload (base + BLOCK-RESTRKCH_)
-    block["maxTrkCh"] = LITTLE-ENDIAN.uint8 payload (base + BLOCK-MAXTRKCH_)
-    block["flags"] = LITTLE-ENDIAN.uint32 payload (base + BLOCK-FLAGS_)
+    block["gnssId"] = uint8_ (base + BLOCK-GNSSID_)
+    block["resTrkCh"] = uint8_ (base + BLOCK-RESTRKCH_)
+    block["maxTrkCh"] = uint8_ (base + BLOCK-MAXTRKCH_)
+    block["flags"] = uint32_ (base + BLOCK-FLAGS_)
     return block
-
-  id-string_ -> string: return "GNSS"
