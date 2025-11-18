@@ -1665,6 +1665,7 @@ Legacy Navigation solution, in ECEF (Earth-Centered, Earth-Fixed cartesian
 class NavSol extends Message:
   static ID ::= 0x06
 
+  static DGPS-USED-MASK_          ::= 0b00000010
   static WEEK-VALID-MASK_         ::= 0b00000100
   static TIME-OF-WEEK-VALID-MASK_ ::= 0b00001000
 
@@ -1741,8 +1742,7 @@ class NavSol extends Message:
   Whether DGPS is used.  (UBX field: diffSoln)
   */
   dgps-used -> bool:
-    dgps-used-mask := 0b00000010
-    return ((flags & dgps-used-mask) >> dgps-used-mask.count-trailing-zeros) != 0
+    return ((flags & DGPS-USED-MASK_) >> DGPS-USED-MASK_.count-trailing-zeros) != 0
 
   /**
   The type of fix.
@@ -1815,6 +1815,10 @@ UTC time solution.  Functions on 6M and later devices.
 */
 class NavTimeUtc extends Message:
   static ID ::= 0x21
+
+  static TIME-OF-WEEK-VALID-MASK_ ::= 0b00000001
+  static WEEK-VALID-MASK_         ::= 0b00000010
+  static UTC-VALID-MASK_          ::= 0b00000100
 
   /** Constructs a poll UBX-NAV-TIMEUTC message. */
   constructor.poll:
@@ -1892,25 +1896,22 @@ class NavTimeUtc extends Message:
     return uint8_ 19
 
   /**
-  Returns if GPS Week number is Valid. (ValidWKN)
+  Returns if GPS Week number is Valid. (UBX field: ValidWKN)
   */
   valid-week -> bool:
-    week-valid-mask := 0b00000010
-    return ((valid-flags-raw & week-valid-mask) >> week-valid-mask.count-trailing-zeros) != 0
+    return ((valid-flags-raw & WEEK-VALID-MASK_) >> WEEK-VALID-MASK_.count-trailing-zeros) != 0
 
   /**
-  Returns if GPS Time of Week number is Valid. (ValidTOW)
+  Returns if GPS Time of Week number is Valid. (UBX field: ValidTOW)
   */
   valid-time-of-week -> bool:
-    time-of-week-valid-mask := 0b00000001
-    return ((valid-flags-raw & time-of-week-valid-mask) >> time-of-week-valid-mask.count-trailing-zeros) != 0
+    return ((valid-flags-raw & TIME-OF-WEEK-VALID-MASK_) >> TIME-OF-WEEK-VALID-MASK_.count-trailing-zeros) != 0
 
   /**
-  Returns if UTC time is valid. (ValidUTC - If the leap seconds are known.)
+  Returns if UTC time is valid. (UBX field: ValidUTC - If the leap seconds are known.)
   */
   valid-utc -> bool:
-    valid-utc-mask := 0b00000100
-    return ((valid-flags-raw & valid-utc-mask) >> valid-utc-mask.count-trailing-zeros) != 0
+    return ((valid-flags-raw & UTC-VALID-MASK_) >> UTC-VALID-MASK_.count-trailing-zeros) != 0
 
   /**
   Returns UTC standard code.
