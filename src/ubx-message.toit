@@ -104,64 +104,64 @@ class Message:
     nested Maps.
   */
   static PACK-MESSAGE-TYPES := {
-    // NAV (0x01)
+    // NAV (0x01).
     NAV: {
       0x01: "POSECEF",
       0x02: "POSLLH",
       0x03: "STATUS",
       0x04: "DOP",
-      0x05: "ATT",        // M8+
+      0x05: "ATT",        // M8+.
       0x06: "SOL",
-      0x07: "PVT",        // M8+
-      0x09: "ODO",        // M8+
-      0x10: "RESETODO",   // M8+
+      0x07: "PVT",        // M8+.
+      0x09: "ODO",        // M8+.
+      0x10: "RESETODO",   // M8+.
       0x11: "VELECEF",
       0x12: "VELNED",
-      0x13: "HPPOSECEF",  // M8+
-      0x14: "HPPOSLLH",   // M8+
+      0x13: "HPPOSECEF",  // M8+.
+      0x14: "HPPOSLLH",   // M8+.
       0x20: "TIMEGPS",
       0x21: "TIMEUTC",
-      0x23: "TIMEGLO",    // M8+
-      0x24: "TIMEBDS",    // M8+
-      0x25: "TIMEGAL",    // M8+
-      0x26: "TIMELS",     // M8+
-      0x28: "NMI",        // M8+
+      0x23: "TIMEGLO",    // M8+.
+      0x24: "TIMEBDS",    // M8+.
+      0x25: "TIMEGAL",    // M8+.
+      0x26: "TIMELS",     // M8+.
+      0x28: "NMI",        // M8+.
       0x30: "SVINFO",
       0x31: "DGPS",
       0x32: "SBAS",
-      0x35: "SAT",        // M8+
-      0x39: "GEOFENCE",   // M8+
-      0x3B: "SVIN",       // M8+
-      0x3C: "RELPOSNED",  // M8+
-      0x3D: "EELL",       // M8+
-      0x42: "SLAS",       // M8+
+      0x35: "SAT",        // M8+.
+      0x39: "GEOFENCE",   // M8+.
+      0x3B: "SVIN",       // M8+.
+      0x3C: "RELPOSNED",  // M8+.
+      0x3D: "EELL",       // M8+.
+      0x42: "SLAS",       // M8+.
       0x60: "AOPSTATUS",
-      0x61: "EOE",        // M8+
+      0x61: "EOE",        // M8+.
     },
 
-    // RXM (0x02)
+    // RXM (0x02).
     RXM: {
-      0x10: "RAW",     // 6-series
-      0x11: "SFRB",    // 6-series
-      0x13: "SFRBX",   // M8+
-      0x14: "MEASX",   // M8+
-      0x15: "RAWX",    // M8+
+      0x10: "RAW",     // 6-series.
+      0x11: "SFRB",    // 6-series.
+      0x13: "SFRBX",   // M8+.
+      0x14: "MEASX",   // M8+.
+      0x15: "RAWX",    // M8+.
       0x20: "SVSI",
       0x30: "ALM",
       0x31: "EPH",
-      0x32: "RTCM",    // M8+
+      0x32: "RTCM",    // M8+.
       0x41: "PMREQ",
-      0x59: "RLM",     // M8+
-      0x61: "IMES",    // M8+
+      0x59: "RLM",     // M8+.
+      0x61: "IMES",    // M8+.
     },
 
-    // ACK (0x05)
+    // ACK (0x05).
     ACK: {
       0x00: "ACK-NAK",
       0x01: "ACK-ACK",
     },
 
-    // CFG (0x06)
+    // CFG (0x06).
     CFG: {
       0x00: "PRT",
       0x01: "MSG",
@@ -171,44 +171,44 @@ class Message:
       0x07: "TP",
       0x08: "RATE",
       0x09: "CFG",
-      0x0E: "FXN",       // 6-series
+      0x0E: "FXN",       // 6-series.
       0x11: "RXM",
-      0x12: "EKF",       // 6-series LEA-6R
+      0x12: "EKF",       // 6-series LEA-6R.
       0x13: "ANT",
       0x16: "SBAS",
       0x17: "NMEA",
       0x1B: "USB",
-      0x1D: "TMODE",     // 6-series
+      0x1D: "TMODE",     // 6-series.
       0x1E: "ODO",
       0x23: "NAVX5",
       0x24: "NAV5",
-      0x29: "ESFGWT",    // 6-series (LEA-6R)
+      0x29: "ESFGWT",    // 6-series (LEA-6R).
       0x31: "TP5",
       0x34: "RINV",
       0x39: "ITFM",
       0x3B: "PM2",
       0x3D: "TMODE2",
-      0x3E: "GNSS",      // M8+
-      0x47: "LOGFILTER", // M8+
-      0x53: "TXSLOT",    // M8+
-      0x56: "ESFALG",    // M8+
-      0x57: "PWR",       // M8+
-      0x5C: "HNR",       // M8+
-      0x60: "ESRC",      // M8+
-      0x61: "DOSC",      // M8+
-      0x62: "SMGR",      // M8+
-      0x64: "SPT",       // M8+
-      0x69: "GEOFENCE",  // M8+
-      0x70: "DGNSS",     // M8+
-      0x71: "TMODE3",    // M8+
-      0x82: "ESFWT",     // M8+
-      0x86: "PMS",       // M8+
-      0x88: "SENIF",     // M8+
-      0x8D: "SLAS",      // M8+
-      0x93: "BATCH",     // M8+
+      0x3E: "GNSS",      // M8+.
+      0x47: "LOGFILTER", // M8+.
+      0x53: "TXSLOT",    // M8+.
+      0x56: "ESFALG",    // M8+.
+      0x57: "PWR",       // M8+.
+      0x5C: "HNR",       // M8+.
+      0x60: "ESRC",      // M8+.
+      0x61: "DOSC",      // M8+.
+      0x62: "SMGR",      // M8+.
+      0x64: "SPT",       // M8+.
+      0x69: "GEOFENCE",  // M8+.
+      0x70: "DGNSS",     // M8+.
+      0x71: "TMODE3",    // M8+.
+      0x82: "ESFWT",     // M8+.
+      0x86: "PMS",       // M8+.
+      0x88: "SENIF",     // M8+.
+      0x8D: "SLAS",      // M8+.
+      0x93: "BATCH",     // M8+.
     },
 
-    // MON (0x0A)
+    // MON (0x0A).
     MON: {
       0x02: "IO",
       0x04: "VER",
@@ -218,49 +218,49 @@ class Message:
       0x09: "HW",
       0x0B: "HW2",
       0x21: "RXR",
-      0x27: "PATCH",     // M8+
-      0x28: "GNSS",      // M8+
-      0x2E: "SMGR",      // M8+
-      0x2F: "SPT",       // M8+
-      0x32: "BATCH",     // M8+
+      0x27: "PATCH",     // M8+.
+      0x28: "GNSS",      // M8+.
+      0x2E: "SMGR",      // M8+.
+      0x2F: "SPT",       // M8+.
+      0x32: "BATCH",     // M8+.
     },
 
-    // AID (0x0B) — legacy assistance (6 & M8)
+    // AID (0x0B) — legacy assistance (6 & M8).
     AID: {
       0x01: "INI",
       0x02: "HUI",
       0x30: "ALM",
       0x31: "EPH",
       0x33: "AOP",
-      0x50: "ALP",   // 6-series
-      0x10: "DATA",  // 6-series
-      0x32: "ALPSRV" // 6-series
+      0x50: "ALP",   // 6-series.
+      0x10: "DATA",  // 6-series.
+      0x32: "ALPSRV" // 6-series.
     },
 
-    // TIM (0x0D)
+    // TIM (0x0D).
     TIM: {
       0x01: "TP",
       0x03: "TM2",
       0x04: "SVIN",
-      0x06: "VRFY",    // 6-series
-      0x11: "DOSC",    // M8+
-      0x12: "TOS",     // M8+
-      0x13: "SMEAS",   // M8+
-      0x15: "VCOCAL",  // M8+
-      0x16: "FCHG",    // M8+
-      0x17: "HOC",     // M8+
+      0x06: "VRFY",    // 6-series.
+      0x11: "DOSC",    // M8+.
+      0x12: "TOS",     // M8+.
+      0x13: "SMEAS",   // M8+.
+      0x15: "VCOCAL",  // M8+.
+      0x16: "FCHG",    // M8+.
+      0x17: "HOC",     // M8+.
     },
 
-    // ESF (0x10) — external sensor fusion
+    // ESF (0x10) — external sensor fusion.
     ESF: {
-      0x02: "MEAS",  // 6-series LEA-6R / M8 ESF-MEAS (different payloads)
-      0x03: "RAW",   // M8+
-      0x10: "STATUS",// 6-series LEA-6R / M8 ESF-STATUS
-      0x14: "ALG",   // M8+
-      0x15: "INS",   // M8+
+      0x02: "MEAS",  // 6-series LEA-6R / M8 ESF-MEAS (different payloads).
+      0x03: "RAW",   // M8+.
+      0x10: "STATUS",// 6-series LEA-6R / M8 ESF-STATUS.
+      0x14: "ALG",   // M8+.
+      0x15: "INS",   // M8+.
     },
 
-    // MGA (0x13) — M8+ multi-GNSS assistance (index only; many subtypes)
+    // MGA (0x13) — M8+ multi-GNSS assistance (index only; many subtypes).
     MGA: {
       0x00: "GPS",
       0x02: "GAL",
@@ -273,7 +273,7 @@ class Message:
       0x80: "DBD",
     },
 
-    // LOG (0x21) — M8+
+    // LOG (0x21) — M8+.
     LOG: {
       0x03: "ERASE",
       0x07: "CREATE",
@@ -285,18 +285,17 @@ class Message:
       0x11: "BATCH",
     },
 
-    // SEC (0x27) — M8+
+    // SEC (0x27) — M8+.
     SEC: {
       0x03: "SEC-UNIQID",
     },
 
-    // HNR (0x28) — M8+
+    // HNR (0x28) — M8+.
     HNR: {
       0x00: "PVT",
       0x01: "ATT",
       0x02: "INS",
     },
-
 
   }
 
@@ -304,14 +303,14 @@ class Message:
   static RESERVED_ ::= 0
 
   /**
-  Represents the minimum protocol version for the message type.
+  The minimum protocol version for the message type.
 
   Devices must support at least this protocol version to use the message.
   */
   min-protver/string := "15.0"
 
   /**
-  Represents the maximum protocol version for the message type.
+  The maximum protocol version for the message type.
 
   Devices supporting protocol version newer than this may not be able to
     work with the message type.
@@ -478,28 +477,53 @@ class Message:
 
   /** Hash Code for use as an identifier in a Map. */
   hash-code:
-    return #[cls, id]
+    //return #[cls, id]
+    // hash-code needs to be an integer.  By these numbers we could assume
+    // cls << 8 would be ok, but I want to be sure:
+    return (cls << 16) | id
 
   /** Helper to return uint8 from payload index. */
-  int8_ index -> int: return LITTLE-ENDIAN.int8 payload index
+  int8_ index --payload=payload -> int: return LITTLE-ENDIAN.int8 payload index
 
   /** Helper to return uint8 from payload index. */
-  uint8_ index -> int: return payload[index]
+  uint8_ index --payload=payload -> int: return payload[index]
 
   /** Helper to return int16 from payload index. */
-  int16_ index -> int: return LITTLE-ENDIAN.int16 payload index
+  int16_ index --payload=payload -> int: return LITTLE-ENDIAN.int16 payload index
 
   /** Helper to return uint16 from payload index. */
-  uint16_ index -> int: return LITTLE-ENDIAN.uint16 payload index
+  uint16_ index --payload=payload -> int: return LITTLE-ENDIAN.uint16 payload index
 
   /** Helper to return int32 from payload index. */
-  int32_ index -> int: return LITTLE-ENDIAN.int32 payload index
+  int32_ index --payload=payload -> int: return LITTLE-ENDIAN.int32 payload index
 
   /** Helper to return uint32 from payload index. */
-  uint32_ index -> int: return LITTLE-ENDIAN.uint32 payload index
+  uint32_ index --payload=payload -> int: return LITTLE-ENDIAN.uint32 payload index
 
 
+  /** Helper to insert int8 into payload index. */
+  put-int8_ index value --payload=payload -> none:
+    LITTLE-ENDIAN.put-int8 payload index value
 
+  /** Helper to insert uint8 into payload index. */
+  put-uint8_ index value --payload=payload -> none:
+    payload[index] = value
+
+  /** Helper to insert int16 into payload index. */
+  put-int16_ index value --payload=payload -> none:
+    LITTLE-ENDIAN.put-int16 payload index value
+
+  /** Helper to insert uint16 into payload index. */
+  put-uint16_ index value --payload=payload -> none:
+    LITTLE-ENDIAN.put-uint16 payload index value
+
+  /** Helper to insert int32 into payload index. */
+  put-int32_ index value --payload=payload -> none:
+    LITTLE-ENDIAN.put-int32 payload index value
+
+  /** Helper to insert uint32 into payload index. */
+  put-uint32_ index value --payload=payload -> none:
+    LITTLE-ENDIAN.put-uint32 payload index value
 
 /**
 The UBX-ACK-ACK message.
@@ -655,7 +679,7 @@ class CfgPrt extends Message:
   static PORT-UART1 ::= 0x01
   static PORT-UART2 ::= 0x02
 
-  // Todo: expose these on the constructor
+  // Todo: expose these on the constructor.
   // mode bitfield shortcut: 8 data bits, no parity, 1 stop (8N1).
   // (charLen=3 -> bits 6..7 = 0b11; parity=0 -> bits 9..11 = 0; nStop=1 -> bit 12 = 0).
   // u-blox ref value: 0x000008D0.
@@ -689,24 +713,24 @@ class CfgPrt extends Message:
       --flags/int=0:
     super.private_ Message.CFG ID (ByteArray 20)
 
-    // PortID, Reserved0, TxReady(2)
-    LITTLE-ENDIAN.put-uint8 payload 0 port-id
-    LITTLE-ENDIAN.put-uint8 payload 1 0
-    LITTLE-ENDIAN.put-uint16 payload 2 0     // txReady off.
+    // PortID, Reserved0, TxReady(2).
+    put-uint8_ 0 port-id
+    put-uint8_ 1 0
+    put-uint16_ 2 0     // txReady off.
 
     // Mode (framing).
-    LITTLE-ENDIAN.put-uint32 payload 4 mode
+    put-uint32_ 4 mode
 
     // BaudRate.
-    LITTLE-ENDIAN.put-uint32 payload 8 baud
+    put-uint32_ 8 baud
 
     // In/out proto masks.
-    LITTLE-ENDIAN.put-uint16 payload 12 in-proto
-    LITTLE-ENDIAN.put-uint16 payload 14 out-proto
+    put-uint16_ 12 in-proto
+    put-uint16_ 14 out-proto
 
     // Flags, reserved1.
-    LITTLE-ENDIAN.put-uint16 payload 16 flags
-    LITTLE-ENDIAN.put-uint16 payload 18 0
+    put-uint16_ 16 flags
+    put-uint16_ 18 0
 
   /**
   Poll the configuration for a given port.
@@ -764,9 +788,9 @@ class CfgRst extends Message:
   */
   constructor --clear-sections=0xFFFF --reset-mode=2:
     super.private_ Message.CFG ID (ByteArray 4)
-    LITTLE-ENDIAN.put-uint16 payload 0 clear-sections
-    LITTLE-ENDIAN.put-uint8 payload 2 reset-mode
-    LITTLE-ENDIAN.put-uint8 payload 3 Message.RESERVED_
+    put-uint16_ 0 clear-sections
+    put-uint8_ 2 reset-mode
+    put-uint8_ 3 Message.RESERVED_
 
   id-string_ -> string:
     return "RST"
@@ -1607,7 +1631,7 @@ class NavPvt extends Message:
   */
   magnetic-declination -> int:
     assert: not payload.is-empty
-    return LITTLE-ENDIAN.int16 payload 88
+    return int16_ 88
 
   /**
   Accuracy of magnetic declination.
@@ -1774,7 +1798,7 @@ class NavSol extends Message:
   s-acc-cms   -> int: return uint32_ 40      // U4 cm/s.
 
   /** Reserved 1. */
-  reserved1  -> int: return LITTLE-ENDIAN.uint8 payload 46      // U1.
+  reserved1  -> int: return uint8_ 46      // U1.
 
   /** Reserved 2. */
   reserved2  -> int: return uint32_ 48      // U4 (M8 doc shows U1[4]; same 4 bytes).
@@ -1947,9 +1971,9 @@ class CfgTp5 extends Message:
   /** Poll the TP5 configuration for tpIdx (0 or 1). */
   constructor.poll --tp-idx/int=TP-IDX-0:
     new-payload := ByteArray 2
-    LITTLE-ENDIAN.put-uint8 new-payload 0 tp-idx
-    LITTLE-ENDIAN.put-uint8 new-payload 1 1  // Version.
     super.private_ Message.CFG ID new-payload
+    put-uint8_ 0 tp-idx
+    put-uint8_ 1 1  // Version.
 
   /** Construct an instance with bytes from a retrieved message. */
   constructor.private_ payload/ByteArray:
@@ -1969,21 +1993,24 @@ class CfgTp5 extends Message:
       --use-utc/bool=false
       --active/bool=true
       --polarity-high/bool=true:
+
     new-payload := ByteArray 32
-    LITTLE-ENDIAN.put-uint8  new-payload 0 tp-idx
-    LITTLE-ENDIAN.put-uint8  new-payload 1 1  // Version.
-    LITTLE-ENDIAN.put-uint16 new-payload 2 0
-    LITTLE-ENDIAN.put-int16  new-payload 4 ant-cable-ns
-    LITTLE-ENDIAN.put-int16  new-payload 6 rf-group-ns
+    super.private_ Message.CFG ID new-payload
 
-    // Frequency mode: set freqPeriod=freq, isFreq=1; pulseLenRatio = duty * 1e-9
-    LITTLE-ENDIAN.put-uint32 new-payload 8  freq-hz
-    LITTLE-ENDIAN.put-uint32 new-payload 12 freq-hz
+    put-uint8_ 0 tp-idx
+    put-uint8_ 1 1  // Version.
+    put-uint16_ 2 0
+    put-int16_ 4 ant-cable-ns
+    put-int16_ 6 rf-group-ns
 
-    duty-ratio-nano := duty-permille * 1_000_000  // permille -> nanos of 1e9
-    LITTLE-ENDIAN.put-uint32 new-payload 16 duty-ratio-nano
-    LITTLE-ENDIAN.put-uint32 new-payload 20 duty-ratio-nano
-    LITTLE-ENDIAN.put-int32  new-payload 24 0
+    // Frequency mode: set freqPeriod=freq, isFreq=1; pulseLenRatio = duty * 1e-9.
+    put-uint32_ 8 freq-hz
+    put-uint32_ 12 freq-hz
+
+    duty-ratio-nano := duty-permille * 1_000_000  // permille -> nanos of 1e9.
+    put-uint32_ 16 duty-ratio-nano
+    put-uint32_ 20 duty-ratio-nano
+    put-int32_ 24 0
 
     flags := 0
     if active: flags |= FLAG-ACTIVE
@@ -1992,9 +2019,9 @@ class CfgTp5 extends Message:
     flags |= FLAG-ALIGN-TOW
     if polarity-high: flags |= FLAG-POLARITY-HI
     if use-utc: flags |= FLAG-UTC-GRID
-    LITTLE-ENDIAN.put-uint32 new-payload 28 flags
+    put-uint32_ 28 flags
 
-    super.private_ Message.CFG ID new-payload
+
 
   id-string_ -> string:
     return "TP5"
@@ -2106,12 +2133,14 @@ class CfgNav5 extends Message:
   constructor.set-basic
       --dyn/int=DYN-AUTOMOTIVE
       --fix/int=FIX-AUTO:
-    new-payload := ByteArray 36
-    LITTLE-ENDIAN.put-uint16 new-payload 0 (DYN-MASK_ | FIXMODE-MASK_)
-    LITTLE-ENDIAN.put-uint8  new-payload 2 dyn
-    LITTLE-ENDIAN.put-uint8  new-payload 3 fix
+
     // Sensible defaults / zeros elsewhere.
+    new-payload := ByteArray 36
     super.private_ Message.CFG ID new-payload
+    put-uint16_ 0 (DYN-MASK_ | FIXMODE-MASK_)
+    put-uint8_ 2 dyn
+    put-uint8_ 3 fix
+
 
   /** Full setter for advanced control (pass null to skip a field & mask). */
   constructor.set-advanced
@@ -2132,59 +2161,60 @@ class CfgNav5 extends Message:
       --static-hold-max-dist-m/int?=null
       --utc-standard/int?=null:
     new-payload := ByteArray 36
-    mask := 0
+    super.private_ Message.CFG ID new-payload
 
+    mask := 0
     if dyn:
       mask |= DYN-MASK_
-      LITTLE-ENDIAN.put-uint8 new-payload 2 dyn
+      put-uint8_ 2 dyn
     if fix:
       mask |= FIXMODE-MASK_
-      LITTLE-ENDIAN.put-uint8 new-payload 3 fix
+      put-uint8_ 3 fix
     if fixed-alt-cm:
       mask |= ALT-MASK_
-      LITTLE-ENDIAN.put-int32 new-payload 4 fixed-alt-cm
+      put-int32_ 4 fixed-alt-cm
     if fixed-alt-var-cm2:
       mask |= ALT-MASK_
-      LITTLE-ENDIAN.put-uint32 new-payload 8 fixed-alt-var-cm2
+      put-uint32_ 8 fixed-alt-var-cm2
     if min-elev-deg:
       mask |= OUTLYING-MASK_
-      LITTLE-ENDIAN.put-int8 new-payload 12 min-elev-deg
+      put-int8_ 12 min-elev-deg
     if dr-limit-s:
       mask |= OUTLYING-MASK_
-      LITTLE-ENDIAN.put-uint8 new-payload 13 dr-limit-s
+      put-uint8_ 13 dr-limit-s
     if p-dop-x10:
       mask |= PDOP-MASK_
-      LITTLE-ENDIAN.put-uint16 new-payload 14 p-dop-x10
+      put-uint16_ 14 p-dop-x10
     if t-dop-x10:
       mask |= TDOP-MASK_
-      LITTLE-ENDIAN.put-uint16 new-payload 16 t-dop-x10
+      put-uint16_ 16 t-dop-x10
     if p-acc-m:
       mask |= PACC-MASK_
-      LITTLE-ENDIAN.put-uint16 new-payload 18 p-acc-m
+      put-uint16_ 18 p-acc-m
     if t-acc-m:
       mask |= TACC-MASK_
-      LITTLE-ENDIAN.put-uint16 new-payload 20 t-acc-m
+      put-uint16_ 20 t-acc-m
     if static-hold-thresh-cmps:
       mask |= STATIC-MASK_
-      LITTLE-ENDIAN.put-uint8 new-payload 22 static-hold-thresh-cmps
+      put-uint8_ 22 static-hold-thresh-cmps
     if dgnss-timeout-s:
       mask |= DGPS-MASK_
-      LITTLE-ENDIAN.put-uint8 new-payload 23 dgnss-timeout-s
+      put-uint8_ 23 dgnss-timeout-s
     if cno-thresh-num-sv:
       mask |= OUTLYING-MASK_
-      LITTLE-ENDIAN.put-uint8 new-payload 24 cno-thresh-num-sv
+      put-uint8_ 24 cno-thresh-num-sv
     if cno-thresh-dbHz:
       mask |= OUTLYING-MASK_
-      LITTLE-ENDIAN.put-uint8 new-payload 25 cno-thresh-dbHz
+      put-uint8_ 25 cno-thresh-dbHz
     if static-hold-max-dist-m:
       mask |= STATIC-MASK_
-      LITTLE-ENDIAN.put-uint16 new-payload 28 static-hold-max-dist-m
+      put-uint16_ 28 static-hold-max-dist-m
     if utc-standard:
       mask |= UTC-MASK_
-      LITTLE-ENDIAN.put-uint8 new-payload 30 utc-standard
+      put-uint8_ 30 utc-standard
 
-    LITTLE-ENDIAN.put-uint16 new-payload 0 mask
-    super.private_ Message.CFG ID new-payload
+    put-uint16_ 0 mask
+
 
   id-string_ -> string:
     return "NAV5"
@@ -2261,24 +2291,23 @@ class CfgGnss extends Message:
       --num-trk-ch-hw/int=0
       --num-trk-ch-use/int=0
       --blocks/List=[]:
-    num := blocks.size
-    new-payload := ByteArray (4 + 8 * num)
-    LITTLE-ENDIAN.put-uint8 new-payload 0 msg-ver
-    LITTLE-ENDIAN.put-uint8 new-payload 1 num-trk-ch-hw
-    LITTLE-ENDIAN.put-uint8 new-payload 2 num-trk-ch-use
-    LITTLE-ENDIAN.put-uint8 new-payload 3 num
+    new-payload := ByteArray (4 + 8 * blocks.size)
+    super.private_ Message.CFG ID new-payload
 
-    num.repeat: | i/int |
+    put-uint8_ 0 msg-ver
+    put-uint8_ 1 num-trk-ch-hw
+    put-uint8_ 2 num-trk-ch-use
+    put-uint8_ 3 blocks.size
+
+    blocks.size.repeat: | i/int |
       block := blocks[i]  // Expect map with fields: "gnssId", "resTrkCh", "maxTrkCh", "flags"
       assert: block.size = 5
       base := 4 + 8 * i
-      LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-GNSSID_) block["gnssId"]
-      LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-RESTRKCH_) block["resTrkCh"]
-      LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-MAXTRKCH_) block["maxTrkCh"]
-      LITTLE-ENDIAN.put-uint8 new-payload (base + BLOCK-RESERVED1_) 0
-      LITTLE-ENDIAN.put-uint32 new-payload (base + BLOCK-FLAGS_) block["flags"]
-
-    super.private_ Message.CFG ID new-payload
+      put-uint8_ (base + BLOCK-GNSSID_) block["gnssId"]
+      put-uint8_ (base + BLOCK-RESTRKCH_) block["resTrkCh"]
+      put-uint8_ (base + BLOCK-MAXTRKCH_) block["maxTrkCh"]
+      put-uint8_ (base + BLOCK-RESERVED1_) 0
+      put-uint32_ (base + BLOCK-FLAGS_) block["flags"]
 
   id-string_ -> string:
     return "GNSS"
