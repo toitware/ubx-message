@@ -1111,16 +1111,6 @@ class SatelliteData:
     offset := 0
 
     if src-id == NavSat.ID:
-      offset = index * 12
-      gnss-id = LITTLE-ENDIAN.uint8 payload (offset + 8)
-
-      sv-id = LITTLE-ENDIAN.uint8 payload (offset + 9)
-      cno = LITTLE-ENDIAN.uint8 payload (offset + 10)
-      elev = LITTLE-ENDIAN.int8 payload (offset + 11)
-      azim = LITTLE-ENDIAN.int16 payload (offset + 12)
-      pr-res = (LITTLE-ENDIAN.uint8 payload offset + 14) / 10.0 // scale 0.1
-      flags = LITTLE-ENDIAN.uint32 payload (offset + 16)
-
       quality-mask        := 0b00000000_00000111
       sv-used-mask        := 0b00000000_00001000
       health-mask         := 0b00000000_00110000
@@ -1132,6 +1122,14 @@ class SatelliteData:
       ano-avail-mask      := 0b00100000_00000000
       aop-avail-mask      := 0b01000000_00000000
 
+      offset = index * 12
+      gnss-id = LITTLE-ENDIAN.uint8 payload (offset + 8)
+      sv-id = LITTLE-ENDIAN.uint8 payload (offset + 9)
+      cno = LITTLE-ENDIAN.uint8 payload (offset + 10)
+      elev = LITTLE-ENDIAN.int8 payload (offset + 11)
+      azim = LITTLE-ENDIAN.int16 payload (offset + 12)
+      pr-res = (LITTLE-ENDIAN.int16 payload offset + 14) / 10.0 // scale 0.1
+      flags = LITTLE-ENDIAN.uint32 payload (offset + 16)
 
       quality      = (flags & quality-mask) >> quality-mask.count-trailing-zeros
       health       = (flags & health-mask) >> health-mask.count-trailing-zeros
@@ -1147,19 +1145,10 @@ class SatelliteData:
       orbit-info-avail = (eph-avail != 0) or (alm-avail != 0) or (ano-avail != 0) or (aop-avail != 0)
 
     else if src-id == NavSvInfo.ID:
-      offset = index * 12
-      channel = LITTLE-ENDIAN.uint8 payload offset + 8
+      // For quality register.
+      quality-mask     := 0b00001111
 
-      sv-id = LITTLE-ENDIAN.uint8 payload offset + 9
-      cno = LITTLE-ENDIAN.uint8 payload offset + 12
-      elev = LITTLE-ENDIAN.int8 payload offset + 13
-      azim = LITTLE-ENDIAN.int16 payload offset + 14
-      pr-res = (LITTLE-ENDIAN.uint32 payload offset + 16).to-float / 100 // Scaled in cm.
-      flags = LITTLE-ENDIAN.uint32 payload offset + 10
-
-      quality-mask   := 0b00000111
-      quality = (LITTLE-ENDIAN.uint32 payload offset + 11) & quality-mask
-
+      // For flags bitfield.
       sv-used-mask     := 0b00000001
       diff-corr-mask   := 0b00000010
       orbit-avail-mask := 0b00000100
@@ -1168,6 +1157,16 @@ class SatelliteData:
       orbit-alm-mask   := 0b00100000
       orbit-aop-mask   := 0b01000000
       smoothed-mask    := 0b10000000
+
+      offset = index * 12
+      channel = LITTLE-ENDIAN.uint8 payload (offset + 8)
+      sv-id = LITTLE-ENDIAN.uint8 payload (offset + 9)
+      flags = LITTLE-ENDIAN.uint8 payload (offset + 10)
+      quality = (LITTLE-ENDIAN.uint8 payload (offset + 11)) & quality-mask
+      cno = LITTLE-ENDIAN.uint8 payload (offset + 12)
+      elev = LITTLE-ENDIAN.int8 payload (offset + 13)
+      azim = LITTLE-ENDIAN.int16 payload (offset + 14)
+      pr-res = (LITTLE-ENDIAN.int32 payload (offset + 16)).to-float / 100 // Scaled in cm.
 
       // Directly usable
       diff-corr        = ((flags & diff-corr-mask) >> diff-corr-mask.count-trailing-zeros) != 0
@@ -1192,27 +1191,10 @@ class SatelliteData:
     else:
       throw "Unknown Space Vehicle Definition Source"
 
-  /** Helper to return uint8 from payload index. */
-  int8_ payload index -> int: return LITTLE-ENDIAN.int8 payload index
-
-  /** Helper to return uint8 from payload index. */
-  uint8_ payload index -> int: return payload[index]
-
-  /** Helper to return int16 from payload index. */
-  int16_ payload index -> int: return LITTLE-ENDIAN.int16 payload index
-
-  /** Helper to return uint16 from payload index. */
-  uint16_ payload index -> int: return LITTLE-ENDIAN.uint16 payload index
-
-  /** Helper to return int32 from payload index. */
-  int32_ payload index -> int: return LITTLE-ENDIAN.int32 payload index
-
-  /** Helper to return uint32 from payload index. */
-  uint32_ payload index -> int: return LITTLE-ENDIAN.uint32 payload index
-
   /** See $super. */
   stringify -> string:
-    codes := ""
+    codes := ""      //gnss-id = LITTLE-ENDIAN.uint8 payload (offset + 8)
+
     if alm-avail == 1: codes += "A"
     if ano-avail == 1: codes += "N"
 
@@ -1620,10 +1602,11 @@ class NavPvt extends Message:
   */
   position-dop -> float:
     assert: not payload.is-empty
-    return (uint16_ 76).to-float / 100
+    return (uint16_ 76) / 100.0
 
   /**
   Additional flags.
+
   See receiver specification for details.
   */
   flags3 -> int:
@@ -1632,6 +1615,7 @@ class NavPvt extends Message:
 
   /**
   The heading of the vehicle.
+
   See receiver specification for details.
   */
   heading-vehicle -> int:
@@ -1722,15 +1706,15 @@ class NavSol extends Message:
     return int16_ 8
 
   /**
-  Returns if GPS Week number is Valid. (UBX field: WKNSET.)
+  Whether GPS Week number is Valid. (UBX field: WKNSET.)
 
-  See $week.
+  See $week.  Time values should not be used until this returns True.
   */
   has-valid-week -> bool:
     return ((flags & WEEK-VALID-MASK_) >> WEEK-VALID-MASK_.count-trailing-zeros) != 0
 
   /**
-  Returns if GPS Time of Week number is Valid. (UBX field: TOWSET.)
+  Whether GPS Time of Week number is Valid. (UBX field: TOWSET.)
   */
   valid-time-of-week -> bool:
     return ((flags & TIME-OF-WEEK-VALID-MASK_) >> TIME-OF-WEEK-VALID-MASK_.count-trailing-zeros) != 0
