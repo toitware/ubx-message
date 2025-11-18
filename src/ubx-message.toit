@@ -1095,7 +1095,7 @@ class SatelliteData:
       sv-id = LITTLE-ENDIAN.uint8 payload offset + 9
       cno = LITTLE-ENDIAN.uint8 payload offset + 12
       elev = LITTLE-ENDIAN.int8 payload offset + 13
-      azim = LITTLE-ENDIAN.int8 payload offset + 14
+      azim = LITTLE-ENDIAN.int16 payload offset + 14
       pr-res = (LITTLE-ENDIAN.uint32 payload offset + 16).to-float / 100 // Scaled in cm.
       flags = LITTLE-ENDIAN.uint32 payload offset + 10
 

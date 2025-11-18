@@ -19,7 +19,7 @@ version they support will be assumed this way:
 
 | Device Generation | Example module | SW-Ver (Observed) | UBX protocol equiv. | Notes |
 |-|-|-|-|-|
-| u-blox 5| `NEO-5Q` / `LEA-5H` | 5.00–5.03 | `13.00` (Assumed) | Earliest unified UBX message set.  Has `UBX-NAV-SOL`, `UBX-NAV-POSLLH`, `UBX-TIMEUTC`, `UBX-NAV-SVINFO`, `UBX-NAV-STATUS` |
+| u-blox 5| `NEO-5Q` / `LEA-5H` | 5.00–5.03 | `12.00` (Assumed) | Earliest unified UBX message set.  Has `UBX-NAV-SOL`, `UBX-NAV-POSLLH`, `UBX-TIMEUTC`, `UBX-NAV-SVINFO`, `UBX-NAV-STATUS` |
 | u-blox 6 | `NEO-6M-0-001` / `LEA-6` | 7.00-7.03 | `13.00` (Assumed)	| Adds `UBX-NAV-SVINFO`, `UBX-TIMEUTC`, `UBX-NAV-SOL`.  (still no PROTVER field). |
 | u-blox 7 | `NEO-7M-0-000` | 1.00 | `14.00` | Transitional-message formats same as 6-series.  PROTVER string present in observed devices. |
 | u-blox 8/M8 | NEO-M8N	| 3.01+ | > `15.00` | First to advertise PROTVER in `UBX-MON-VER` messages.  Adds `NAV-SAT`, `NAT-PVT`, `MON-PATCH` etc. |
