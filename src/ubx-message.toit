@@ -299,6 +299,31 @@ class Message:
 
   }
 
+  // Fix type constants used through several messages
+
+  /** Unknown GNSS fix. */
+  static NO-FIX ::= 0
+  /** Dead reckoning only. */
+  static DEAD-RECKONING-ONLY ::= 1
+  /** 2D fix. */
+  static FIX-2D ::= 2
+  /** 3D fix. */
+  static FIX-3D ::= 3
+  /** GPS and dead reckoning. */
+  static GPS-DEAD-FIX ::= 4
+  /** Time only fix. */
+  static TIME-ONLY ::= 5
+
+  /** Lookup for Fix Type descriptions. */
+  static PACK-FIX-TYPES ::= {
+    NO-FIX: "NO-FIX",
+    DEAD-RECKONING-ONLY : "DEAD-RECKONING-ONLY",
+    FIX-2D : "FIX-2D",
+    FIX-3D : "FIX-3D",
+    GPS-DEAD-FIX : "GPS-DEAD-FIX",
+    TIME-ONLY : "TIME-ONLY",
+  }
+
   static INVALID-UBX-MESSAGE_ ::= "INVALID UBX MESSAGE"
   static RESERVED_ ::= 0
 
@@ -469,6 +494,9 @@ class Message:
       return "0x$(%02x cls)"
 
   id-string_ -> string:
+    if Message.PACK-MESSAGE-TYPES.contains cls:
+      if Message.PACK-MESSAGE-TYPES[cls].contains id:
+        return Message.PACK-MESSAGE-TYPES[cls].get id
     return "0x$(%02x id)"
 
   /** See $super. */
@@ -816,20 +844,12 @@ class NavStatus extends Message:
   static GPS-DEAD-FIX ::= 4
   /** Time only fix. */
   static TIME-ONLY ::= 5
-  /** Constructs a poll UBX-NAV-STATUS message. */
 
-  static PACK-FIX-TYPES ::= {
-    NO-FIX: "NO-FIX",
-    DEAD-RECKONING-ONLY : "DEAD-RECKONING-ONLY",
-    FIX-2D : "FIX-2D",
-    FIX-3D : "FIX-3D",
-    GPS-DEAD-FIX : "GPS-DEAD-FIX",
-    TIME-ONLY : "TIME-ONLY",
-  }
-
+  /** Constructs a message to poll for a UBX-NAV-STATUS message. */
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
+  /** Constructs a UBX-NAV-STATUS message from raw byte array. */
   constructor.private_ payload:
     super.private_ Message.NAV ID payload
 
@@ -848,13 +868,12 @@ class NavStatus extends Message:
   */
   gps-fix -> int:
     assert: not payload.is-empty
-    //return uint8_ 4
     return uint8_ 4
 
   // Thinking to remove this and have the user/driver do it via the PACK... static.
   gps-fix-text -> string:
     assert: not payload.is-empty
-    return PACK-FIX-TYPES[gps-fix]
+    return Message.PACK-FIX-TYPES[gps-fix]
 
   /**
   Navigation status flags.
@@ -1220,7 +1239,7 @@ class MonVer extends Message:
   hw-version -> string:
     return convert-string_ 30 10
 
-  /** Returns true if an extension row exists containing the supplied string. */
+  /** Whether an extension row exists containing string $str. */
   has-extension str/string -> bool:
     return extensions-raw.any: it.contains str
 
@@ -1235,36 +1254,11 @@ class MonVer extends Message:
         return it
     return null
 
-  /*
-  A map of extension string AVPs.
-
-  This function returns a map of strings with the keyed by the first part, with
-    the value being the remainder past the first instance of "=".
-
-  DISABLED: Originally it looked like the extensions would be AVPs delimited by
-    '='.  This is not true in all device generations. In addition, the sets of
-    tags shown in the extensions aren't grouped, and can be split across more
-    than one extension 'row'.  So for now, this is disabled in favor of the
-    driver parsing these messages.
-
-  extensions -> Map:
-    raw-extensions := extensions-raw
-    output-extensions := {:}
-    print "TESTING $(extensions-raw)"
-    raw-extensions.do:
-      eq-pos := it.index-of "="
-      if eq-pos > -1:
-        output-extensions[it[..eq-pos]] = it[..(eq-pos + 1)]
-      else:
-        output-extensions[it] = ""
-    return output-extensions
-  */
-
   /**
   A list of extension strings, if present.
 
-  If provided by the firmware version on the device, it provides a list of n 30
-    byte entries.  Each entry is a NUL-terminated ASCII string.
+  If provided by the firmware version on the device, this function obtains its
+    list of 30 byte entries, converted to strings.
   */
   extensions-raw -> List:
     raw-extensions := []
@@ -1276,7 +1270,7 @@ class MonVer extends Message:
     return raw-extensions
 
 
-  /** Helper: read a NULL-terminated string from a fixed-size field. */
+  /** Helper: read a '\0'-terminated string from a fixed-size field. */
   convert-string_ start length -> string:
     // Find first NUL within [start .. start+length).
     end := start
@@ -1296,6 +1290,8 @@ Geodetic position solution.  Works on u-blox 6 and M8.
 class NavPosLlh extends Message:
   static ID ::= 0x02
 
+  static DEGREES-SCALING-FACTOR_ ::= 1e7
+
   constructor.private_ payload/ByteArray:
     super.private_ Message.NAV ID payload
 
@@ -1306,11 +1302,11 @@ class NavPosLlh extends Message:
   itow -> int:
     return uint32_ 0
 
-  /** longitude. (1e-7 degrees.) */
+  /** Raw Longitude value returned by the device (Degrees: / 1e7). */
   longitude-raw -> int:
     return int32_ 4
 
-  /** Latitude. (1e-7 degrees.) */
+  /** Raw Latitude value returned by the device (Degrees: / 1e7). */
   latitude-raw    -> int:
     return int32_ 8
 
@@ -1330,13 +1326,13 @@ class NavPosLlh extends Message:
   vertical-accuracy-mm   -> int:
     return uint32_ 24
 
-  // Convenience in float degrees
+  /** Longitude value converted to degrees (as float). */
   longitude-deg -> float:
-    return longitude-raw / 1e7
+    return longitude-raw / DEGREES-SCALING-FACTOR_
 
-  // Convenience in float degrees
+  /** Latitude value converted to degrees (as float). */
   latitude-deg -> float:
-    return latitude-raw / 1e7
+    return latitude-raw / DEGREES-SCALING-FACTOR_
 
   stringify -> string:
     return  "UBX-$class-string_-$id-string_: [Latitude:$(latitude-deg),Longtidude:$(longitude-deg)]"
@@ -1345,8 +1341,8 @@ class NavPosLlh extends Message:
 /**
 The UBX-NAV-SVINFO message.
 
-"Space vehicle info" message (legacy). Present on u-blox 6; kept on M8 for
-  backward compatibility.
+"Space Vehicle INFOrmation" message.  Is legacy, present on u-blox 6 and kept
+  on M8 for backward compatibility.
 */
 class NavSvInfo extends Message:
   static ID ::= 0x30
@@ -1357,12 +1353,12 @@ class NavSvInfo extends Message:
   id-string_ -> string:
     return "SVINFO"
 
-  /** The GPS interval time of week of the navigation epoch. (ms) */
-  itow   -> int:
+  /** The GPS interval time of week of the navigation epoch. (ms). */
+  itow -> int:
     return uint32_ 0
 
   /** Number of channels. */
-  num-ch     -> int:
+  num-ch -> int:
     return uint8_ 4
 
   /** Global flags bitmask.
@@ -1382,7 +1378,8 @@ class NavSvInfo extends Message:
   /**
   How many satellites in the message.
 
-  Introduced for compatibility with NavSat.
+  Function returns $num-ch. Is included to help this 'legacy' class become
+    functionally similar with UBX-NAV-SAT.
   */
   satellite-count -> int:
     return num-ch
@@ -1408,17 +1405,17 @@ class NavPvt extends Message:
   static ID ::= 0x07
 
   /** Unknown GNSS fix. */
-  static FIX-TYPE-UNKNOWN ::= 0
+  static NO-FIX ::= 0
   /** Dead reckoning only. */
-  static FIX-TYPE-DEAD ::= 1
+  static DEAD-RECKONING-ONLY ::= 1
   /** 2D fix. */
-  static FIX-TYPE-2D ::= 2
+  static FIX-2D ::= 2
   /** 3D fix. */
-  static FIX-TYPE-3D ::= 3
-  /** GNSS and dead reckoning. */
-  static FIX-TYPE-GNSS-DEAD ::= 4
+  static FIX-3D ::= 3
+  /** GPS and dead reckoning. */
+  static GPS-DEAD-FIX ::= 4
   /** Time only fix. */
-  static FIX-TYPE-TIME-ONLY ::= 5
+  static TIME-ONLY ::= 5
 
   /** Constructs a poll UBX-NAV-PVT message. */
   constructor.poll:
@@ -1511,7 +1508,7 @@ class NavPvt extends Message:
 
   /**
   The type of fix.
-  One of $FIX-TYPE-UNKNOWN, $FIX-TYPE-DEAD, $FIX-TYPE-2D, $FIX-TYPE-3D, $FIX-TYPE-GNSS-DEAD, $FIX-TYPE-TIME-ONLY.
+  One of $NO-FIX, $DEAD-RECKONING-ONLY, $2D-FIX, $3D-FIX, $GPS-DEAD-FIX, $TIME-ONLY.
   */
   fix-type -> int:
     assert: not payload.is-empty
@@ -1656,17 +1653,17 @@ class NavSol extends Message:
   static ID ::= 0x06
 
   /** Unknown GNSS fix. */
-  static FIX-TYPE-UNKNOWN ::= 0
+  static NO-FIX ::= 0
   /** Dead reckoning only. */
-  static FIX-TYPE-DEAD ::= 1
+  static DEAD-RECKONING-ONLY ::= 1
   /** 2D fix. */
-  static FIX-TYPE-2D ::= 2
+  static FIX-2D ::= 2
   /** 3D fix. */
-  static FIX-TYPE-3D ::= 3
-  /** GNSS and dead reckoning. */
-  static FIX-TYPE-GNSS-DEAD ::= 4
+  static FIX-3D ::= 3
+  /** GPS and dead reckoning. */
+  static GPS-DEAD-FIX ::= 4
   /** Time only fix. */
-  static FIX-TYPE-TIME-ONLY ::= 5
+  static TIME-ONLY ::= 5
 
   /** Constructs a poll UBX-NAV-SOL message. */
   constructor.poll:
@@ -1682,18 +1679,6 @@ class NavSol extends Message:
   is-gnss-fix -> bool:
     return (flags & 0b00000001) != 0
 
-  /* The time in UTC.
-
-  Time is not included in this legacy Message type, although it can be obtained
-    using other message types.  Need to think what to do with this one.  Take out
-    for both, or leave in?  Perhaps remove custom properties (made for human
-    consumption) on the message types, and have the driver worry about
-    presentation of message data...
-
-  utc-time -> Time:
-    return Time.utc year month day h m s --ns=ns
-  */
-
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
     assert: not payload.is-empty
@@ -1702,7 +1687,7 @@ class NavSol extends Message:
   /**
   The fractional GPS interval time of week (in ns) of the navigation epoch.
 
-  Range in ns: -500000..+500000
+  Range in ns: -500000..+500000.
   */
   ftow -> int:
     assert: not payload.is-empty
@@ -1718,14 +1703,14 @@ class NavSol extends Message:
     return int16_ 8
 
   /**
-  Returns if GPS Week number is Valid. (WKNSET)
+  Returns if GPS Week number is Valid. (UBX field: WKNSET.)
   */
   valid-week -> bool:
     week-valid-mask := 0b00000100
     return ((flags & week-valid-mask) >> week-valid-mask.count-trailing-zeros) != 0
 
   /**
-  Returns if GPS Time of Week number is Valid. (TOWSET)
+  Returns if GPS Time of Week number is Valid. (UBX field: TOWSET.)
   */
   valid-time-of-week -> bool:
     time-of-week-valid-mask := 0b00001000
@@ -1735,7 +1720,7 @@ class NavSol extends Message:
   //(iTOW * 1e-3) + (fTOW * 1e-9)
 
   /**
-  Whether DGPS is used.  (diffSoln)
+  Whether DGPS is used.  (UBX field: diffSoln)
   */
   dgps-used -> bool:
     dgps-used-mask := 0b00000010
@@ -1744,8 +1729,7 @@ class NavSol extends Message:
   /**
   The type of fix.
 
-  One of $NavSol.FIX-TYPE-UNKNOWN, $NavSol.FIX-TYPE-DEAD, $NavSol.FIX-TYPE-2D,
-    $NavSol.FIX-TYPE-3D, $NavSol.FIX-TYPE-GNSS-DEAD, $NavSol.FIX-TYPE-TIME-ONLY.
+  One of $NO-FIX, $DEAD-RECKONING-ONLY, $2D-FIX, $3D-FIX, $GPS-DEAD-FIX, $TIME-ONLY.
   */
   fix-type -> int:
     assert: not payload.is-empty
