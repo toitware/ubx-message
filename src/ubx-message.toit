@@ -993,7 +993,9 @@ class SatelliteData:
   health/int
 
   /**
-  Flags. Includes $quality, $orbit-source, $alm-avail, and $ano-avail.  See
+  Flags.
+
+  Includes $quality, $orbit-source, $alm-avail, and $ano-avail.  See
     receiver specification for details.
   */
   flags/int
@@ -1220,20 +1222,21 @@ class MonVer extends Message:
 
   /** Returns true if an extension row exists containing the supplied string. */
   has-extension str/string -> bool:
-    //return (extensions-raw.contains extension-name)
-    return (extensions-raw.any: (it.index-of str) > -1)
+    return extensions-raw.any: it.contains str
 
-  /** If a string exists in the extensions with the supplied text, return the
-  entire line . */
+  /**
+  The entire line of the extension with the given $str.
+
+  Null if this message doesn't have the extension (see $has-extension).
+  */
   extension str/string -> string?:
-    //return (extensions-raw.contains extension-name)
     extensions-raw.any:
       if (it.index-of str) > -1:
         return it
     return null
 
   /*
-  Returns a map of extension string AVPs.
+  A map of extension string AVPs.
 
   This function returns a map of strings with the keyed by the first part, with
     the value being the remainder past the first instance of "=".
@@ -1258,7 +1261,7 @@ class MonVer extends Message:
   */
 
   /**
-  Returns a list of extension strings, if present.
+  A list of extension strings, if present.
 
   If provided by the firmware version on the device, it provides a list of n 30
     byte entries.  Each entry is a NUL-terminated ASCII string.
