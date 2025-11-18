@@ -877,6 +877,7 @@ class NavStatus extends Message:
 
   /**
   Navigation status flags.
+
   See receiver specification for details.
   */
   flags -> int:
@@ -885,15 +886,27 @@ class NavStatus extends Message:
 
   /**
   Fix status information.
-  See receiver specification for details.
+
+  See receiver specification for details. bit[0] = 1 if differential corrections
+    are available.  Bit[7..6] carries map matching status:
+    ```
+    00: none
+    01: valid but not used, i.e. map matching data was received, but was too old
+    10: valid and used, map matching data was applied
+    11: valid and used, map matching data was applied. In case of sensor
+        unavailability map matching data enables dead reckoning. This requires
+        map matched latitude/longitude or heading data
+    ```
   */
-  fix-stat -> int:
+  fix-status -> int:
     assert: not payload.is-empty
     return uint8_ 6
 
   /**
   Additional status information.
-  See receiver specification for details.
+
+  See receiver specification for details.  Contains power-saving mode and
+    spoofing detection information.  Requires PROTVER >= 18.00.
   */
   flags2 -> int:
     assert: not payload.is-empty
@@ -1652,6 +1665,9 @@ Legacy Navigation solution, in ECEF (Earth-Centered, Earth-Fixed cartesian
 class NavSol extends Message:
   static ID ::= 0x06
 
+  static WEEK-VALID-MASK_         ::= 0b00000100
+  static TIME-OF-WEEK-VALID-MASK_ ::= 0b00001000
+
   /** Unknown GNSS fix. */
   static NO-FIX ::= 0
   /** Dead reckoning only. */
@@ -1696,7 +1712,9 @@ class NavSol extends Message:
   /**
   The GPS Week number.
 
-  This is the week number since Jan 6 1980.
+  This is the week number since Jan 6 1980.  This value is not always valid.  A
+    potentially non-zero value can be obtained if it has taken a long time to
+    get a fix.  Test for $has-valid-week before using this value.
   */
   week -> int:
     assert: not payload.is-empty
@@ -1704,17 +1722,17 @@ class NavSol extends Message:
 
   /**
   Returns if GPS Week number is Valid. (UBX field: WKNSET.)
+
+  See $week.
   */
-  valid-week -> bool:
-    week-valid-mask := 0b00000100
-    return ((flags & week-valid-mask) >> week-valid-mask.count-trailing-zeros) != 0
+  has-valid-week -> bool:
+    return ((flags & WEEK-VALID-MASK_) >> WEEK-VALID-MASK_.count-trailing-zeros) != 0
 
   /**
   Returns if GPS Time of Week number is Valid. (UBX field: TOWSET.)
   */
   valid-time-of-week -> bool:
-    time-of-week-valid-mask := 0b00001000
-    return ((flags & time-of-week-valid-mask) >> time-of-week-valid-mask.count-trailing-zeros) != 0
+    return ((flags & TIME-OF-WEEK-VALID-MASK_) >> TIME-OF-WEEK-VALID-MASK_.count-trailing-zeros) != 0
 
   //The precise GPS time of week in seconds is:
   //(iTOW * 1e-3) + (fTOW * 1e-9)
@@ -1822,26 +1840,32 @@ class NavTimeUtc extends Message:
     assert: not payload.is-empty
     return uint32_ 4
 
+  /** UTC time, nanoseconds only. */
   ns -> int:
     assert: not payload.is-empty
     return int32_ 8
 
+  /** UTC time, year only. */
   year -> int:
     assert: not payload.is-empty
     return uint16_ 12
 
+  /** UTC time, month only. */
   month -> int:
     assert: not payload.is-empty
     return uint8_ 14
 
+  /** UTC time, calendar day only. */
   day -> int:
     assert: not payload.is-empty
     return uint8_ 15
 
+  /** UTC time, hours only. */
   h -> int:
     assert: not payload.is-empty
     return uint8_ 16
 
+  /** UTC time, minutes only. */
   m -> int:
     assert: not payload.is-empty
     return uint8_ 17
