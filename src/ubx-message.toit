@@ -1285,7 +1285,7 @@ class MonVer extends Message:
       end++
 
     // Slice bytes [start .. end) and convert to a Toit string.
-    return (payload[start..end]).to-string.trim
+    return (payload[start..end]).to-string
 
 
 /**
