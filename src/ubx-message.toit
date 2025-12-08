@@ -499,7 +499,8 @@ class Message:
         return Message.PACK-MESSAGE-TYPES[cls].get id
     return "0x$(%02x id)"
 
-  /** See $super. */
+  /** Converts object content as string. */
+  // This is the $super.
   stringify -> string:
     return "UBX-$class-string_-$id-string_"
 
@@ -1096,7 +1097,7 @@ class SatelliteData:
 
   /**
   Constructs the satellite data for the given message $payload and data.
-    Parses UBX-NAV-SAT and UBX-NAV-SVINFO sourced Space Vehicles.
+    Parses entire UBX-NAV-SAT and UBX-NAV-SVINFO sourced Space Vehicles.
   */
   constructor .index payload/ByteArray --src-id/int:
 
@@ -1276,6 +1277,9 @@ class MonVer extends Message:
     // Slice bytes [start .. end) and convert to a Toit string.
     return (payload[start..end]).to-string
 
+  /** See $super. */
+  stringify -> string:
+    return "$(super.stringify): $sw-version|$hw-version"
 
 /**
 The UBX-NAV-POSLLH message.
@@ -1330,7 +1334,7 @@ class NavPosLlh extends Message:
     return latitude-raw / DEGREES-SCALING-FACTOR_
 
   stringify -> string:
-    return  "UBX-$class-string_-$id-string_: [Latitude:$(latitude-deg),Longtidude:$(longitude-deg)]"
+    return  "$(super.stringify): [Latitude:$(latitude-deg),Longtidude:$(longitude-deg)]"
 
 
 /**
@@ -1649,9 +1653,10 @@ Legacy Navigation solution, in ECEF (Earth-Centered, Earth-Fixed cartesian
 class NavSol extends Message:
   static ID ::= 0x06
 
-  static DGPS-USED-MASK_          ::= 0b00000010
-  static WEEK-VALID-MASK_         ::= 0b00000100
-  static TIME-OF-WEEK-VALID-MASK_ ::= 0b00001000
+  static FLAGS-GPS-FIX-OK_              ::= 0b00000001 // e.g. is within DOP & ACC Masks.
+  static FLAGS-DGPS-USED-MASK_          ::= 0b00000010
+  static FLAGS-WEEK-VALID-MASK_         ::= 0b00000100
+  static FLAGS-TIME-OF-WEEK-VALID-MASK_ ::= 0b00001000
 
   /** Unknown GNSS fix. */
   static NO-FIX ::= 0
@@ -1678,7 +1683,7 @@ class NavSol extends Message:
 
   /** Whether this is a GNSS fix. */
   is-gnss-fix -> bool:
-    return (flags & 0b00000001) != 0
+    return (flags & FLAGS-GPS-FIX-OK_) != 0
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
@@ -1711,13 +1716,13 @@ class NavSol extends Message:
   See $week.  Time values should not be used until this returns True.
   */
   has-valid-week -> bool:
-    return ((flags & WEEK-VALID-MASK_) >> WEEK-VALID-MASK_.count-trailing-zeros) != 0
+    return ((flags & FLAGS-WEEK-VALID-MASK_) >> FLAGS-WEEK-VALID-MASK_.count-trailing-zeros) != 0
 
   /**
   Whether GPS Time of Week number is Valid. (UBX field: TOWSET.)
   */
   valid-time-of-week -> bool:
-    return ((flags & TIME-OF-WEEK-VALID-MASK_) >> TIME-OF-WEEK-VALID-MASK_.count-trailing-zeros) != 0
+    return ((flags & FLAGS-TIME-OF-WEEK-VALID-MASK_) >> FLAGS-TIME-OF-WEEK-VALID-MASK_.count-trailing-zeros) != 0
 
   //The precise GPS time of week in seconds is:
   //(iTOW * 1e-3) + (fTOW * 1e-9)
@@ -1726,7 +1731,7 @@ class NavSol extends Message:
   Whether DGPS is used.  (UBX field: diffSoln)
   */
   dgps-used -> bool:
-    return ((flags & DGPS-USED-MASK_) >> DGPS-USED-MASK_.count-trailing-zeros) != 0
+    return ((flags & FLAGS-DGPS-USED-MASK_) >> FLAGS-DGPS-USED-MASK_.count-trailing-zeros) != 0
 
   /**
   The type of fix.
@@ -1824,7 +1829,7 @@ class NavTimeUtc extends Message:
     return Time.utc year month day h m s --ns=ns
 
   /** UTC Time accuracy estimate, in nanoseconds. */
-  time-acc -> int:
+  time-accuracy-est -> int:
     assert: not payload.is-empty
     return uint32_ 4
 
@@ -1916,6 +1921,8 @@ class NavTimeUtc extends Message:
   */
   utc-standard -> int:
     return (valid-flags-raw >> 4) & 0x0F
+
+
 
 /**
 The UBX-CFG-TP5 message.
@@ -2017,8 +2024,6 @@ class CfgTp5 extends Message:
     if use-utc: flags |= FLAG-UTC-GRID
     put-uint32_ 28 flags
 
-
-
   id-string_ -> string:
     return "TP5"
 
@@ -2043,9 +2048,6 @@ class CfgTp5 extends Message:
 
   duty-nano -> int:
     return uint32_ 16
-
-
-
 
 /**
 The UBX-CFG-NAV5 message.
