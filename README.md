@@ -28,15 +28,14 @@ version they support will be assumed this way:
 
 The implemented driver will need to determine/assume a suitable protocol version
 for the device, and provide any guardrails necessary.  The ubx-message library
-will not perform this.  (This will be implmemented with Toit
-[ublox-gnss-driver](https://github.com/toitware/ublox-gnss-driver)).
+does not perform this.
 
 ### Proposed logic for downlevel devices
 Devices earlier than M8 do not refer to the ubx protocol version when
 determining support - they referred to software versions.  Starting with the M8,
 the protocol was given its own versioning, which started with `15.0`.  Devices
 released before this are referred to as 'legacy', and some assumptions are made
-about the equivalent protocol version they support
+about the equivalent protocol version they support.
 
 The following logic is proposed for the supported protocol version, if the
 device itself does not return the information specifically in its version
@@ -59,7 +58,7 @@ else:
 ```
 
 > [!IMPORTANT]
-> The minimum protocol version requried is stored in `MIN-PROTVER` (string) for
+> The minimum protocol version required is stored in `MIN-PROTVER` (string) for
 > each message.  As this parser was originally written for the M8, the default
 > protocol version for all message types is **`15.0`**.
 >
@@ -76,7 +75,7 @@ else:
 > [!WARNING]
 > While the groundwork for the framework of message types and parsing is
 > complete, the exact message types you might need may not yet be implemented.
-> This is most often largely due to a lack of hardware available to testers...
+> This is most often largely due to a lack of hardware available to testers.
 > Please create an [issue](https://github.com/toitware/ubx-message/issues) or
 > contact on [discord](https://chat.toit.io).
 
