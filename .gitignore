@@ -1,0 +1,36 @@
+## For more: https://github.com/github/gitignore
+
+## To keep reference material and backups with source:
+.reference/
+.backups/
+
+## Toit 
+.packages/
+.jaguar
+
+## IDEs
+# VS Code
+.vscode/
+# Eclipse
+.project
+.classpath
+.settings/
+
+## OS Junk 
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+# Linux
+*~
+.nfs*
+
+## Environment & Secrets
+.env
+.env.*
+
