@@ -378,6 +378,8 @@ class Message:
         return CfgGnss.private_ payload
       if id == CfgInf.ID:
         return CfgInf.private_ payload
+      if id == CfgMsg.ID:
+        return CfgMsg.private_ payload
 
     if cls == Message.INF:
       if id == InfError.ID:
