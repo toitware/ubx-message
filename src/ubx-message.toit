@@ -2571,7 +2571,7 @@ class CfgGnss extends Message:
 
     blocks.size.repeat: | i/int |
       block := blocks[i]  // Expect map with fields: "gnssId", "resTrkCh", "maxTrkCh", "flags"
-      assert: block.size = 5
+      assert: block.size == 5
       base := 4 + 8 * i
       put-uint8_ (base + BLOCK-GNSSID_) block["gnssId"]
       put-uint8_ (base + BLOCK-RESTRKCH_) block["resTrkCh"]
@@ -2769,11 +2769,11 @@ class CfgInf extends Message:
       6.repeat:
         if enable == null: put-uint8_ (4 + it) type
         else if enable: put-uint8_ (4 + it) ((uint8_ (4 + it)) | type)
-        else: put-uint8_ (4 + it) ((uint8_ (4 + it)) & ~type)
+        else: put-uint8_ (4 + it) ((uint8_ (4 + it)) & (~type & 0xFF))
     else:
       if enable == null: put-uint8_ (4 + port) type
       else if enable: put-uint8_ (4 + port) ((uint8_ (4 + port)) | type)
-      else: put-uint8_ (4 + port) ((uint8_ (4 + port)) & ~type)
+      else: put-uint8_ (4 + port) ((uint8_ (4 + port)) & (~type & 0xFF))
 
   /**
   Gets the mask byte for the given $port.
