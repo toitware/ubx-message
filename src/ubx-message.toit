@@ -576,23 +576,23 @@ class AckAck extends Message:
   constructor.private_ cls id:
     super.private_ Message.ACK ID #[cls, id]
 
-  /** Constructs a dummy acknowledge message. */
+  /** Construct an instance with bytes from a retrieved message. */
   constructor.private_ payload:
     super.private_ Message.ACK ID payload
 
-  /** The class ID of the acknowledged message. */
+  /** The class ID of the original message being ACK'ed. */
   class-id -> int:
     return uint8_ 0
 
-  /** The class ID (converted to text) of the acknowledged message. */
+  /** The class ID (converted to text) of the ACK'ed message. */
   class-id-text -> string:
     return cls-string_ class-id
 
-  /** The message ID of the acknowledged message. */
+  /** The message ID of the original message being ACK'ed. */
   message-id -> int:
     return uint8_ 1
 
-  /** The message ID (converted to text, if known) of the acknowledged message. */
+  /** The message ID (converted to text, if known) of the ACK'ed message. */
   message-id-text -> string:
     return id-string_ class-id message-id
 
@@ -624,22 +624,23 @@ class AckNak extends Message:
   constructor.private_ cls id:
     super.private_ Message.ACK ID #[cls, id]
 
+  /** Construct an instance with bytes from a retrieved message. */
   constructor.private_ bytearray/ByteArray:
     super.private_ Message.ACK ID bytearray
 
-  /** The class ID of the NAK message. */
+  /** The class ID of the original message being NAK'ed. */
   class-id -> int:
     return uint8_ 0
 
-  /** The class ID (converted to text) of the NAK message. */
+  /** The class ID (converted to text) of the NAK'ed message. */
   class-id-text -> string:
     return cls-string_ class-id
 
-  /** The message ID of the NAK message. */
+  /** The message ID of the original message being NAK'ed. */
   message-id -> int:
     return uint8_ 1
 
-  /** The message ID (converted to text, if known) of the NAK message. */
+  /** The message ID (converted to text, if known) of the NAK'ed message. */
   message-id-text -> string:
     return id-string_ class-id message-id
 
@@ -714,8 +715,10 @@ class CfgMsg extends Message:
   constructor.poll --msg-class --msg-id:
     super.private_ Message.CFG ID #[msg-class, msg-id]
 
-  /** Set all port rates at once using 6*byte $rates byte array. */
-  constructor.per-port --msg-class --msg-id --rates/ByteArray:
+  /** Set all port rates at once using 6*byte byte array ($rates). */
+  constructor.per-port --msg-class/int --msg-id/int --rates/ByteArray:
+    assert: 0 <= msg-class <= 255
+    assert: 0 <= msg-id <= 255
     assert: rates.size == 6
     super.private_ Message.CFG ID (#[msg-class, msg-id] + rates)
 
