@@ -687,7 +687,7 @@ class CfgMsg extends Message:
   static MAX-PROTVER/string := ""
 
   /**
-  Constructs a configuration message.
+  Constructs a configuration-rate message.
 
   When sent to the receiver, the message with the given $msg-class and
     $msg-id will be sent at the given $rate.
@@ -699,7 +699,7 @@ class CfgMsg extends Message:
   constructor.poll --msg-class --msg-id:
     super.private_ Message.CFG ID #[msg-class, msg-id]
 
-  /** Set per-port rates. */
+  /** Set all port rates at once. */
   constructor.per-port --msg-class --msg-id --rates/ByteArray:
     assert: rates.size == 6
     super.private_ Message.CFG ID (#[msg-class, msg-id] + rates)
@@ -852,6 +852,19 @@ Resets the receiver.
 class CfgRst extends Message:
   /** The UBX-CFG-RST message ID. */
   static ID ::= 0x04
+
+  /** Reset mode 00: Hardware reset (watchdog) immediately */
+  static RESET-MODE-HW-WD-IMMEDIATE ::= 0x00
+  /** Reset mode 01: Controlled software reset */
+  static RESET-MODE-SW-CONTROLLED ::= 0x01
+  /** Reset mode 02: Controlled software reset (GNSS only) */
+  static RESET-MODE-SW-CONTROLLED-GNSS-ONLY ::= 0x02
+  /** Reset mode 04: Hardware reset (watchdog) after shutdown */
+  static RESET-MODE-HW-RESET-WD-AFTER-SHUTDOWN ::= 0x04
+  /** Reset mode 08: Controlled GNSS stop */
+  static RESET-MODE-CONTROLLED-GNSS-STOP ::= 0x08
+  /** Reset mode 09: Controlled GNSS start */
+  static RESET-MODE-CONTROLLED-GNSS-START ::= 0x09
 
   /**
   The minimum protocol version for the message type.
@@ -2562,6 +2575,8 @@ class CfgInf extends Message:
   static PROTO-NMEA ::= 1
 
   // infMsgMask bits (per port).
+  static MASK-NONE    ::= 0b00000000
+  static MASK-ALL     ::= 0b00011111
   static MASK-ERROR   ::= 0b00000001
   static MASK-WARNING ::= 0b00000010
   static MASK-NOTICE  ::= 0b00000100
@@ -2578,6 +2593,7 @@ class CfgInf extends Message:
   static PORT-RES5  ::= 5
 
   static PACK-PORT-TYPES := {
+    PORT-ALL: "ALL",
     PORT-DDC:  "DDC",
     PORT-UART1:"UART1",
     PORT-UART2:"UART2",
@@ -2604,54 +2620,29 @@ class CfgInf extends Message:
   /**
   Poll for the current INF configuration for a given protocol.
 
-  protocol-id = one of $PROTO-UBX (0, default) to query UBX-INF-* enable masks,
-    or $PROTO-NMEA (1) to query NMEA informational enable masks.
+  $protocol-id = one of $PROTO-UBX (0, default) to query UBX-INF-* enable masks,
+    or $PROTO-NMEA (1) to query NMEA informational enable masks.  Returned
+    message is fixed for the protocol requested.
   */
   constructor.poll --protocol-id/int=PROTO-UBX:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     super.private_ Message.CFG ID #[protocol-id]
 
+  /**
+  Construct a blank instance.
+
+  Warning: If sent, would overwrite current configuration, not edit it.  To edit
+    the current configuration, poll for this message, and use the methods on
+    the UBX-CFG-INF response message.
+  */
+  constructor --protocol-id/int=PROTO-UBX:
+    assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
+    super.private_ Message.CFG ID (ByteArray 10)
+    put-uint8_ 0 protocol-id
+
   /** Construct an instance with bytes from a retrieved message. */
   constructor.private_ payload/ByteArray:
     super.private_ Message.CFG ID payload
-
-  /**
-  Configure enable/disable on a specific message type for a specific port.
-
-  Leaves other ports unchanged/disabled (0).  Ex: enable ERROR+WARNING on UART1:
-  ```
-  CfgInf.enable --protocol-id=CfgInf.PROTO-UBX --port=CfgInf.PORT-UART1
-    --mask=(CfgInf.MASK-ERROR | CfgInf.MASK-WARNING)
-  ```
-  */
-  set --protocol-id/int=PROTO-UBX --port/int=-1 --mask/int --replace=false:
-    assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
-    assert: -1 <= port < 6
-    assert: 0 <= mask <= 0xFF
-
-    // protocolID + reserved.
-    put-uint8_ 0 protocol-id
-    put-uint8_ 1 0
-    put-uint8_ 2 0
-    put-uint8_ 3 0
-
-    // Set infMsgMask for $port.  (if $port == -1, do for all 6.)
-    if port == -1:  //
-      6.repeat:
-        payload[4 + it] = payload[4 + it] | mask
-    else:
-      if replace:
-        payload[4 + port] = mask
-      else:
-        payload[4 + port] = payload[4 + port] | mask
-
-  /**
-  Method disables all messages for a specific port
-
-  Omit $port to disable all messages for all ports.
-  */
-  disable --protocol-id/int=PROTO-UBX --port/int=-1:
-    set --protocol-id=protocol-id --port=port --mask=0 --replace=true
 
   id-string_ -> string:
     return "INF"
@@ -2661,45 +2652,119 @@ class CfgInf extends Message:
     return payload.size == 1
 
   /**
-  Returns which protocol this message is about (0=UBX, 1=NMEA).
+  Returns which protocol of this (0=UBX, 1=NMEA).
   */
   protocol-id -> int:
     return uint8_ 0
 
-  /** Returns the per-port mask byte for the given port index [0..5]. */
-  mask port/int -> int:
+  /**
+  Configure enable/disable on a specific message type for a specific port.
+
+  Omit $port to set for all types. Use --enable or --no-enable to set.
+  */
+  set-port-type --port/int=-1 --type/int --enable/bool?=true:
+    assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
+    assert: -1 <= port < 6
+    assert: 0 <= type <= 0xFF
+
+    // if $enable is null, replace instead of adjusting the existing value.
+    if port == -1:  //
+      6.repeat:
+        if enable == null: put-uint8_ (4 + it) type
+        else if enable: put-uint8_ (4 + it) ((uint8_ (4 + it)) | type)
+        else: put-uint8_ (4 + it) ((uint8_ (4 + it)) & ~type)
+    else:
+      if enable == null: put-uint8_ (4 + port) type
+      else if enable: put-uint8_ (4 + port) ((uint8_ (4 + port)) | type)
+      else: put-uint8_ (4 + port) ((uint8_ (4 + port)) & ~type)
+
+  /**
+  Gets the mask byte for the given $port.
+
+  $port must be one of $PORT-DDC(0), $PORT-UART1(1), $PORT-UART2(2),
+    $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
+  */
+  get-port-type-mask port/int -> int:
     assert: payload.size >= 10
     assert: 0 <= port < 6
     return uint8_ (4 + port)
 
+  /**
+  Sets the mask byte for outright the given $port.
+
+  $port must be one of  $PORT-ALL(-1), $PORT-DDC(0), $PORT-UART1(1),
+    $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
+  */
+  set-port-type-mask port/int --mask/int -> none:
+    assert: payload.size >= 10
+    assert: -1 <= port < 6
+    set-port-type --port=port --enable=null --type=mask
+
   // Convenience per-port accessors (only valid for Get/Set form).
-  mask-ddc   -> int: return mask PORT-DDC
-  mask-uart1 -> int: return mask PORT-UART1
-  mask-uart2 -> int: return mask PORT-UART2
-  mask-usb   -> int: return mask PORT-USB
-  mask-spi   -> int: return mask PORT-SPI
+  get-type-mask-ddc   -> int: return get-port-type-mask PORT-DDC
+  get-type-mask-uart1 -> int: return get-port-type-mask PORT-UART1
+  get-type-mask-uart2 -> int: return get-port-type-mask PORT-UART2
+  get-type-mask-usb   -> int: return get-port-type-mask PORT-USB
+  get-type-mask-spi   -> int: return get-port-type-mask PORT-SPI
+
+  // Convenience per-port accessors (only valid for Get/Set form).
+  set-type-mask-ddc   mask/int -> none: set-port-type-mask PORT-DDC --mask=mask
+  set-type-mask-uart1 mask/int -> none: set-port-type-mask PORT-UART1 --mask=mask
+  set-type-mask-uart2 mask/int -> none: set-port-type-mask PORT-UART2 --mask=mask
+  set-type-mask-usb   mask/int -> none: set-port-type-mask PORT-USB --mask=mask
+  set-type-mask-spi   mask/int -> none: set-port-type-mask PORT-SPI --mask=mask
 
   // Helpers for checking whether a given INF type is enabled on a port.
-  error-enabled   port/int -> bool: return (mask port) & MASK-ERROR   != 0
-  warning-enabled port/int -> bool: return (mask port) & MASK-WARNING != 0
-  notice-enabled  port/int -> bool: return (mask port) & MASK-NOTICE  != 0
-  test-enabled    port/int -> bool: return (mask port) & MASK-TEST    != 0
-  debug-enabled   port/int -> bool: return (mask port) & MASK-DEBUG   != 0
+  error-enabled   port/int -> bool: return (get-port-type-mask port) & MASK-ERROR   != 0
+  warning-enabled port/int -> bool: return (get-port-type-mask port) & MASK-WARNING != 0
+  notice-enabled  port/int -> bool: return (get-port-type-mask port) & MASK-NOTICE  != 0
+  test-enabled    port/int -> bool: return (get-port-type-mask port) & MASK-TEST    != 0
+  debug-enabled   port/int -> bool: return (get-port-type-mask port) & MASK-DEBUG   != 0
 
+  // Helpers for enabling a given INF type on a port.
+  enable-error   port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-ERROR
+  enable-warning port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-WARNING
+  enable-notice  port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-NOTICE
+  enable-test    port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-TEST
+  enable-debug   port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-DEBUG
+  /**
+  Disable all message types for a specific port.
+
+  Omit $port to set for all ports.
+  */
+  enable-all --port/int=-1:
+    set-port-type --port=port --enable=null --type=MASK-ALL
+
+  // Helpers for disabling a given INF type on a port.
+  disable-error   port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-ERROR
+  disable-warning port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-WARNING
+  disable-notice  port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-NOTICE
+  disable-test    port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-TEST
+  disable-debug   port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-DEBUG
+  /**
+  Disable all message types for a specific port.
+
+  Omit $port to set for all ports.
+  */
+  disable-all --port/int=-1:
+    set-port-type --port=port --enable=null --type=MASK_NONE
+
+  /** Return the string name of this messages' protocol. */
   proto-string_ -> string:
     if protocol-id == PROTO-UBX: return "UBX"
     if protocol-id == PROTO-NMEA: return "NMEA"
     return "UNKNOWN($protocol-id)"
 
+  /** Return the string name of the given port. */
   port-string_ port/int -> string:
     assert: -1 <= port < 6
     return PACK-PORT-TYPES[port]
 
   /** See $super. */
   stringify -> string:
-    out-str := "$(super.stringify): $(proto-string_)"
+    out-str := "$(super.stringify): [$(proto-string_)]"
     if is-poll:
-      return "$out-str|(poll)"
+      return "$out-str (poll)"
     6.repeat:
       out-str += "|$(port-string_ it)=0x$(%02x payload[4 + it])"
     return out-str
