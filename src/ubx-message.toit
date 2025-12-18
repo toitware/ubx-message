@@ -2629,11 +2629,12 @@ class CfgInf extends Message:
     super.private_ Message.CFG ID #[protocol-id]
 
   /**
-  Construct a blank instance.
+  Construct a blank instance of UBX-CFG-INF.
 
-  Warning: If sent, would overwrite current configuration, not edit it.  To edit
-    the current configuration, poll for this message, and use the methods on
-    the UBX-CFG-INF response message.
+  Warning: If sent, configurations present in this message would overwrite the
+    current configuration, not edit it.  To edit the current configuration,
+    poll for this message, and use the methods in the response message.  Then
+    send that message back as a configuration message.
   */
   constructor --protocol-id/int=PROTO-UBX:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
