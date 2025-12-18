@@ -668,11 +668,11 @@ class CfgMsg extends Message:
   static PACK-PORT-TYPES := {
     PORT-ALL: "ALL",
     PORT-DDC: "DDC",
-    PORT-UART1:"UART1",
-    PORT-UART2:"UART2",
-    PORT-USB:"USB",
-    PORT-SPI:"SPI",
-    PORT-RES5:"RES5",
+    PORT-UART1: "UART1",
+    PORT-UART2: "UART2",
+    PORT-USB: "USB",
+    PORT-SPI: "SPI",
+    PORT-RES5: "RES5",
   }
 
   /**
@@ -842,12 +842,12 @@ class CfgPrt extends Message:
 
   static PACK-PORT-TYPES := {
     PORT-ALL: "ALL",
-    PORT-DDC:  "DDC",
-    PORT-UART1:"UART1",
-    PORT-UART2:"UART2",
-    PORT-USB:"USB",
-    PORT-SPI:"SPI",
-    PORT-RES5:"RES5",
+    PORT-DDC: "DDC",
+    PORT-UART1: "UART1",
+    PORT-UART2: "UART2",
+    PORT-USB: "USB",
+    PORT-SPI: "SPI",
+    PORT-RES5: "RES5",
   }
 
   // Todo: expose these on the constructor.
@@ -1026,6 +1026,16 @@ class NavStatus extends Message:
   /** Time only fix. */
   static TIME-ONLY ::= 5
 
+  /** Fix Types for Lookup*/
+  static PACK-FIX-TYPE_ ::= {
+    NO-FIX: "NO-FIX",
+    DEAD-RECKONING-ONLY: "DEAD-RECKONING-ONLY",
+    FIX-2D: "FIX-2D",
+    FIX-3D: "FIX-3D",
+    GPS-DEAD-FIX: "GPS-DEAD-FIX",
+    TIME-ONLY: "TIME-ONLY",
+  }
+
   /** Constructs a message to poll for a UBX-NAV-STATUS message. */
   constructor.poll:
     super.private_ Message.NAV ID #[]
@@ -1043,8 +1053,21 @@ class NavStatus extends Message:
 
   One of $NO-FIX, $DEAD-RECKONING-ONLY, $FIX-2D, $FIX-3D, $GPS-DEAD-FIX, $TIME-ONLY.
   */
-  gps-fix -> int:
+  fix-type -> int:
     return uint8_ 4
+
+  // Deprecated - switched to use naming convention from later message type.
+  gps-fix -> int: return fix-type
+
+  /**
+  The current fix type in string form.
+
+  One of "NO-FIX", "DEAD-RECKONING-ONLY", "FIX-2D", "FIX-3D", "GPS-DEAD-FIX",
+    "TIME-ONLY", or "UNKNOWN" in case of error or unexpected output.
+  */
+  fix-type-text fixtype=fix-type -> string:
+    return PACK-FIX-TYPE_.get fixtype --if-absent=:
+      return "UNKNOWN"
 
   /**
   Navigation status flags.
@@ -1874,6 +1897,16 @@ class NavSol extends Message:
   /** Time only fix. */
   static TIME-ONLY ::= 5
 
+  /** Fix Types for Lookup*/
+  static PACK-FIX-TYPE_ ::= {
+    NO-FIX: "NO-FIX",
+    DEAD-RECKONING-ONLY: "DEAD-RECKONING-ONLY",
+    FIX-2D: "FIX-2D",
+    FIX-3D: "FIX-3D",
+    GPS-DEAD-FIX: "GPS-DEAD-FIX",
+    TIME-ONLY: "TIME-ONLY",
+  }
+
   /** Constructs a poll UBX-NAV-SOL message. */
   constructor.poll:
     super.private_ Message.NAV ID #[]
@@ -1937,6 +1970,16 @@ class NavSol extends Message:
   */
   fix-type -> int:
     return uint8_ 10
+
+  /**
+  The current fix type in string form.
+
+  One of "NO-FIX", "DEAD-RECKONING-ONLY", "FIX-2D", "FIX-3D", "GPS-DEAD-FIX",
+    "TIME-ONLY", or "UNKNOWN" in case of error or unexpected output.
+  */
+  fix-type-text fixtype=fix-type -> string:
+    return PACK-FIX-TYPE_.get fixtype --if-absent=:
+      return "UNKNOWN"
 
   /**
   Fix status flags.
@@ -2653,12 +2696,12 @@ class CfgInf extends Message:
 
   static PACK-PORT-TYPES := {
     PORT-ALL: "ALL",
-    PORT-DDC:  "DDC",
-    PORT-UART1:"UART1",
-    PORT-UART2:"UART2",
-    PORT-USB:"USB",
-    PORT-SPI:"SPI",
-    PORT-RES5:"RES5",
+    PORT-DDC: "DDC",
+    PORT-UART1: "UART1",
+    PORT-UART2: "UART2",
+    PORT-USB: "USB",
+    PORT-SPI: "SPI",
+    PORT-RES5: "RES5",
   }
 
   /**
