@@ -769,20 +769,20 @@ class CfgMsg extends Message:
     else:
       put-uint8_ (2 + port) rate
 
-  // Convenience per-port accessors (only valid for Get/Set form).
-  get-rate-ddc   -> int: return get-rate PORT-DDC
+  // Convenience per-port setters/getters (only valid for get/set form).
+  get-rate-ddc -> int: return get-rate PORT-DDC
   get-rate-uart1 -> int: return get-rate PORT-UART1
   get-rate-uart2 -> int: return get-rate PORT-UART2
-  get-rate-usb   -> int: return get-rate PORT-USB
-  get-rate-spi   -> int: return get-rate PORT-SPI
-  get-rate-res5  -> int: return get-rate PORT-RES5
+  get-rate-usb -> int: return get-rate PORT-USB
+  get-rate-spi -> int: return get-rate PORT-SPI
+  get-rate-res5 -> int: return get-rate PORT-RES5
 
-  set-rate-ddc   rate/int -> none: set-rate PORT-DDC --rate=rate
+  set-rate-ddc rate/int -> none: set-rate PORT-DDC --rate=rate
   set-rate-uart1 rate/int -> none: set-rate PORT-UART1 --rate=rate
   set-rate-uart2 rate/int -> none: set-rate PORT-UART2 --rate=rate
-  set-rate-usb   rate/int -> none: set-rate PORT-USB --rate=rate
-  set-rate-spi   rate/int -> none: set-rate PORT-SPI --rate=rate
-  set-rate-res5  rate/int -> none: set-rate PORT-RES5 --rate=rate
+  set-rate-usb rate/int -> none: set-rate PORT-USB --rate=rate
+  set-rate-spi rate/int -> none: set-rate PORT-SPI --rate=rate
+  set-rate-res5 rate/int -> none: set-rate PORT-RES5 --rate=rate
 
   /** See $super. */
   stringify -> string:
@@ -2790,7 +2790,7 @@ class CfgInf extends Message:
     assert: -1 <= port <= 5
     set-port-type --port=port --enable=null --type=mask
 
-  // Convenience per-port accessors (only valid for Get/Set form).
+  // Convenience per-port getters/setters (only valid for Get/Set form).
   get-type-mask-ddc -> int: return get-port-type-mask PORT-DDC
   get-type-mask-uart1 -> int: return get-port-type-mask PORT-UART1
   get-type-mask-uart2 -> int: return get-port-type-mask PORT-UART2
@@ -2798,7 +2798,6 @@ class CfgInf extends Message:
   get-type-mask-spi -> int: return get-port-type-mask PORT-SPI
   get-type-mask-res5 -> int: return get-port-type-mask PORT-RES5
 
-  // Convenience per-port accessors (only valid for Get/Set form).
   set-type-mask-ddc mask/int -> none: set-port-type-mask PORT-DDC --mask=mask
   set-type-mask-uart1 mask/int -> none: set-port-type-mask PORT-UART1 --mask=mask
   set-type-mask-uart2 mask/int -> none: set-port-type-mask PORT-UART2 --mask=mask
@@ -2828,11 +2827,11 @@ class CfgInf extends Message:
     set-port-type --port=port --enable=null --type=MASK-ALL
 
   // Helpers for disabling a given INF type on a port.
-  disable-error   port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-ERROR
+  disable-error port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-ERROR
   disable-warning port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-WARNING
-  disable-notice  port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-NOTICE
-  disable-test    port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-TEST
-  disable-debug   port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-DEBUG
+  disable-notice port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-NOTICE
+  disable-test port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-TEST
+  disable-debug port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-DEBUG
   /**
   Disable all message types for a specific port.
 
