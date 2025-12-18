@@ -526,7 +526,6 @@ class Message:
   /** Helper to return an uint32 from payload index. */
   uint32_ index --payload=payload -> int: return LITTLE-ENDIAN.uint32 payload index
 
-
   /** Helper to insert an int8 into payload index. */
   put-int8_ index value --payload=payload -> none:
     LITTLE-ENDIAN.put-int8 payload index value
@@ -626,7 +625,6 @@ class AckNak extends Message:
   */
   static MAX-PROTVER/string := ""
 
-
   /** Constructs a dummy NAK message. */
   constructor.private_ cls id:
     super.private_ Message.ACK ID #[cls, id]
@@ -671,6 +669,25 @@ class CfgMsg extends Message:
   /** The UBX-CFG-MSG message ID. */
   static ID ::= 0x01
 
+  /** Static port type constants. */
+  static PORT-ALL   ::= -1  // Not a valid port identifier, used for config.
+  static PORT-DDC   ::= 0
+  static PORT-UART1 ::= 1
+  static PORT-UART2 ::= 2
+  static PORT-USB   ::= 3
+  static PORT-SPI   ::= 4
+  static PORT-RES5  ::= 5
+
+  static PACK-PORT-TYPES := {
+    PORT-ALL: "ALL",
+    PORT-DDC:  "DDC",
+    PORT-UART1:"UART1",
+    PORT-UART2:"UART2",
+    PORT-USB:"USB",
+    PORT-SPI:"SPI",
+    PORT-RES5:"RES5",
+  }
+
   /**
   The minimum protocol version for the message type.
 
@@ -687,26 +704,102 @@ class CfgMsg extends Message:
   static MAX-PROTVER/string := ""
 
   /**
-  Constructs a configuration-rate message.
+  Constructs a blank configuration-rate message.
 
-  When sent to the receiver, the message with the given $msg-class and
-    $msg-id will be sent at the given $rate.
+  Examine/configure this message using the supplied getters and setters.  If
+    sent to the device it may overwrite the rates for all ports for the
+    specified message type.
+
+  In order to edit rates (as opposed to replacing them) poll for this message
+    first.  Then change the required rates on the reply message, and send it
+    back.
   */
-  constructor.message-rate --msg-class --msg-id --rate:
-    super.private_ Message.CFG ID #[msg-class, msg-id, rate]
+  constructor.message-rate --msg-class --msg-id --rate/int --port/int=-1:
+    assert: 0 <= msg-class <= 255
+    assert: 0 <= msg-id <= 255
+    assert: 0 <= rate <= 255
+    super.private_ Message.CFG ID (ByteArray 6 --initial=0x00)
+    put-uint8_ 0 msg-class
+    put-uint8_ 1 msg-id
+    set-rate port --rate=rate
 
   /** Poll the configuration. */
   constructor.poll --msg-class --msg-id:
     super.private_ Message.CFG ID #[msg-class, msg-id]
 
-  /** Set all port rates at once. */
+  /** Set all port rates at once using 6*byte $rates byte array. */
   constructor.per-port --msg-class --msg-id --rates/ByteArray:
     assert: rates.size == 6
     super.private_ Message.CFG ID (#[msg-class, msg-id] + rates)
 
+  /** Construct an instance with bytes from a retrieved message. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.CFG ID payload
+
   id-string_ -> string:
     return "MSG"
 
+  /** True if this is a poll message (2-byte payload). */
+  is-poll -> bool:
+    return payload.size == 2
+
+  /** Return the string name of the given port. */
+  port-string_ port/int -> string:
+    assert: -1 <= port <= 5
+    return PACK-PORT-TYPES[port]
+
+  /**
+  Gets the rate for the message type for the given $port.
+
+  $port must be one of $PORT-DDC(0), $PORT-UART1(1), $PORT-UART2(2),
+    $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
+  */
+  get-rate port/int -> int:
+    assert: payload.size == 8
+    assert: 0 <= port <= 5
+    return uint8_ (port + 2)
+
+  /**
+  Sets the rate for the message type for the specified $port.
+
+  Omit $port to set for all types.
+  */
+  set-rate port/int=-1 --rate/int:
+    assert: payload.size == 8
+    assert: -1 <= port <= 5
+    assert: 0 <= rate <= 0xFF
+
+    // if $enable is null, replace instead of adjusting the existing value.
+    if port == -1:  //
+      6.repeat:
+        put-uint8_ (2 + it) rate
+    else:
+      put-uint8_ (2 + port) rate
+
+  // Convenience per-port accessors (only valid for Get/Set form).
+  get-rate-ddc   -> int: return get-rate PORT-DDC
+  get-rate-uart1 -> int: return get-rate PORT-UART1
+  get-rate-uart2 -> int: return get-rate PORT-UART2
+  get-rate-usb   -> int: return get-rate PORT-USB
+  get-rate-spi   -> int: return get-rate PORT-SPI
+  get-rate-res5  -> int: return get-rate PORT-RES5
+
+  set-rate-ddc   rate/int -> none: set-rate PORT-DDC --rate=rate
+  set-rate-uart1 rate/int -> none: set-rate PORT-UART1 --rate=rate
+  set-rate-uart2 rate/int -> none: set-rate PORT-UART2 --rate=rate
+  set-rate-usb   rate/int -> none: set-rate PORT-USB --rate=rate
+  set-rate-spi   rate/int -> none: set-rate PORT-SPI --rate=rate
+  set-rate-res5  rate/int -> none: set-rate PORT-RES5 --rate=rate
+
+  /** See $super. */
+  stringify -> string:
+    out-str := "$(super.stringify):"
+    if is-poll:
+      return "$out-str (poll)"
+    out-str += "$(port-string_ 0)=0x$(%02x payload[2])"
+    5.repeat:
+      out-str += "|$(port-string_ (it + 1))=0x$(%02x payload[3 + it])"
+    return out-str
 
 /**
 The UBX-CFG-PRT message.
@@ -748,8 +841,23 @@ class CfgPrt extends Message:
   static MAX-PROTVER/string := "23.0"  // Manual says not after this version.
 
   // Common constants (see u-blox docs).
-  static PORT-UART1 ::= 0x01
-  static PORT-UART2 ::= 0x02
+  static PORT-ALL   ::= -1  // Not a valid port identifier, used for config.
+  static PORT-DDC   ::= 0
+  static PORT-UART1 ::= 1
+  static PORT-UART2 ::= 2
+  static PORT-USB   ::= 3
+  static PORT-SPI   ::= 4
+  static PORT-RES5  ::= 5
+
+  static PACK-PORT-TYPES := {
+    PORT-ALL: "ALL",
+    PORT-DDC:  "DDC",
+    PORT-UART1:"UART1",
+    PORT-UART2:"UART2",
+    PORT-USB:"USB",
+    PORT-SPI:"SPI",
+    PORT-RES5:"RES5",
+  }
 
   // Todo: expose these on the constructor.
   // mode bitfield shortcut: 8 data bits, no parity, 1 stop (8N1).
@@ -2584,7 +2692,7 @@ class CfgInf extends Message:
   static MASK-DEBUG   ::= 0b00010000
 
   // Port indices in infMsgMask[6].
-  static PORT-ALL   ::= -1
+  static PORT-ALL   ::= -1  // Not a valid port identifier, used for config.
   static PORT-DDC   ::= 0
   static PORT-UART1 ::= 1
   static PORT-UART2 ::= 2
@@ -2665,7 +2773,7 @@ class CfgInf extends Message:
   */
   set-port-type --port/int=-1 --type/int --enable/bool?=true:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
-    assert: -1 <= port < 6
+    assert: -1 <= port <= 5
     assert: 0 <= type <= 0xFF
 
     // if $enable is null, replace instead of adjusting the existing value.
@@ -2687,7 +2795,7 @@ class CfgInf extends Message:
   */
   get-port-type-mask port/int -> int:
     assert: payload.size >= 10
-    assert: 0 <= port < 6
+    assert: 0 <= port <= 5
     return uint8_ (4 + port)
 
   /**
@@ -2698,36 +2806,38 @@ class CfgInf extends Message:
   */
   set-port-type-mask port/int --mask/int -> none:
     assert: payload.size >= 10
-    assert: -1 <= port < 6
+    assert: -1 <= port <= 5
     set-port-type --port=port --enable=null --type=mask
 
   // Convenience per-port accessors (only valid for Get/Set form).
-  get-type-mask-ddc   -> int: return get-port-type-mask PORT-DDC
+  get-type-mask-ddc -> int: return get-port-type-mask PORT-DDC
   get-type-mask-uart1 -> int: return get-port-type-mask PORT-UART1
   get-type-mask-uart2 -> int: return get-port-type-mask PORT-UART2
-  get-type-mask-usb   -> int: return get-port-type-mask PORT-USB
-  get-type-mask-spi   -> int: return get-port-type-mask PORT-SPI
+  get-type-mask-usb -> int: return get-port-type-mask PORT-USB
+  get-type-mask-spi -> int: return get-port-type-mask PORT-SPI
+  get-type-mask-res5 -> int: return get-port-type-mask PORT-RES5
 
   // Convenience per-port accessors (only valid for Get/Set form).
-  set-type-mask-ddc   mask/int -> none: set-port-type-mask PORT-DDC --mask=mask
+  set-type-mask-ddc mask/int -> none: set-port-type-mask PORT-DDC --mask=mask
   set-type-mask-uart1 mask/int -> none: set-port-type-mask PORT-UART1 --mask=mask
   set-type-mask-uart2 mask/int -> none: set-port-type-mask PORT-UART2 --mask=mask
-  set-type-mask-usb   mask/int -> none: set-port-type-mask PORT-USB --mask=mask
-  set-type-mask-spi   mask/int -> none: set-port-type-mask PORT-SPI --mask=mask
+  set-type-mask-usb mask/int -> none: set-port-type-mask PORT-USB --mask=mask
+  set-type-mask-spi mask/int -> none: set-port-type-mask PORT-SPI --mask=mask
+  set-type-mask-res5 mask/int -> none: set-port-type-mask PORT-RES5 --mask=mask
 
   // Helpers for checking whether a given INF type is enabled on a port.
-  error-enabled   port/int -> bool: return (get-port-type-mask port) & MASK-ERROR   != 0
+  error-enabled  port/int -> bool: return (get-port-type-mask port) & MASK-ERROR   != 0
   warning-enabled port/int -> bool: return (get-port-type-mask port) & MASK-WARNING != 0
-  notice-enabled  port/int -> bool: return (get-port-type-mask port) & MASK-NOTICE  != 0
-  test-enabled    port/int -> bool: return (get-port-type-mask port) & MASK-TEST    != 0
-  debug-enabled   port/int -> bool: return (get-port-type-mask port) & MASK-DEBUG   != 0
+  notice-enabled port/int -> bool: return (get-port-type-mask port) & MASK-NOTICE  != 0
+  test-enabled port/int -> bool: return (get-port-type-mask port) & MASK-TEST    != 0
+  debug-enabled port/int -> bool: return (get-port-type-mask port) & MASK-DEBUG   != 0
 
   // Helpers for enabling a given INF type on a port.
-  enable-error   port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-ERROR
+  enable-error port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-ERROR
   enable-warning port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-WARNING
-  enable-notice  port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-NOTICE
-  enable-test    port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-TEST
-  enable-debug   port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-DEBUG
+  enable-notice port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-NOTICE
+  enable-test port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-TEST
+  enable-debug port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-DEBUG
   /**
   Disable all message types for a specific port.
 
@@ -2758,7 +2868,7 @@ class CfgInf extends Message:
 
   /** Return the string name of the given port. */
   port-string_ port/int -> string:
-    assert: -1 <= port < 6
+    assert: -1 <= port <= 5
     return PACK-PORT-TYPES[port]
 
   /** See $super. */
@@ -2774,8 +2884,8 @@ class CfgInf extends Message:
 /**
 The UBX-INF-ERROR message.
 
-Asynchronous human-readable text message, emitted by the receiver when an error
-  condition occurs.
+Asynchronous human-readable text message, emitted by the receiver (if
+  configured) when an error condition occurs in the UBX firmware.
 
 UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
   (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
@@ -2820,10 +2930,11 @@ class InfError extends Message:
 /**
 The UBX-INF-WARNING message.
 
-Asynchronous human-readable text message, emitted by the receiver for warnings.
+Asynchronous human-readable text message, emitted by the receiver (if
+  configured) for warnings.
 
 UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
-  (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
+  (VALSET 'CFG-INFMSG' keys, or using UBX-CFG-INF M8/older devices).
 */
 class InfWarning extends Message:
   /** The UBX-INF-WARNING message ID. */
@@ -2865,10 +2976,11 @@ class InfWarning extends Message:
 /**
 The UBX-INF-NOTICE message.
 
-Asynchronous human-readable text message, emitted by the receiver for notices.
+Asynchronous human-readable text message, emitted by the receiver for notices
+  (if configured).
 
 UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
-  (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
+  (VALSET 'CFG-INFMSG' keys, or using UBX-CFG-INF M8/older devices).
 */
 class InfNotice extends Message:
   /** The UBX-INF-NOTICE message ID. */
@@ -2910,11 +3022,11 @@ class InfNotice extends Message:
 /**
 The UBX-INF-TEST message.
 
-Asynchronous human-readable text message, emitted by the receiver for test
-  output.
+Asynchronous human-readable text message, emitted by the receiver (if
+  configured) for test output.
 
 UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
-  (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
+  (VALSET 'CFG-INFMSG' keys, or using UBX-CFG-INF M8/older devices).
 */
 class InfTest extends Message:
   /** The UBX-INF-TEST message ID. */
@@ -2956,11 +3068,11 @@ class InfTest extends Message:
 /**
 The UBX-INF-DEBUG message.
 
-Asynchronous human-readable text message, emitted by the receiver for debug
-  output.
+Asynchronous human-readable text message, emitted by the receiver (if
+  configured) for debug output.
 
 UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
-  (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
+  (VALSET 'CFG-INFMSG' keys, or using UBX-CFG-INF M8/older devices).
 */
 class InfDebug extends Message:
   /** The UBX-INF-DEBUG message ID. */
