@@ -158,8 +158,8 @@ class Message:
 
     // ACK (0x05).
     ACK: {
-      0x00: "ACK-NAK",
-      0x01: "ACK-ACK",
+      0x00: "NAK",
+      0x01: "ACK",
     },
 
     // CFG (0x06).
@@ -492,19 +492,19 @@ class Message:
       bytes[bytes.size - 1] = ck-b
     return bytes
 
-  class-string_ -> string:
-    return PACK-CLASSES.get cls --if-absent=:
-      return "0x$(%02x cls)"
+  cls-string_ clsid=cls -> string:
+    return PACK-CLASSES.get clsid --if-absent=:
+      return "0x$(%02x clsid)"
 
-  id-string_ -> string:
-    if Message.PACK-MESSAGE-TYPES.contains cls and
-        Message.PACK-MESSAGE-TYPES[cls].contains id:
-      return Message.PACK-MESSAGE-TYPES[cls].get id
-    return "0x$(%02x id)"
+  id-string_ clsid=cls msgid=id -> string:
+    if Message.PACK-MESSAGE-TYPES.contains clsid and
+        Message.PACK-MESSAGE-TYPES[clsid].contains msgid:
+      return Message.PACK-MESSAGE-TYPES[clsid][msgid]
+    return "0x$(%02x msgid)"
 
   /** See $super. */
   stringify -> string:
-    return "UBX-$class-string_-$id-string_"
+    return "UBX-$cls-string_-$id-string_"
 
   /** Hash code for use as an identifier in a Map. */
   hash-code:
@@ -580,16 +580,13 @@ class AckAck extends Message:
   constructor.private_ payload:
     super.private_ Message.ACK ID payload
 
-  id-string_ -> string:
-    return "ACK"
-
   /** The class ID of the acknowledged message. */
   class-id -> int:
     return uint8_ 0
 
   /** The class ID (converted to text) of the acknowledged message. */
   class-id-text -> string:
-    return Message.PACK-CLASSES[class-id]
+    return cls-string_ class-id
 
   /** The message ID of the acknowledged message. */
   message-id -> int:
@@ -597,15 +594,11 @@ class AckAck extends Message:
 
   /** The message ID (converted to text, if known) of the acknowledged message. */
   message-id-text -> string:
-    output := ""
-    if Message.PACK-MESSAGE-TYPES.contains class-id:
-      if Message.PACK-MESSAGE-TYPES[class-id].contains message-id:
-        output = Message.PACK-MESSAGE-TYPES[class-id][message-id]
-    return output
+    return id-string_ class-id message-id
 
   /** See $super. */
   stringify -> string:
-    return  "$(super.stringify): [$(class-id):$(class-id-text),$(message-id):$(message-id-text)]"
+    return  "$(super.stringify): {0x$(%02x class-id)($(cls-string_ class-id)):0x$(%02x message-id)($(id-string_ class-id message-id))}"
 
 /**
 The UBX-ACK-NAK message.
@@ -634,33 +627,25 @@ class AckNak extends Message:
   constructor.private_ bytearray/ByteArray:
     super.private_ Message.ACK ID bytearray
 
-  id-string_ -> string:
-    return "NAK"
-
   /** The class ID of the NAK message. */
   class-id -> int:
     return uint8_ 0
 
-  /** The class ID (converted to text) of the negative-acknowledge message. */
+  /** The class ID (converted to text) of the NAK message. */
   class-id-text -> string:
-    return Message.PACK-CLASSES[class-id]
+    return cls-string_ class-id
 
   /** The message ID of the NAK message. */
   message-id -> int:
     return uint8_ 1
 
-  /** The message ID (converted to text, if known) of the acknowledged message. */
+  /** The message ID (converted to text, if known) of the NAK message. */
   message-id-text -> string:
-    output := ""
-    if Message.PACK-MESSAGE-TYPES.contains class-id and
-        Message.PACK-MESSAGE-TYPES[class-id].contains message-id:
-      output = Message.PACK-MESSAGE-TYPES[class-id][message-id]
-    return output
+    return id-string_ class-id message-id
 
   /** See $super. */
   stringify -> string:
-    return  "$(super.stringify): [$(class-id):$(class-id-text),$(message-id):$(message-id-text)]"
-
+    return  "$(super.stringify): {0x$(%02x class-id)($(cls-string_ class-id)):0x$(%02x message-id)(:$(id-string_ class-id message-id))}"
 
 /**
 The UBX-CFG-MSG message.
@@ -682,7 +667,7 @@ class CfgMsg extends Message:
 
   static PACK-PORT-TYPES := {
     PORT-ALL: "ALL",
-    PORT-DDC:  "DDC",
+    PORT-DDC: "DDC",
     PORT-UART1:"UART1",
     PORT-UART2:"UART2",
     PORT-USB:"USB",
@@ -738,8 +723,11 @@ class CfgMsg extends Message:
   constructor.private_ payload/ByteArray:
     super.private_ Message.CFG ID payload
 
-  id-string_ -> string:
-    return "MSG"
+  class-id -> int:
+    return uint8_ 0
+
+  message-id -> int:
+    return uint8_ 1
 
   /** True if this is a poll message (2-byte payload). */
   is-poll -> bool:
@@ -795,13 +783,14 @@ class CfgMsg extends Message:
 
   /** See $super. */
   stringify -> string:
-    out-str := "$(super.stringify):"
+    out-str := "$(super.stringify)"
     if is-poll:
-      return "$out-str (poll)"
-    out-str += "$(port-string_ 0)=0x$(%02x payload[2])"
-    5.repeat:
-      out-str += "|$(port-string_ (it + 1))=0x$(%02x payload[3 + it])"
-    return out-str
+      return "$out-str: {poll}"
+    out-str += ": {0x$(%02x class-id)($(cls-string_ class-id)):0x$(%02x message-id)($(id-string_ class-id message-id))}"
+    out-set := []
+    6.repeat:
+      out-set.add "$(port-string_ (it))=0x$(%02x payload[2 + it])"
+    return "$out-str $(out-set.join "|")"
 
 /**
 The UBX-CFG-PRT message.
@@ -1561,7 +1550,7 @@ class NavPosLlh extends Message:
     return latitude-raw / DEGREES-SCALING-FACTOR_
 
   stringify -> string:
-    return  "$(super.stringify): [Latitude:$(latitude-deg),Longtidude:$(longitude-deg)]"
+    return  "$(super.stringify): {latitude:$(latitude-deg),longtidude:$(longitude-deg)}"
 
 
 /**
@@ -2755,9 +2744,6 @@ class CfgInf extends Message:
   constructor.private_ payload/ByteArray:
     super.private_ Message.CFG ID payload
 
-  id-string_ -> string:
-    return "INF"
-
   /** True if this is a poll message (1-byte payload). */
   is-poll -> bool:
     return payload.size == 1
@@ -2915,9 +2901,6 @@ class InfError extends Message:
   constructor.private_ payload/ByteArray:
     super.private_ Message.INF ID payload
 
-  id-string_ -> string:
-    return "ERROR"
-
   /** The informational text payload (NUL-terminated or raw). */
   text -> string:
     return (payload[0..payload.size]).to-string-non-throwing
@@ -2960,9 +2943,6 @@ class InfWarning extends Message:
   /** Construct an instance with bytes from a retrieved message. */
   constructor.private_ payload/ByteArray:
     super.private_ Message.INF ID payload
-
-  id-string_ -> string:
-    return "WARNING"
 
   /** The informational text payload (NUL-terminated or raw). */
   text -> string:
@@ -3007,9 +2987,6 @@ class InfNotice extends Message:
   constructor.private_ payload/ByteArray:
     super.private_ Message.INF ID payload
 
-  id-string_ -> string:
-    return "NOTICE"
-
   /** The informational text payload (NUL-terminated or raw). */
   text -> string:
     return (payload[0..payload.size]).to-string-non-throwing
@@ -3053,9 +3030,6 @@ class InfTest extends Message:
   constructor.private_ payload/ByteArray:
     super.private_ Message.INF ID payload
 
-  id-string_ -> string:
-    return "TEST"
-
   /** The informational text payload (NUL-terminated or raw). */
   text -> string:
     return (payload[0..payload.size]).to-string-non-throwing
@@ -3098,9 +3072,6 @@ class InfDebug extends Message:
   /** Construct an instance with bytes from a retrieved message. */
   constructor.private_ payload/ByteArray:
     super.private_ Message.INF ID payload
-
-  id-string_ -> string:
-    return "DEBUG"
 
   /** The informational text payload (NUL-terminated or raw). */
   text -> string:
