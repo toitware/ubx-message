@@ -207,6 +207,10 @@ class Message:
       0x88: "SENIF",     // M8+.
       0x8D: "SLAS",      // M8+.
       0x93: "BATCH",     // M8+.
+
+      0x8A: "VALSET",    // M8/9+.
+      0x8B: "VALGET",    // M8/9+.
+      0x8C: "VALDEL",    // M8/9+.
     },
 
     // MON (0x0A).
