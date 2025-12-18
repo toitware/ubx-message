@@ -147,6 +147,15 @@ class Message:
       0x61: "IMES",    // M8+.
     },
 
+    // INF (0x04) - INFO messages.
+    INF: {
+      0x00: "ERROR",   // M6+
+      0x01: "WARNING", // M6+
+      0x02: "NOTICE",  // M6+
+      0x03: "TEST",    // M6+
+      0x04: "DEBUG",   // M6+
+    },
+
     // ACK (0x05).
     ACK: {
       0x00: "ACK-NAK",
@@ -363,6 +372,20 @@ class Message:
         return CfgNav5.private_ payload
       if id == CfgGnss.ID:
         return CfgGnss.private_ payload
+      if id == CfgInf.ID:
+        return CfgInf.private_ payload
+
+    if cls == Message.INF:
+      if id == InfError.ID:
+        return InfError.private_ payload
+      if id == InfWarning.ID:
+        return InfWarning.private_ payload
+      if id == InfNotice.ID:
+        return InfNotice.private_ payload
+      if id == InfTest.ID:
+        return InfTest.private_ payload
+      if id == InfDebug.ID:
+        return InfDebug.private_ payload
 
     return Message.private_ cls id payload
 
@@ -2496,3 +2519,412 @@ class CfgGnss extends Message:
     block["maxTrkCh"] = uint8_ (base + BLOCK-MAXTRKCH_)
     block["flags"] = uint32_ (base + BLOCK-FLAGS_)
     return block
+
+
+
+
+/**
+The UBX-CFG-INF message.
+
+This message type polls, gets and sets the configuration for UBX-CFG-* message
+  types.  It controls whether UBX-INF-* (and/or NMEA informational) messages
+  are emitted, and on which interface/port.
+
+  These types are acsynchronous human-readable text messages, emitted
+  by the receiver when an error condition occurs.  The UBX-INF-* message types
+  cannot be directly polled for.
+
+This message type is used for M8 or lower devices, for higher devices use the
+  VALGET/VALSET/VALDEL configuration mechanism.
+*/
+/*
+Payload (Get/Set, 10 bytes):
+  U1   protocolID        (0=UBX, 1=NMEA)
+  U1   reserved1[3]      (0)
+  X1   infMsgMask[6]     (bitmask per port)
+
+Poll payload (1 byte):
+  U1   protocolID
+
+Port index mapping (eg, M8):
+  0=DDC (I2C), 1=UART1, 2=UART2, 3=USB, 4=SPI, 5=reserved.
+*/
+class CfgInf extends Message:
+  /** The UBX-CFG-INF message ID. */
+  static ID ::= 0x02
+
+  // protocolID values.
+  static PROTO-UBX  ::= 0
+  static PROTO-NMEA ::= 1
+
+  // infMsgMask bits (per port).
+  static MASK-ERROR   ::= 0b00000001
+  static MASK-WARNING ::= 0b00000010
+  static MASK-NOTICE  ::= 0b00000100
+  static MASK-TEST    ::= 0b00001000
+  static MASK-DEBUG   ::= 0b00010000
+
+  // Port indices in infMsgMask[6].
+  static PORT-ALL   ::= -1
+  static PORT-DDC   ::= 0
+  static PORT-UART1 ::= 1
+  static PORT-UART2 ::= 2
+  static PORT-USB   ::= 3
+  static PORT-SPI   ::= 4
+  static PORT-RES5  ::= 5
+
+  static PACK-PORT-TYPES := {
+    PORT-DDC:  "DDC",
+    PORT-UART1:"UART1",
+    PORT-UART2:"UART2",
+    PORT-USB:"USB",
+    PORT-SPI:"SPI",
+    PORT-RES5:"RES5",
+  }
+
+  /**
+  The minimum protocol version for the message type.
+
+  Devices must support at least this protocol version to use the message.
+  */
+  static MIN-PROTVER/string := ""
+
+  /**
+  The maximum protocol version for the message type.
+
+  Devices supporting protocol version newer than this may not be able to
+    work with the message type.
+  */
+  static MAX-PROTVER/string := "23.01"
+
+  /**
+  Poll for the current INF configuration for a given protocol.
+
+  protocol-id = one of $PROTO-UBX (0, default) to query UBX-INF-* enable masks,
+    or $PROTO-NMEA (1) to query NMEA informational enable masks.
+  */
+  constructor.poll --protocol-id/int=PROTO-UBX:
+    assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
+    super.private_ Message.CFG ID #[protocol-id]
+
+  /** Construct an instance with bytes from a retrieved message. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.CFG ID payload
+
+  /**
+  Configure enable/disable on a specific message type for a specific port.
+
+  Leaves other ports unchanged/disabled (0).  Ex: enable ERROR+WARNING on UART1:
+  ```
+  CfgInf.enable --protocol-id=CfgInf.PROTO-UBX --port=CfgInf.PORT-UART1
+    --mask=(CfgInf.MASK-ERROR | CfgInf.MASK-WARNING)
+  ```
+  */
+  set --protocol-id/int=PROTO-UBX --port/int=-1 --mask/int --replace=false:
+    assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
+    assert: -1 <= port < 6
+    assert: 0 <= mask <= 0xFF
+
+    // protocolID + reserved.
+    put-uint8_ 0 protocol-id
+    put-uint8_ 1 0
+    put-uint8_ 2 0
+    put-uint8_ 3 0
+
+    // Set infMsgMask for $port.  (if $port == -1, do for all 6.)
+    if port == -1:  //
+      6.repeat:
+        payload[4 + it] = payload[4 + it] | mask
+    else:
+      if replace:
+        payload[4 + port] = mask
+      else:
+        payload[4 + port] = payload[4 + port] | mask
+
+  /**
+  Method disables all messages for a specific port
+
+  Omit $port to disable all messages for all ports.
+  */
+  disable --protocol-id/int=PROTO-UBX --port/int=-1:
+    set --protocol-id=protocol-id --port=port --mask=0 --replace=true
+
+  id-string_ -> string:
+    return "INF"
+
+  /** True if this is a poll message (1-byte payload). */
+  is-poll -> bool:
+    return payload.size == 1
+
+  /**
+  Returns which protocol this message is about (0=UBX, 1=NMEA).
+  */
+  protocol-id -> int:
+    return uint8_ 0
+
+  /** Returns the per-port mask byte for the given port index [0..5]. */
+  mask port/int -> int:
+    assert: payload.size >= 10
+    assert: 0 <= port < 6
+    return uint8_ (4 + port)
+
+  // Convenience per-port accessors (only valid for Get/Set form).
+  mask-ddc   -> int: return mask PORT-DDC
+  mask-uart1 -> int: return mask PORT-UART1
+  mask-uart2 -> int: return mask PORT-UART2
+  mask-usb   -> int: return mask PORT-USB
+  mask-spi   -> int: return mask PORT-SPI
+
+  // Helpers for checking whether a given INF type is enabled on a port.
+  error-enabled   port/int -> bool: return (mask port) & MASK-ERROR   != 0
+  warning-enabled port/int -> bool: return (mask port) & MASK-WARNING != 0
+  notice-enabled  port/int -> bool: return (mask port) & MASK-NOTICE  != 0
+  test-enabled    port/int -> bool: return (mask port) & MASK-TEST    != 0
+  debug-enabled   port/int -> bool: return (mask port) & MASK-DEBUG   != 0
+
+  proto-string_ -> string:
+    if protocol-id == PROTO-UBX: return "UBX"
+    if protocol-id == PROTO-NMEA: return "NMEA"
+    return "UNKNOWN($protocol-id)"
+
+  port-string_ port/int -> string:
+    assert: -1 <= port < 6
+    return PACK-PORT-TYPES[port]
+
+  /** See $super. */
+  stringify -> string:
+    out-str := "$(super.stringify): $(proto-string_)"
+    if is-poll:
+      return "$out-str|(poll)"
+    6.repeat:
+      out-str += "|$(port-string_ it)=0x$(%02x payload[4 + it])"
+    return out-str
+
+
+/**
+The UBX-INF-ERROR message.
+
+Asynchronous human-readable text message, emitted by the receiver when an error
+  condition occurs.
+
+UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
+  (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
+*/
+class InfError extends Message:
+  /** The UBX-INF-ERROR message ID. */
+  static ID ::= 0x00
+
+  /**
+  The minimum protocol version for the message type.
+
+  Devices must support at least this protocol version to use the message.
+  */
+  static MIN-PROTVER/string := ""
+
+  /**
+  The maximum protocol version for the message type.
+
+  Devices supporting protocol version newer than this may not be able to
+    work with the message type.
+  */
+  static MAX-PROTVER/string := ""
+
+  /** Construct an instance with bytes from a retrieved message. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.INF ID payload
+
+  id-string_ -> string:
+    return "ERROR"
+
+  /** The informational text payload (NUL-terminated or raw). */
+  text -> string:
+    return (payload[0..payload.size]).to-string-non-throwing
+
+  /** See $super. */
+  stringify -> string:
+    if payload.size > 0:
+      return "$(super.stringify): $text"
+    else:
+      return "$(super.stringify)"
+
+/**
+The UBX-INF-WARNING message.
+
+Asynchronous human-readable text message, emitted by the receiver for warnings.
+
+UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
+  (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
+*/
+class InfWarning extends Message:
+  /** The UBX-INF-WARNING message ID. */
+  static ID ::= 0x01
+
+  /**
+  The minimum protocol version for the message type.
+
+  Devices must support at least this protocol version to use the message.
+  */
+  static MIN-PROTVER/string := ""
+
+  /**
+  The maximum protocol version for the message type.
+
+  Devices supporting protocol version newer than this may not be able to
+    work with the message type.
+  */
+  static MAX-PROTVER/string := ""
+
+  /** Construct an instance with bytes from a retrieved message. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.INF ID payload
+
+  id-string_ -> string:
+    return "WARNING"
+
+  /** The informational text payload (NUL-terminated or raw). */
+  text -> string:
+    return (payload[0..payload.size]).to-string-non-throwing
+
+  /** See $super. */
+  stringify -> string:
+    if payload.size > 0:
+      return "$(super.stringify): $text"
+    else:
+      return "$(super.stringify)"
+
+/**
+The UBX-INF-NOTICE message.
+
+Asynchronous human-readable text message, emitted by the receiver for notices.
+
+UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
+  (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
+*/
+class InfNotice extends Message:
+  /** The UBX-INF-NOTICE message ID. */
+  static ID ::= 0x02
+
+  /**
+  The minimum protocol version for the message type.
+
+  Devices must support at least this protocol version to use the message.
+  */
+  static MIN-PROTVER/string := ""
+
+  /**
+  The maximum protocol version for the message type.
+
+  Devices supporting protocol version newer than this may not be able to
+    work with the message type.
+  */
+  static MAX-PROTVER/string := ""
+
+  /** Construct an instance with bytes from a retrieved message. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.INF ID payload
+
+  id-string_ -> string:
+    return "NOTICE"
+
+  /** The informational text payload (NUL-terminated or raw). */
+  text -> string:
+    return (payload[0..payload.size]).to-string-non-throwing
+
+  /** See $super. */
+  stringify -> string:
+    if payload.size > 0:
+      return "$(super.stringify): $text"
+    else:
+      return "$(super.stringify)"
+
+/**
+The UBX-INF-TEST message.
+
+Asynchronous human-readable text message, emitted by the receiver for test
+  output.
+
+UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
+  (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
+*/
+class InfTest extends Message:
+  /** The UBX-INF-TEST message ID. */
+  static ID ::= 0x03
+
+  /**
+  The minimum protocol version for the message type.
+
+  Devices must support at least this protocol version to use the message.
+  */
+  static MIN-PROTVER/string := ""
+
+  /**
+  The maximum protocol version for the message type.
+
+  Devices supporting protocol version newer than this may not be able to
+    work with the message type.
+  */
+  static MAX-PROTVER/string := ""
+
+  /** Construct an instance with bytes from a retrieved message. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.INF ID payload
+
+  id-string_ -> string:
+    return "TEST"
+
+  /** The informational text payload (NUL-terminated or raw). */
+  text -> string:
+    return (payload[0..payload.size]).to-string-non-throwing
+
+  /** See $super. */
+  stringify -> string:
+    if payload.size > 0:
+      return "$(super.stringify): $text"
+    else:
+      return "$(super.stringify)"
+
+/**
+The UBX-INF-DEBUG message.
+
+Asynchronous human-readable text message, emitted by the receiver for debug
+  output.
+
+UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
+  (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
+*/
+class InfDebug extends Message:
+  /** The UBX-INF-DEBUG message ID. */
+  static ID ::= 0x04
+
+  /**
+  The minimum protocol version for the message type.
+
+  Devices must support at least this protocol version to use the message.
+  */
+  static MIN-PROTVER/string := ""
+
+  /**
+  The maximum protocol version for the message type.
+
+  Devices supporting protocol version newer than this may not be able to
+    work with the message type.
+  */
+  static MAX-PROTVER/string := ""
+
+  /** Construct an instance with bytes from a retrieved message. */
+  constructor.private_ payload/ByteArray:
+    super.private_ Message.INF ID payload
+
+  id-string_ -> string:
+    return "DEBUG"
+
+  /** The informational text payload (NUL-terminated or raw). */
+  text -> string:
+    return (payload[0..payload.size]).to-string-non-throwing
+
+  /** See $super. */
+  stringify -> string:
+    if payload.size > 0:
+      return "$(super.stringify): $text"
+    else:
+      return "$(super.stringify)"
