@@ -915,9 +915,6 @@ class CfgPrt extends Message:
   constructor.private_ payload/ByteArray:
     super.private_ Message.CFG ID payload
 
-  id-string_ -> string:
-    return "PRT"
-
   /**
   Ublox internal port ID.
 
@@ -992,9 +989,6 @@ class CfgRst extends Message:
     put-uint8_ 2 reset-mode
     put-uint8_ 3 Message.RESERVED_
 
-  id-string_ -> string:
-    return "RST"
-
 /**
 The UBX-NAV-STATUS message.
 
@@ -1039,9 +1033,6 @@ class NavStatus extends Message:
   /** Constructs a UBX-NAV-STATUS message from raw byte array. */
   constructor.private_ payload:
     super.private_ Message.NAV ID payload
-
-  id-string_ -> string:
-    return "STATUS"
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
@@ -1131,9 +1122,6 @@ class NavSat extends Message:
 
   constructor.private_ payload/ByteArray:
     super.private_ Message.NAV ID payload
-
-  id-string_ -> string:
-    return "SAT"
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
@@ -1423,10 +1411,6 @@ class MonVer extends Message:
   constructor.private_ payload/ByteArray:
     super.private_ Message.MON ID payload
 
-  /** See $super. */
-  id-string_ -> string:
-    return "VER"
-
   /** Software version string. */
   // Null terminated with fixed field size of 30 bytes.
   sw-version -> string:
@@ -1510,9 +1494,6 @@ class NavPosLlh extends Message:
   constructor.private_ payload/ByteArray:
     super.private_ Message.NAV ID payload
 
-  id-string_ -> string:
-    return "POSLLH"
-
   /** GPS time of week of the navigation epoch. */
   itow -> int:
     return uint32_ 0
@@ -1579,9 +1560,6 @@ class NavSvInfo extends Message:
 
   constructor.private_ payload/ByteArray:
     super.private_ Message.NAV ID payload
-
-  id-string_ -> string:
-    return "SVINFO"
 
   /** The GPS interval time of week of the navigation epoch. (ms). */
   itow -> int:
@@ -1667,9 +1645,6 @@ class NavPvt extends Message:
 
   constructor.private_ payload/ByteArray:
     super.private_ Message.NAV ID payload
-
-  id-string_ -> string:
-    return "PVT"
 
   /** Whether this is a GNSS fix. */
   is-gnss-fix -> bool:
@@ -1906,9 +1881,6 @@ class NavSol extends Message:
   constructor.private_ payload/ByteArray:
     super.private_ Message.NAV ID payload
 
-  id-string_ -> string:
-    return "SOL"
-
   /** Whether this is a GNSS fix. */
   is-gnss-fix -> bool:
     return (flags & FLAGS-GPS-FIX-OK_) != 0
@@ -2051,8 +2023,6 @@ class NavTimeUtc extends Message:
 
   constructor.private_ payload/ByteArray:
     super.private_ Message.NAV ID payload
-
-  id-string_ -> string: return "TIMEUTC"
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
@@ -2266,9 +2236,6 @@ class CfgTp5 extends Message:
     if use-utc: flags |= FLAG-UTC-GRID
     put-uint32_ 28 flags
 
-  id-string_ -> string:
-    return "TP5"
-
   /**
   Time pulse selection.
 
@@ -2470,10 +2437,6 @@ class CfgNav5 extends Message:
 
     put-uint16_ 0 mask
 
-
-  id-string_ -> string:
-    return "NAV5"
-
   dyn-model -> int:
     return uint8_ 2
 
@@ -2578,9 +2541,6 @@ class CfgGnss extends Message:
       put-uint8_ (base + BLOCK-MAXTRKCH_) block["maxTrkCh"]
       put-uint8_ (base + BLOCK-RESERVED1_) 0
       put-uint32_ (base + BLOCK-FLAGS_) block["flags"]
-
-  id-string_ -> string:
-    return "GNSS"
 
   /**
   Convenience builder for a configuration block.
