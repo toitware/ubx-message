@@ -2385,7 +2385,6 @@ class CfgNav5 extends Message:
     DYN-AIR4G: "AIR4G"
   }
 
-
   /** Poll current NAV5. */
   constructor.poll:
     super.private_ Message.CFG ID #[]
@@ -2655,18 +2654,6 @@ This message type polls, gets and sets the configuration for UBX-CFG-* message
 
 This message type is used for M8 or lower devices, for higher devices use the
   VALGET/VALSET/VALDEL configuration mechanism.
-*/
-/*
-Payload (Get/Set, 10 bytes):
-  U1   protocolID        (0=UBX, 1=NMEA)
-  U1   reserved1[3]      (0)
-  X1   infMsgMask[6]     (bitmask per port)
-
-Poll payload (1 byte):
-  U1   protocolID
-
-Port index mapping (eg, M8):
-  0=DDC (I2C), 1=UART1, 2=UART2, 3=USB, 4=SPI, 5=reserved.
 */
 class CfgInf extends Message:
   /** The UBX-CFG-INF message ID. */
