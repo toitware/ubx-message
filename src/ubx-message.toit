@@ -581,7 +581,7 @@ class AckAck extends Message:
     super.private_ Message.ACK ID #[cls, id]
 
   /** Construct an instance with bytes from a retrieved message. */
-  constructor.private_ payload:
+  constructor.private_ payload/ByteArray:
     super.private_ Message.ACK ID payload
 
   /** The class ID of the original message being ACK'ed. */
@@ -1048,7 +1048,7 @@ class NavStatus extends Message:
     super.private_ Message.NAV ID #[]
 
   /** Constructs a UBX-NAV-STATUS message from raw byte array. */
-  constructor.private_ payload:
+  constructor.private_ payload/ByteArray:
     super.private_ Message.NAV ID payload
 
   /** The GPS interval time of week of the navigation epoch. */
