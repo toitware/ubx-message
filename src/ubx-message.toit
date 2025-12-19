@@ -2850,7 +2850,7 @@ class CfgInf extends Message:
   enable-test port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-TEST
   enable-debug port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-DEBUG
   /**
-  Disable all message types for a specific port.
+  Enables all message types for the given $port.
 
   Sets the type for all ports if $port is omitted.
   */
@@ -2864,7 +2864,7 @@ class CfgInf extends Message:
   disable-test port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-TEST
   disable-debug port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-DEBUG
   /**
-  Disable all message types for a specific port.
+  Disables all message types for the given $port.
 
   Sets the type for all ports if $port is omitted.
   */
