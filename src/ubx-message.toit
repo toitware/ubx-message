@@ -2788,7 +2788,7 @@ class CfgInf extends Message:
     return uint8_ 0
 
   /**
-  Configure enable/disable on a specific log $level for a specific $port.
+  Enable or disable) a specific logging $level, for a specific $port.
 
   Sets the logging $level for all ports if $port is omitted. Logging $level
     should be one of  $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE, $LEVEL-TEST,
