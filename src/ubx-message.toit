@@ -556,6 +556,14 @@ class Message:
   put-uint32_ index value --payload=payload -> none:
     LITTLE-ENDIAN.put-uint32 payload index value
 
+  /** Helper to read a '\0'-terminated string from a larger byte array. */
+  convert-string_ start/int length/int -> string:
+    // Find first NUL within [start .. start+length].
+    end := start + length
+    pos := payload.index-of 0x00 --from=start --to=end
+    if pos > -1: end = start + pos
+    return (payload[start..end]).to-string
+
 /**
 The UBX-ACK-ACK message.
 
@@ -1483,18 +1491,6 @@ class MonVer extends Message:
       raw-extensions.add (convert-string_ offset 30)
       offset += 30
     return raw-extensions
-
-
-  /** Helper: read a '\0'-terminated string from a fixed-size field. */
-  convert-string_ start length -> string:
-    // Find first NUL within [start .. start+length).
-    end := start
-    limit := start + length
-    while (end < limit) and (uint8_ end) != 0:
-      end++
-
-    // Slice bytes [start .. end) and convert to a Toit string.
-    return (payload[start..end]).to-string
 
   /** See $super. */
   stringify -> string:
@@ -2924,9 +2920,9 @@ class InfError extends Message:
   constructor.private_ bytes/ByteArray:
     super.private_ Message.INF ID bytes
 
-  /** The informational text payload (NUL-terminated or raw). */
+  /** The text payload. */
   text -> string:
-    return (payload[0..payload.size]).to-string-non-throwing
+    return convert-string_ 0 payload.size
 
   /** See $super. */
   stringify -> string:
@@ -2965,9 +2961,9 @@ class InfWarning extends Message:
   constructor.private_ bytes/ByteArray:
     super.private_ Message.INF ID bytes
 
-  /** The informational text payload (NUL-terminated or raw). */
+  /** The text payload. */
   text -> string:
-    return (payload[0..payload.size]).to-string-non-throwing
+    return convert-string_ 0 payload.size
 
   /** See $super. */
   stringify -> string:
@@ -3006,9 +3002,9 @@ class InfNotice extends Message:
   constructor.private_ bytes/ByteArray:
     super.private_ Message.INF ID bytes
 
-  /** The informational text payload (NUL-terminated or raw). */
+  /** The text payload. */
   text -> string:
-    return (payload[0..payload.size]).to-string-non-throwing
+    return convert-string_ 0 payload.size
 
   /** See $super. */
   stringify -> string:
@@ -3047,9 +3043,9 @@ class InfTest extends Message:
   constructor.private_ bytes/ByteArray:
     super.private_ Message.INF ID bytes
 
-  /** The informational text payload (NUL-terminated or raw). */
+  /** The text payload. */
   text -> string:
-    return (payload[0..payload.size]).to-string-non-throwing
+    return convert-string_ 0 payload.size
 
   /** See $super. */
   stringify -> string:
@@ -3088,9 +3084,9 @@ class InfDebug extends Message:
   constructor.private_ bytes/ByteArray:
     super.private_ Message.INF ID bytes
 
-  /** The informational text payload (NUL-terminated or raw). */
+  /** The text payload. */
   text -> string:
-    return (payload[0..payload.size]).to-string-non-throwing
+    return convert-string_ 0 payload.size
 
   /** See $super. */
   stringify -> string:
