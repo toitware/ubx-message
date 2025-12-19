@@ -766,7 +766,7 @@ class CfgMsg extends Message:
     assert: 0 <= rate <= 0xFF
 
     // if $enable is null, replace instead of adjusting the existing value.
-    if port == -1:  //
+    if port == PORT-ALL:  //
       6.repeat:
         put-uint8_ (2 + it) rate
     else:
@@ -2791,7 +2791,7 @@ class CfgInf extends Message:
 
     // if $enable is null, the value is replaced, instead of adjusting bits in
     // the existing value using the mask.
-    if port == -1:
+    if port == PORT-ALL:
       6.repeat:
         if enable == null: put-uint8_ (4 + it) type
         else if enable: put-uint8_ (4 + it) ((uint8_ (4 + it)) | type)
