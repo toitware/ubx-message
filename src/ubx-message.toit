@@ -556,7 +556,7 @@ class Message:
   put-uint32_ index value --payload=payload -> none:
     LITTLE-ENDIAN.put-uint32 payload index value
 
-  /** Helper to read a '\0'-terminated string from a larger byte array. */
+  /** Helper to read a '\0'-terminated string from the payload. */
   convert-string_ start/int length/int -> string:
     // Find first NUL within [start .. start+length].
     end := start + length
@@ -1453,12 +1453,10 @@ class MonVer extends Message:
     super.private_ Message.MON ID bytes
 
   /** Software version string. */
-  // Null terminated with fixed field size of 30 bytes.
   sw-version -> string:
     return convert-string_ 0 30
 
   /** Hardware version string. */
-  // Null terminated with fixed field size of 10 bytes.
   hw-version -> string:
     return convert-string_ 30 10
 
