@@ -1561,7 +1561,7 @@ class NavPosLlh extends Message:
     return latitude-raw / DEGREES-SCALING-FACTOR_
 
   stringify -> string:
-    return  "$(super.stringify): {latitude:$(latitude-deg),longtidude:$(longitude-deg)}"
+    return  "$(super.stringify): {latitude:$(latitude-deg),longitude:$(longitude-deg)}"
 
 
 /**
@@ -1630,6 +1630,9 @@ class NavSvInfo extends Message:
   satellite-data index -> SatelliteData:
     if not 0 <= index < num-ch: throw "INVALID ARGUMENT"
     return SatelliteData index payload --src-id=ID
+
+  stringify -> string:
+    return  "$(super.stringify): satellite-count:$satellite-count|num-ch:$num-ch"
 
 
 /**
@@ -2040,6 +2043,9 @@ class NavSol extends Message:
   /** Reserved 2. */
   reserved2 -> int: return uint32_ 48      // U4 (M8 doc shows U1[4]; same 4 bytes).
 
+  stringify -> string:
+    return  "$(super.stringify): fix-type:$fix-type-text|num-sv:$num-sv"
+
 /**
 The UBX-NAV-TIMEUTC message.
 
@@ -2169,7 +2175,8 @@ class NavTimeUtc extends Message:
   utc-standard -> int:
     return (valid-flags-raw >> 4) & 0x0F
 
-
+  stringify -> string:
+    return  "$(super.stringify): valid-utc:$valid-utc|utc-time:$utc-time"
 
 /**
 The UBX-CFG-TP5 message.
