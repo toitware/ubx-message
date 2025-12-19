@@ -602,7 +602,7 @@ class AckAck extends Message:
 
   /** See $super. */
   stringify -> string:
-    return  "$(super.stringify): {0x$(%02x class-id)($(cls-string_ class-id)):0x$(%02x message-id)($(id-string_ class-id message-id))}"
+    return  "$super: {0x$(%02x class-id)($(cls-string_ class-id)):0x$(%02x message-id)($(id-string_ class-id message-id))}"
 
 /**
 The UBX-ACK-NAK message.
@@ -650,7 +650,7 @@ class AckNak extends Message:
 
   /** See $super. */
   stringify -> string:
-    return  "$(super.stringify): {0x$(%02x class-id)($(cls-string_ class-id)):0x$(%02x message-id)(:$(id-string_ class-id message-id))}"
+    return  "$super: {0x$(%02x class-id)($(cls-string_ class-id)):0x$(%02x message-id)(:$(id-string_ class-id message-id))}"
 
 /**
 The UBX-CFG-MSG message.
@@ -789,7 +789,7 @@ class CfgMsg extends Message:
 
   /** See $super. */
   stringify -> string:
-    out-str := "$(super.stringify)"
+    out-str := "$super"
     if is-poll:
       return "$out-str: {poll}"
     out-str += ": {0x$(%02x class-id)($(cls-string_ class-id)):0x$(%02x message-id)($(id-string_ class-id message-id))}"
@@ -1127,7 +1127,7 @@ class NavStatus extends Message:
     return uint32_ 12
 
   stringify -> string:
-    return  "$(super.stringify): fix-type:$fix-type-text|ttff:$(Duration --ms=time-to-first-fix)"
+    return  "$super: fix-type:$fix-type-text|ttff:$(Duration --ms=time-to-first-fix)"
 
 /**
 The UBX-NAV-SAT message.
@@ -1411,7 +1411,7 @@ class SatelliteData:
     // TODO(kasper): Make this output a whole lot prettier and easier to parse.
     //          ian: Added class/id type string from $super to assist with
     //               tests.  Would be cool to standardise them somehow...?
-    return "$(super.stringify): $index|$gnss-id|$sv-id|$cno|$quality|$orbit-source|$codes"
+    return "$super: $index|$gnss-id|$sv-id|$cno|$quality|$orbit-source|$codes"
 
 /**
 The UBX-MON-VER message.
@@ -1498,7 +1498,7 @@ class MonVer extends Message:
 
   /** See $super. */
   stringify -> string:
-    return "$(super.stringify): $sw-version|$hw-version"
+    return "$super: $sw-version|$hw-version"
 
 /**
 The UBX-NAV-POSLLH message.
@@ -1566,7 +1566,7 @@ class NavPosLlh extends Message:
     return latitude-raw / DEGREES-SCALING-FACTOR_
 
   stringify -> string:
-    return  "$(super.stringify): latitude:$(latitude-deg)|longitude:$(longitude-deg)"
+    return  "$super: latitude:$(latitude-deg)|longitude:$(longitude-deg)"
 
 
 /**
@@ -1638,7 +1638,7 @@ class NavSvInfo extends Message:
     return SatelliteData index payload --src-id=ID
 
   stringify -> string:
-    return  "$(super.stringify): satellite-count:$satellite-count|num-ch:$num-ch"
+    return  "$super: satellite-count:$satellite-count|num-ch:$num-ch"
 
 
 /**
@@ -1881,7 +1881,7 @@ class NavPvt extends Message:
     return uint16_ 90
 
   stringify -> string:
-    return  "$(super.stringify): latitude:$(latitude)|longitude:$(longitude)"
+    return  "$super: latitude:$(latitude)|longitude:$(longitude)"
 
 
 /**
@@ -2065,7 +2065,7 @@ class NavSol extends Message:
   reserved2 -> int: return uint32_ 48      // U4 (M8 doc shows U1[4]; same 4 bytes).
 
   stringify -> string:
-    return  "$(super.stringify): fix-type:$fix-type-text|num-sv:$num-sv"
+    return  "$super: fix-type:$fix-type-text|num-sv:$num-sv"
 
 /**
 The UBX-NAV-TIMEUTC message.
@@ -2198,7 +2198,7 @@ class NavTimeUtc extends Message:
     return (valid-flags-raw >> 4) & 0x0F
 
   stringify -> string:
-    return  "$(super.stringify): valid-utc:$valid-utc|utc-time:$utc-time"
+    return  "$super: valid-utc:$valid-utc|utc-time:$utc-time"
 
 /**
 The UBX-CFG-TP5 message.
@@ -2884,7 +2884,7 @@ class CfgInf extends Message:
 
   /** See $super. */
   stringify -> string:
-    out-str := "$(super.stringify): {$(proto-string_)}"
+    out-str := "$super: {$(proto-string_)}"
     if is-poll:
       return "$out-str (poll)"
     6.repeat:
