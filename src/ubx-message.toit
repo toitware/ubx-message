@@ -698,8 +698,7 @@ class CfgMsg extends Message:
   /**
   Constructs a blank configuration-rate message.
 
-  Examine/configure this message using the supplied getters and setters.  If
-    sent to the device it may overwrite the rates for all ports for the
+  When sent to the device it will overwrite the rates for all ports for the
     specified message type.
 
   In order to edit rates (as opposed to replacing them) poll for this message
