@@ -741,7 +741,7 @@ class CfgMsg extends Message:
 
   /** Returns the string name of the given port. */
   port-string_ port/int -> string:
-    assert: -1 <= port <= 5
+    assert: port == PORT-ALL or 0 <= port <= 5
     return PACK-PORT-TYPES[port]
 
   /**
@@ -762,7 +762,7 @@ class CfgMsg extends Message:
   */
   set-rate port/int=PORT-ALL --rate/int:
     assert: payload.size == 8
-    assert: -1 <= port <= 5
+    assert: port == PORT-ALL or 0 <= port <= 5
     assert: 0 <= rate <= 0xFF
 
     // if $enable is null, replace instead of adjusting the existing value.
@@ -2786,7 +2786,7 @@ class CfgInf extends Message:
   */
   set-port-type --port/int=PORT-ALL --type/int --enable/bool?=true:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
-    assert: -1 <= port <= 5
+    assert: port == PORT-ALL or 0 <= port <= 5
     assert: 0 <= type <= 0xFF
 
     // if $enable is null, the value is replaced, instead of adjusting bits in
@@ -2820,7 +2820,7 @@ class CfgInf extends Message:
   */
   set-port-type-mask port/int --mask/int -> none:
     assert: payload.size >= 10
-    assert: -1 <= port <= 5
+    assert: port == PORT-ALL or 0 <= port <= 5
     set-port-type --port=port --enable=null --type=mask
 
   // Convenience per-port getters/setters.
@@ -2881,7 +2881,7 @@ class CfgInf extends Message:
 
   /** Returns the string name of the given port. */
   port-string_ port/int -> string:
-    assert: -1 <= port <= 5
+    assert: port == PORT-ALL or 0 <= port <= 5
     return PACK-PORT-TYPES[port]
 
   /** See $super. */
