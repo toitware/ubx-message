@@ -1126,6 +1126,9 @@ class NavStatus extends Message:
   ms-since-startup -> int:
     return uint32_ 12
 
+  stringify -> string:
+    return  "$(super.stringify): fix-type:$fix-type-text|ttff:$(Duration --ms=time-to-first-fix)"
+
 /**
 The UBX-NAV-SAT message.
 
@@ -1561,7 +1564,7 @@ class NavPosLlh extends Message:
     return latitude-raw / DEGREES-SCALING-FACTOR_
 
   stringify -> string:
-    return  "$(super.stringify): {latitude:$(latitude-deg),longitude:$(longitude-deg)}"
+    return  "$(super.stringify): latitude:$(latitude-deg)|longitude:$(longitude-deg)"
 
 
 /**
@@ -1777,9 +1780,19 @@ class NavPvt extends Message:
   lon -> int:
     return int32_ 24
 
+  /** Convenience method for $lon. */
+  // To match message type 'UBX-NAV-POSLLH'.
+  longitude -> int:
+    return lon
+
   /** Latitude. */
   lat -> int:
     return int32_ 28
+
+  /** Convenience method for $lat. */
+  // To match message type 'UBX-NAV-POSLLH'.
+  latitude -> int:
+    return lat
 
   /** Height above ellipsoid in millimeter. */
   height -> int:
@@ -1862,6 +1875,9 @@ class NavPvt extends Message:
   */
   magnetic-acc -> int:
     return uint16_ 90
+
+  stringify -> string:
+    return  "$(super.stringify): latitude:$(latitude)|longitude:$(longitude)"
 
 
 /**
@@ -2864,7 +2880,7 @@ class CfgInf extends Message:
 
   /** See $super. */
   stringify -> string:
-    out-str := "$(super.stringify): [$(proto-string_)]"
+    out-str := "$(super.stringify): {$(proto-string_)}"
     if is-poll:
       return "$out-str (poll)"
     6.repeat:
