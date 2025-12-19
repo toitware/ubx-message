@@ -1436,7 +1436,7 @@ class MonVer extends Message:
   */
   static MAX-PROTVER/string := ""
 
-  /** Construct a poll-request UBX-MON-VER. */
+  /** Constructs a poll-request UBX-MON-VER. */
   constructor.poll:
     super.private_ Message.MON ID #[]
 
@@ -2749,7 +2749,7 @@ class CfgInf extends Message:
     super.private_ Message.CFG ID #[protocol-id]
 
   /**
-  Construct a blank instance of UBX-CFG-INF.
+  Constructs a blank instance of UBX-CFG-INF.
 
   # Warning
   Configurations present in this message overwrite the current configuration,
