@@ -758,7 +758,7 @@ class CfgMsg extends Message:
   /**
   Sets the rate for the message type for the specified $port.
 
-  Omit $port to set for all types.
+  Sets the rate for all ports if $port is omitted.
   */
   set-rate port/int=-1 --rate/int:
     assert: payload.size == 8
@@ -2782,15 +2782,16 @@ class CfgInf extends Message:
   /**
   Configure enable/disable on a specific message type for a specific port.
 
-  Omit $port to set for all types. Use --enable or --no-enable to set.
+  Sets the type for all ports if $port is omitted. Use --enable or --no-enable to set.
   */
   set-port-type --port/int=-1 --type/int --enable/bool?=true:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     assert: -1 <= port <= 5
     assert: 0 <= type <= 0xFF
 
-    // if $enable is null, replace instead of adjusting the existing value.
-    if port == -1:  //
+    // if $enable is null, the value is replaced, instead of adjusting bits in
+    // the existing value using the mask.
+    if port == -1:
       6.repeat:
         if enable == null: put-uint8_ (4 + it) type
         else if enable: put-uint8_ (4 + it) ((uint8_ (4 + it)) | type)
@@ -2853,7 +2854,7 @@ class CfgInf extends Message:
   /**
   Disable all message types for a specific port.
 
-  Omit $port to set for all ports.
+  Sets the type for all ports if $port is omitted.
   */
   enable-all --port/int=-1:
     set-port-type --port=port --enable=null --type=MASK-ALL
@@ -2867,7 +2868,7 @@ class CfgInf extends Message:
   /**
   Disable all message types for a specific port.
 
-  Omit $port to set for all ports.
+  Sets the type for all ports if $port is omitted.
   */
   disable-all --port/int=-1:
     set-port-type --port=port --enable=null --type=MASK_NONE
