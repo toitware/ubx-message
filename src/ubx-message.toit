@@ -772,7 +772,7 @@ class CfgMsg extends Message:
     else:
       put-uint8_ (2 + port) rate
 
-  // Convenience per-port setters/getters (only valid for get/set form).
+  // Convenience per-port setters/getters.
   get-rate-ddc -> int: return get-rate PORT-DDC
   get-rate-uart1 -> int: return get-rate PORT-UART1
   get-rate-uart2 -> int: return get-rate PORT-UART2
@@ -2823,7 +2823,7 @@ class CfgInf extends Message:
     assert: -1 <= port <= 5
     set-port-type --port=port --enable=null --type=mask
 
-  // Convenience per-port getters/setters (only valid for Get/Set form).
+  // Convenience per-port getters/setters.
   get-type-mask-ddc -> int: return get-port-type-mask PORT-DDC
   get-type-mask-uart1 -> int: return get-port-type-mask PORT-UART1
   get-type-mask-uart2 -> int: return get-port-type-mask PORT-UART2
