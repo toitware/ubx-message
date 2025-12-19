@@ -705,7 +705,7 @@ class CfgMsg extends Message:
     first.  Then change the required rates on the reply message, and send it
     back.
   */
-  constructor.message-rate --msg-class --msg-id --rate/int --port/int=-1:
+  constructor.message-rate --msg-class --msg-id --rate/int --port/int=PORT-ALL:
     assert: 0 <= msg-class <= 255
     assert: 0 <= msg-id <= 255
     assert: 0 <= rate <= 255
@@ -760,7 +760,7 @@ class CfgMsg extends Message:
 
   Sets the rate for all ports if $port is omitted.
   */
-  set-rate port/int=-1 --rate/int:
+  set-rate port/int=PORT-ALL --rate/int:
     assert: payload.size == 8
     assert: -1 <= port <= 5
     assert: 0 <= rate <= 0xFF
@@ -2846,11 +2846,11 @@ class CfgInf extends Message:
   debug-enabled port/int -> bool: return (get-port-type-mask port) & MASK-DEBUG   != 0
 
   // Helpers for enabling a given INF type on a port.
-  enable-error port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-ERROR
-  enable-warning port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-WARNING
-  enable-notice port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-NOTICE
-  enable-test port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-TEST
-  enable-debug port/int=-1 -> none: set-port-type --port=port --enable --type=MASK-DEBUG
+  enable-error port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-ERROR
+  enable-warning port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-WARNING
+  enable-notice port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-NOTICE
+  enable-test port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-TEST
+  enable-debug port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-DEBUG
   /**
   Disable all message types for a specific port.
 
@@ -2860,11 +2860,11 @@ class CfgInf extends Message:
     set-port-type --port=port --enable=null --type=MASK-ALL
 
   // Helpers for disabling a given INF type on a port.
-  disable-error port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-ERROR
-  disable-warning port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-WARNING
-  disable-notice port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-NOTICE
-  disable-test port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-TEST
-  disable-debug port/int=-1 -> none: set-port-type --port=port --no-enable --type=MASK-DEBUG
+  disable-error port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-ERROR
+  disable-warning port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-WARNING
+  disable-notice port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-NOTICE
+  disable-test port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-TEST
+  disable-debug port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-DEBUG
   /**
   Disable all message types for a specific port.
 
