@@ -2673,9 +2673,6 @@ class CfgGnss extends Message:
     block["flags"] = uint32_ (base + BLOCK-FLAGS_)
     return block
 
-
-
-
 /**
 The UBX-CFG-INF message.
 
@@ -2745,8 +2742,7 @@ class CfgInf extends Message:
   Poll for the current INF configuration for a given protocol.
 
   $protocol-id = one of $PROTO-UBX (0, default) to query UBX-INF-* enable masks,
-    or $PROTO-NMEA (1) to query NMEA informational enable masks.  Returned
-    message is fixed for the protocol requested.
+    or $PROTO-NMEA (1) to query NMEA informational enable masks.
   */
   constructor.poll --protocol-id/int=PROTO-UBX:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
