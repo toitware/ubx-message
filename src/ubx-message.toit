@@ -739,7 +739,7 @@ class CfgMsg extends Message:
   is-poll -> bool:
     return payload.size == 2
 
-  /** The string name of the given $port. */
+  /** The name of the given $port. */
   port-string_ port/int -> string:
     assert: port == PORT-ALL or 0 <= port <= 5
     return PACK-PORT-TYPES[port]
@@ -2871,13 +2871,13 @@ class CfgInf extends Message:
   disable-all --port/int=PORT-ALL:
     set-port-type --port=port --enable=null --type=MASK_NONE
 
-  /** The string name of this messages' protocol. */
+  /** The name of this messages' protocol. */
   proto-string_ -> string:
     if protocol-id == PROTO-UBX: return "UBX"
     if protocol-id == PROTO-NMEA: return "NMEA"
     return "UNKNOWN($protocol-id)"
 
-  /** The string name of the given $port. */
+  /** The name of the given $port. */
   port-string_ port/int -> string:
     assert: port == PORT-ALL or 0 <= port <= 5
     return PACK-PORT-TYPES[port]
