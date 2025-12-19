@@ -502,7 +502,7 @@ class Message:
       return Message.PACK-MESSAGE-TYPES[clsid][msgid]
     return "0x$(%02x msgid)"
 
-  /** Return message type in full UBX-* message name format. */
+  /** Returns the message type in full UBX-* message name format. */
   full-name -> string:
     return "UBX-$cls-string_-$id-string_"
 
