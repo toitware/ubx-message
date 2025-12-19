@@ -747,8 +747,8 @@ class CfgMsg extends Message:
   /**
   Gets the rate for the message type for the given $port.
 
-  $port must be one of $PORT-DDC(0), $PORT-UART1(1), $PORT-UART2(2),
-    $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
+  The $port parameter must be one of $PORT-DDC(0), $PORT-UART1(1),
+    $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
   */
   get-rate port/int -> int:
     assert: payload.size == 8
@@ -2803,8 +2803,8 @@ class CfgInf extends Message:
   /**
   Gets the mask byte for the given $port.
 
-  $port must be one of $PORT-DDC(0), $PORT-UART1(1), $PORT-UART2(2),
-    $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
+  The $port parameter must be one of $PORT-DDC(0), $PORT-UART1(1),
+    $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
   */
   get-port-type-mask port/int -> int:
     assert: payload.size >= 10
