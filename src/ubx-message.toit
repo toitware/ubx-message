@@ -2784,7 +2784,7 @@ class CfgInf extends Message:
 
   Sets the type for all ports if $port is omitted. Use --enable or --no-enable to set.
   */
-  set-port-type --port/int=-1 --type/int --enable/bool?=true:
+  set-port-type --port/int=PORT-ALL --type/int --enable/bool?=true:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     assert: -1 <= port <= 5
     assert: 0 <= type <= 0xFF
@@ -2856,7 +2856,7 @@ class CfgInf extends Message:
 
   Sets the type for all ports if $port is omitted.
   */
-  enable-all --port/int=-1:
+  enable-all --port/int=PORT-ALL:
     set-port-type --port=port --enable=null --type=MASK-ALL
 
   // Helpers for disabling a given INF type on a port.
@@ -2870,7 +2870,7 @@ class CfgInf extends Message:
 
   Sets the type for all ports if $port is omitted.
   */
-  disable-all --port/int=-1:
+  disable-all --port/int=PORT-ALL:
     set-port-type --port=port --enable=null --type=MASK_NONE
 
   /** Returns the string name of this messages' protocol. */
