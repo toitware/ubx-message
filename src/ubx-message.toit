@@ -2717,6 +2717,8 @@ class CfgInf extends Message:
     PORT-RES5: "RES5",
   }
 
+  static ENABLED ::= true
+  static DISABLED ::= false
   /**
   The minimum protocol version for the message type.
 
@@ -2773,11 +2775,11 @@ class CfgInf extends Message:
   /**
   Configure enable/disable on a specific log $level for a specific $port.
 
-  Sets the logging $level for all ports if $port is omitted. Use --enable or
-    --no-enable to set the level.  Logging $level should be one of  $LEVEL-ERROR,
-    $LEVEL-WARNING, $LEVEL-NOTICE, $LEVEL-TEST, or $LEVEL-DEBUG.
+  Sets the logging $level for all ports if $port is omitted. Logging $level
+    should be one of  $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE, $LEVEL-TEST,
+    or $LEVEL-DEBUG.
   */
-  set-port-level port/int=PORT-ALL --level/int --enable/bool=true -> none:
+  set-port-level port/int=PORT-ALL --level/int enable/bool=true -> none:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     assert: port == PORT-ALL or 0 <= port <= 5
     assert: 0 <= level <= 0x1F
@@ -2841,11 +2843,11 @@ class CfgInf extends Message:
   debug-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-DEBUG != 0
 
   // Helpers for enabling a given INF type on a port.
-  enable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR --enable
-  enable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING --enable
-  enable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE --enable
-  enable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST --enable
-  enable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG --enable
+  enable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR ENABLED
+  enable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING ENABLED
+  enable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE ENABLED
+  enable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST ENABLED
+  enable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG ENABLED
   /**
   Enables all message types for the given $port.
 
@@ -2855,11 +2857,11 @@ class CfgInf extends Message:
     set-port-level port --level=LEVEL-ALL
 
   // Helpers for disabling a given INF type on a port.
-  disable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR --no-enable
-  disable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING --no-enable
-  disable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE --no-enable
-  disable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST --no-enable
-  disable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG --no-enable
+  disable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR DISABLED
+  disable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING DISABLED
+  disable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE DISABLED
+  disable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST DISABLED
+  disable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG DISABLED
   /**
   Disables all message types for the given $port.
 
