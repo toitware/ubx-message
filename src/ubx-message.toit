@@ -580,9 +580,9 @@ class AckAck extends Message:
   constructor.private_ cls id:
     super.private_ Message.ACK ID #[cls, id]
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.ACK ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.ACK ID bytes
 
   /** The class ID of the original message being ACK'ed. */
   class-id -> int:
@@ -628,9 +628,9 @@ class AckNak extends Message:
   constructor.private_ cls id:
     super.private_ Message.ACK ID #[cls, id]
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.ACK ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.ACK ID bytes
 
   /** The class ID of the original message being NAK'ed. */
   class-id -> int:
@@ -725,9 +725,9 @@ class CfgMsg extends Message:
     assert: rates.size == 6
     super.private_ Message.CFG ID (#[msg-class, msg-id] + rates)
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.CFG ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.CFG ID bytes
 
   class-id -> int:
     return uint8_ 0
@@ -917,9 +917,9 @@ class CfgPrt extends Message:
   constructor.poll --port-id/int=PORT-UART1:
     super.private_ Message.CFG ID #[port-id]
 
-  /** Construct from an incoming payload. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.CFG ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.CFG ID bytes
 
   /**
   Ublox internal port ID.
@@ -1046,9 +1046,9 @@ class NavStatus extends Message:
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
-  /** Constructs a UBX-NAV-STATUS message from raw byte array. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.NAV ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.NAV ID bytes
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
@@ -1152,8 +1152,9 @@ class NavSat extends Message:
   */
   static MAX-PROTVER/string := ""
 
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.NAV ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.NAV ID bytes
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
@@ -1439,9 +1440,9 @@ class MonVer extends Message:
   constructor.poll:
     super.private_ Message.MON ID #[]
 
-  /** Construct from an incoming payload. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.MON ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.MON ID bytes
 
   /** Software version string. */
   // Null terminated with fixed field size of 30 bytes.
@@ -1523,8 +1524,9 @@ class NavPosLlh extends Message:
 
   static DEGREES-SCALING-FACTOR_ ::= 1e7
 
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.NAV ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.NAV ID bytes
 
   /** GPS time of week of the navigation epoch. */
   itow -> int:
@@ -1590,8 +1592,9 @@ class NavSvInfo extends Message:
   */
   static MAX-PROTVER/string := ""
 
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.NAV ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.NAV ID bytes
 
   /** The GPS interval time of week of the navigation epoch. (ms). */
   itow -> int:
@@ -1678,8 +1681,9 @@ class NavPvt extends Message:
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.NAV ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.NAV ID bytes
 
   /** Whether this is a GNSS fix. */
   is-gnss-fix -> bool:
@@ -1936,8 +1940,9 @@ class NavSol extends Message:
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.NAV ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.NAV ID bytes
 
   /** Whether this is a GNSS fix. */
   is-gnss-fix -> bool:
@@ -2092,8 +2097,9 @@ class NavTimeUtc extends Message:
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.NAV ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.NAV ID bytes
 
   /** The GPS interval time of week of the navigation epoch. */
   itow -> int:
@@ -2262,9 +2268,9 @@ class CfgTp5 extends Message:
     put-uint8_ 0 tp-idx
     put-uint8_ 1 1  // Version.
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.CFG ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.CFG ID bytes
 
   /**
   Set TP5, starting with common defaults:
@@ -2418,9 +2424,9 @@ class CfgNav5 extends Message:
   constructor.poll:
     super.private_ Message.CFG ID #[]
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.CFG ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.CFG ID bytes
 
   /** Minimal setter: set dyn model + auto 2D/3D, leave others default. */
   constructor.set-basic
@@ -2585,9 +2591,9 @@ class CfgGnss extends Message:
     // Empty payload poll (some firmwares accept either empty or msgVer=0).
     super.private_ Message.CFG ID #[]
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.CFG ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.CFG ID bytes
 
   /** Build from a list of 8-byte blocks. numTrkChHw/Use are advisory. */
   constructor.set
@@ -2759,9 +2765,9 @@ class CfgInf extends Message:
     super.private_ Message.CFG ID (ByteArray 10)
     put-uint8_ 0 protocol-id
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.CFG ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.CFG ID bytes
 
   /** True if this is a poll message (1-byte payload). */
   is-poll -> bool:
@@ -2915,9 +2921,9 @@ class InfError extends Message:
   */
   static MAX-PROTVER/string := ""
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.INF ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.INF ID bytes
 
   /** The informational text payload (NUL-terminated or raw). */
   text -> string:
@@ -2958,9 +2964,9 @@ class InfWarning extends Message:
   */
   static MAX-PROTVER/string := ""
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.INF ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.INF ID bytes
 
   /** The informational text payload (NUL-terminated or raw). */
   text -> string:
@@ -3001,9 +3007,9 @@ class InfNotice extends Message:
   */
   static MAX-PROTVER/string := ""
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.INF ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.INF ID bytes
 
   /** The informational text payload (NUL-terminated or raw). */
   text -> string:
@@ -3044,9 +3050,9 @@ class InfTest extends Message:
   */
   static MAX-PROTVER/string := ""
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.INF ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.INF ID bytes
 
   /** The informational text payload (NUL-terminated or raw). */
   text -> string:
@@ -3087,9 +3093,9 @@ class InfDebug extends Message:
   */
   static MAX-PROTVER/string := ""
 
-  /** Constructs an instance with the $payload bytes from a retrieved message. */
-  constructor.private_ payload/ByteArray:
-    super.private_ Message.INF ID payload
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.INF ID bytes
 
   /** The informational text payload (NUL-terminated or raw). */
   text -> string:
