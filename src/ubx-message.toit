@@ -1662,6 +1662,8 @@ class NavPvt extends Message:
   */
   static MAX-PROTVER/string := ""
 
+  static DEGREES-SCALING-FACTOR_ ::= 1e7
+
   /** Unknown GNSS fix. */
   static NO-FIX ::= 0
   /** Dead reckoning only. */
@@ -1783,8 +1785,13 @@ class NavPvt extends Message:
 
   /** Convenience method for $lon. */
   // To match message type 'UBX-NAV-POSLLH'.
-  longitude -> int:
+  longitude-raw -> int:
     return lon
+
+  /** Convenience method for $lon converted to degrees (as float). */
+  // To match message type 'UBX-NAV-POSLLH'.
+  longitude-deg -> float:
+    return lon / DEGREES-SCALING-FACTOR_
 
   /** Latitude. */
   lat -> int:
@@ -1792,8 +1799,13 @@ class NavPvt extends Message:
 
   /** Convenience method for $lat. */
   // To match message type 'UBX-NAV-POSLLH'.
-  latitude -> int:
+  latitude-raw -> int:
     return lat
+
+  /** Convenience method for $lat converted to degrees (as float). */
+  // To match message type 'UBX-NAV-POSLLH'.
+  latitude-deg -> float:
+    return lat / DEGREES-SCALING-FACTOR_
 
   /** Height above ellipsoid in millimeter. */
   height -> int:
@@ -1878,8 +1890,7 @@ class NavPvt extends Message:
     return uint16_ 90
 
   stringify -> string:
-    return  "$super: latitude:$(latitude)|longitude:$(longitude)"
-
+    return  "$super: latitude:$(latitude-deg)|longitude:$(longitude-deg)"
 
 /**
 The UBX-NAV-SOL message.
