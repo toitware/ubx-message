@@ -2931,9 +2931,9 @@ class InfError extends Message:
   /** See $super. */
   stringify -> string:
     if payload.size > 0:
-      return "$(super.stringify): $text"
+      return "$super: $text"
     else:
-      return "$(super.stringify)"
+      return super
 
 /**
 The UBX-INF-WARNING message.
@@ -2974,9 +2974,9 @@ class InfWarning extends Message:
   /** See $super. */
   stringify -> string:
     if payload.size > 0:
-      return "$(super.stringify): $text"
+      return "$super: $text"
     else:
-      return "$(super.stringify)"
+      return super
 
 /**
 The UBX-INF-NOTICE message.
@@ -3017,9 +3017,9 @@ class InfNotice extends Message:
   /** See $super. */
   stringify -> string:
     if payload.size > 0:
-      return "$(super.stringify): $text"
+      return "$super: $text"
     else:
-      return "$(super.stringify)"
+      return super
 
 /**
 The UBX-INF-TEST message.
@@ -3060,9 +3060,9 @@ class InfTest extends Message:
   /** See $super. */
   stringify -> string:
     if payload.size > 0:
-      return "$(super.stringify): $text"
+      return "$super: $text"
     else:
-      return "$(super.stringify)"
+      return super
 
 /**
 The UBX-INF-DEBUG message.
@@ -3103,6 +3103,6 @@ class InfDebug extends Message:
   /** See $super. */
   stringify -> string:
     if payload.size > 0:
-      return "$(super.stringify): $text"
+      return "$super: $text"
     else:
-      return "$(super.stringify)"
+      return super
