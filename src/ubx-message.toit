@@ -2772,7 +2772,7 @@ class CfgInf extends Message:
     return payload.size == 1
 
   /**
-  Returns which protocol of this (0=UBX, 1=NMEA).
+  The protocol ($PROTO-UBX, or $PROTO-NMEA).
   */
   protocol-id -> int:
     return uint8_ 0
