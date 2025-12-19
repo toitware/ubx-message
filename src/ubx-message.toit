@@ -502,9 +502,13 @@ class Message:
       return Message.PACK-MESSAGE-TYPES[clsid][msgid]
     return "0x$(%02x msgid)"
 
+  /** Return message type in full UBX-* message name format. */
+  full-name -> string:
+    return "UBX-$cls-string_-$id-string_"
+
   /** See $super. */
   stringify -> string:
-    return "UBX-$cls-string_-$id-string_"
+    return full-name
 
   /** Hash code for use as an identifier in a Map. */
   hash-code:
