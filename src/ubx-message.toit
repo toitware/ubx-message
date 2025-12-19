@@ -714,7 +714,7 @@ class CfgMsg extends Message:
     put-uint8_ 1 msg-id
     set-rate port --rate=rate
 
-  /** Poll the configuration. */
+  /** Constructs a message to retireve the current rate for $msg-class and $msg-id. */
   constructor.poll --msg-class --msg-id:
     super.private_ Message.CFG ID #[msg-class, msg-id]
 
@@ -910,7 +910,8 @@ class CfgPrt extends Message:
     put-uint16_ 18 0
 
   /**
-  Poll the configuration for a given port.
+  Constructs a message to retrieve the configuration for a $port-id.
+
   The poll payload is a single byte: $port-id, which must be one of
     $PORT-UART1, or $PORT-UART2.
   */
@@ -1042,7 +1043,7 @@ class NavStatus extends Message:
     TIME-ONLY: "TIME-ONLY",
   }
 
-  /** Constructs a message to poll for a UBX-NAV-STATUS message. */
+  /** Constructs a message to retrieve a UBX-NAV-STATUS message. */
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
@@ -1436,7 +1437,7 @@ class MonVer extends Message:
   */
   static MAX-PROTVER/string := ""
 
-  /** Constructs a poll-request UBX-MON-VER. */
+  /** Constructs a message to retrieve a UBX-MON-VER message. */
   constructor.poll:
     super.private_ Message.MON ID #[]
 
@@ -1677,7 +1678,7 @@ class NavPvt extends Message:
   /** Time only fix. */
   static TIME-ONLY ::= 5
 
-  /** Constructs a poll UBX-NAV-PVT message. */
+  /** Constructs a message to retrieve a UBX-NAV-PVT message. */
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
@@ -1936,7 +1937,7 @@ class NavSol extends Message:
     TIME-ONLY: "TIME-ONLY",
   }
 
-  /** Constructs a poll UBX-NAV-SOL message. */
+  /** Constructs a message to retrieve a UBX-NAV-SOL message. */
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
@@ -2093,7 +2094,7 @@ class NavTimeUtc extends Message:
   static WEEK-VALID-MASK_         ::= 0b00000010
   static UTC-VALID-MASK_          ::= 0b00000100
 
-  /** Constructs a poll UBX-NAV-TIMEUTC message. */
+  /** Constructs a message to retrieve a UBX-NAV-TIMEUTC message. */
   constructor.poll:
     super.private_ Message.NAV ID #[]
 
@@ -2261,7 +2262,7 @@ class CfgTp5 extends Message:
   static FLAG-POLARITY-HI  ::= 0b00001000_00000000
   static FLAG-UTC-GRID     ::= 0b01000000_00000000
 
-  /** Poll the TP5 configuration for tpIdx (0 or 1). */
+  /** Constructs a message to retrieve the TP5 configuration for a given $tp-idx. */
   constructor.poll --tp-idx/int=TP-IDX-0:
     new-payload := ByteArray 2
     super.private_ Message.CFG ID new-payload
@@ -2420,7 +2421,7 @@ class CfgNav5 extends Message:
     DYN-AIR4G: "AIR4G"
   }
 
-  /** Poll current NAV5. */
+  /** Constructs a message to retrieve the current NAV5 configuration. */
   constructor.poll:
     super.private_ Message.CFG ID #[]
 
@@ -2586,7 +2587,7 @@ class CfgGnss extends Message:
   // Flags helpers.
   static FLAG-ENABLE ::= 1
 
-  /** Construct a poll message to get current GNSS configuration. */
+  /** Construct a poll message to retrieve the current GNSS configuration. */
   constructor.poll:
     // Empty payload poll (some firmwares accept either empty or msgVer=0).
     super.private_ Message.CFG ID #[]
@@ -2739,7 +2740,7 @@ class CfgInf extends Message:
   static MAX-PROTVER/string := "23.01"
 
   /**
-  Poll for the current INF configuration for a given protocol.
+  Retrieves the current INF configuration for a given $protocol-id.
 
   $protocol-id = one of $PROTO-UBX (0, default) to query UBX-INF-* enable masks,
     or $PROTO-NMEA (1) to query NMEA informational enable masks.
