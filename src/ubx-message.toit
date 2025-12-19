@@ -560,8 +560,8 @@ class Message:
   convert-string_ start/int length/int -> string:
     // Find first NUL within [start .. start+length].
     end := start + length
-    pos := payload.index-of 0x00 --from=start --to=end
-    if pos > -1: end = start + pos
+    pos := payload.index-of '\0' --from=start --to=end
+    if pos > -1: end = pos
     return (payload[start..end]).to-string
 
 /**
@@ -773,7 +773,6 @@ class CfgMsg extends Message:
     assert: port == PORT-ALL or 0 <= port <= 5
     assert: 0 <= rate <= 0xFF
 
-    // if $enable is null, replace instead of adjusting the existing value.
     if port == PORT-ALL:  //
       6.repeat:
         put-uint8_ (2 + it) rate
@@ -1486,10 +1485,10 @@ class MonVer extends Message:
   extensions-raw -> List:
     raw-extensions := []
     offset := 40
-    eq-pos := ?
-    while offset + 30 <= payload.size:
-      raw-extensions.add (convert-string_ offset 30)
-      offset += 30
+    field-size := 30
+    num-extensions := (payload.size - offset) / field-size
+    num-extensions.repeat: | i |
+      raw-extensions.add (convert-string_ (offset + (i * field-size)) field-size)
     return raw-extensions
 
   /** See $super. */
@@ -2693,15 +2692,15 @@ class CfgInf extends Message:
   static PROTO-NMEA ::= 1
 
   // infMsgMask bits (per port).
-  static MASK-NONE    ::= 0b00000000
-  static MASK-ALL     ::= 0b00011111
-  static MASK-ERROR   ::= 0b00000001
-  static MASK-WARNING ::= 0b00000010
-  static MASK-NOTICE  ::= 0b00000100
-  static MASK-TEST    ::= 0b00001000
-  static MASK-DEBUG   ::= 0b00010000
+  static LEVEL-NONE    ::= 0b00000000
+  static LEVEL-ALL     ::= 0b00011111
+  static LEVEL-ERROR   ::= 0b00000001
+  static LEVEL-WARNING ::= 0b00000010
+  static LEVEL-NOTICE  ::= 0b00000100
+  static LEVEL-TEST    ::= 0b00001000
+  static LEVEL-DEBUG   ::= 0b00010000
 
-  // Port indices in infMsgMask[6].
+  // Port indices infMsgMask[6].
   static PORT-ALL   ::= -1  // Not a valid port identifier, used for config.
   static PORT-DDC   ::= 0
   static PORT-UART1 ::= 1
@@ -2774,98 +2773,102 @@ class CfgInf extends Message:
     return uint8_ 0
 
   /**
-  Configure enable/disable on a specific message type for a specific port.
+  Configure enable/disable on a specific log $level for a specific $port.
 
-  Sets the type for all ports if $port is omitted. Use --enable or --no-enable to set.
+  Sets the logging $level for all ports if $port is omitted. Use --enable or
+    --no-enable to set the level.  Logging $level should be one of  $LEVEL-ERROR,
+    $LEVEL-WARNING, $LEVEL-NOTICE, $LEVEL-TEST, or $LEVEL-DEBUG.
   */
-  set-port-type --port/int=PORT-ALL --type/int --enable/bool?=true:
+  set-port-level port/int=PORT-ALL --level/int --enable/bool=true -> none:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     assert: port == PORT-ALL or 0 <= port <= 5
-    assert: 0 <= type <= 0xFF
+    assert: 0 <= level <= 0x1F
 
-    // if $enable is null, the value is replaced, instead of adjusting bits in
-    // the existing value using the mask.
     if port == PORT-ALL:
       6.repeat:
-        if enable == null: put-uint8_ (4 + it) type
-        else if enable: put-uint8_ (4 + it) ((uint8_ (4 + it)) | type)
-        else: put-uint8_ (4 + it) ((uint8_ (4 + it)) & (~type & 0xFF))
+        if enable: put-uint8_ (4 + it) ((uint8_ (4 + it)) | level)
+        else: put-uint8_ (4 + it) ((uint8_ (4 + it)) & (~level & 0xFF))
     else:
-      if enable == null: put-uint8_ (4 + port) type
-      else if enable: put-uint8_ (4 + port) ((uint8_ (4 + port)) | type)
-      else: put-uint8_ (4 + port) ((uint8_ (4 + port)) & (~type & 0xFF))
+      if enable: put-uint8_ (4 + port) ((uint8_ (4 + port)) | level)
+      else: put-uint8_ (4 + port) ((uint8_ (4 + port)) & (~level & 0xFF))
 
   /**
-  Gets the mask byte for the given $port.
-
-  The $port parameter must be one of $PORT-DDC(0), $PORT-UART1(1),
-    $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
-  */
-  get-port-type-mask port/int -> int:
-    assert: payload.size >= 10
-    assert: 0 <= port <= 5
-    return uint8_ (4 + port)
-
-  /**
-  Sets the mask byte for outright the given $port.
+  Sets the raw logging level mask byte the given $port.
 
   $port must be one of  $PORT-ALL(-1), $PORT-DDC(0), $PORT-UART1(1),
     $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
   */
-  set-port-type-mask port/int --mask/int -> none:
-    assert: payload.size >= 10
+  set-port-level-raw port/int=PORT-ALL --raw-value/int -> none:
+    assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     assert: port == PORT-ALL or 0 <= port <= 5
-    set-port-type --port=port --enable=null --type=mask
+    assert: 0 <= raw-value <= 0x1F
+
+    if port == PORT-ALL:
+      6.repeat:
+        put-uint8_ (4 + it) raw-value
+    else:
+      put-uint8_ (4 + port) raw-value
+
+  /**
+  Gets the raw logging level mask byte the given $port.
+
+  The $port parameter must be one of $PORT-DDC(0), $PORT-UART1(1),
+    $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
+  */
+  get-port-level-raw port/int -> int:
+    assert: payload.size >= 10
+    assert: 0 <= port <= 5
+    return uint8_ (4 + port)
 
   // Convenience per-port getters/setters.
-  get-type-mask-ddc -> int: return get-port-type-mask PORT-DDC
-  get-type-mask-uart1 -> int: return get-port-type-mask PORT-UART1
-  get-type-mask-uart2 -> int: return get-port-type-mask PORT-UART2
-  get-type-mask-usb -> int: return get-port-type-mask PORT-USB
-  get-type-mask-spi -> int: return get-port-type-mask PORT-SPI
-  get-type-mask-res5 -> int: return get-port-type-mask PORT-RES5
+  get-ddc-level-raw -> int: return get-port-level-raw PORT-DDC
+  get-uart1-level-raw -> int: return get-port-level-raw PORT-UART1
+  get-uart2-level-raw -> int: return get-port-level-raw PORT-UART2
+  get-usb-level-raw -> int: return get-port-level-raw PORT-USB
+  get-spi-level-raw -> int: return get-port-level-raw PORT-SPI
+  get-res5-level-raw -> int: return get-port-level-raw PORT-RES5
 
-  set-type-mask-ddc mask/int -> none: set-port-type-mask PORT-DDC --mask=mask
-  set-type-mask-uart1 mask/int -> none: set-port-type-mask PORT-UART1 --mask=mask
-  set-type-mask-uart2 mask/int -> none: set-port-type-mask PORT-UART2 --mask=mask
-  set-type-mask-usb mask/int -> none: set-port-type-mask PORT-USB --mask=mask
-  set-type-mask-spi mask/int -> none: set-port-type-mask PORT-SPI --mask=mask
-  set-type-mask-res5 mask/int -> none: set-port-type-mask PORT-RES5 --mask=mask
+  set-ddc-level-raw level/int -> none: set-port-level-raw PORT-DDC --raw-value=level
+  set-uart1-level-raw level/int -> none: set-port-level-raw PORT-UART1 --raw-value=level
+  set-uart2-level-raw level/int -> none: set-port-level-raw PORT-UART2 --raw-value=level
+  set-usb-level-raw level/int -> none: set-port-level-raw PORT-USB --raw-value=level
+  set-spi-level-raw level/int -> none: set-port-level-raw PORT-SPI --raw-value=level
+  set-res5-level-raw level/int -> none: set-port-level-raw PORT-RES5 --raw-value=level
 
   // Helpers for checking whether a given INF type is enabled on a port.
-  error-enabled  port/int -> bool: return (get-port-type-mask port) & MASK-ERROR   != 0
-  warning-enabled port/int -> bool: return (get-port-type-mask port) & MASK-WARNING != 0
-  notice-enabled port/int -> bool: return (get-port-type-mask port) & MASK-NOTICE  != 0
-  test-enabled port/int -> bool: return (get-port-type-mask port) & MASK-TEST    != 0
-  debug-enabled port/int -> bool: return (get-port-type-mask port) & MASK-DEBUG   != 0
+  error-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-ERROR != 0
+  warning-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-WARNING != 0
+  notice-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-NOTICE != 0
+  test-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-TEST != 0
+  debug-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-DEBUG != 0
 
   // Helpers for enabling a given INF type on a port.
-  enable-error port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-ERROR
-  enable-warning port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-WARNING
-  enable-notice port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-NOTICE
-  enable-test port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-TEST
-  enable-debug port/int=PORT-ALL -> none: set-port-type --port=port --enable --type=MASK-DEBUG
+  enable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR --enable
+  enable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING --enable
+  enable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE --enable
+  enable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST --enable
+  enable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG --enable
   /**
   Enables all message types for the given $port.
 
   Sets the type for all ports if $port is omitted.
   */
   enable-all --port/int=PORT-ALL:
-    set-port-type --port=port --enable=null --type=MASK-ALL
+    set-port-level port --level=LEVEL-ALL
 
   // Helpers for disabling a given INF type on a port.
-  disable-error port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-ERROR
-  disable-warning port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-WARNING
-  disable-notice port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-NOTICE
-  disable-test port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-TEST
-  disable-debug port/int=PORT-ALL -> none: set-port-type --port=port --no-enable --type=MASK-DEBUG
+  disable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR --no-enable
+  disable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING --no-enable
+  disable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE --no-enable
+  disable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST --no-enable
+  disable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG --no-enable
   /**
   Disables all message types for the given $port.
 
   Sets the type for all ports if $port is omitted.
   */
   disable-all --port/int=PORT-ALL:
-    set-port-type --port=port --enable=null --type=MASK_NONE
+    set-port-level port --level=LEVEL-NONE
 
   /** The name of this messages' protocol. */
   proto-string_ -> string:
