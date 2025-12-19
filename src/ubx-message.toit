@@ -2587,7 +2587,7 @@ class CfgGnss extends Message:
   // Flags helpers.
   static FLAG-ENABLE ::= 1
 
-  /** Construct a poll message to retrieve the current GNSS configuration. */
+  /** Constructs a poll message to retrieve the current GNSS configuration. */
   constructor.poll:
     // Empty payload poll (some firmwares accept either empty or msgVer=0).
     super.private_ Message.CFG ID #[]
