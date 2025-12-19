@@ -559,6 +559,11 @@ class Message:
   /** Helper to read a '\0'-terminated string from the payload. */
   convert-string_ start/int length/int -> string:
     // Find first NUL within [start .. start+length].
+    assert: start >= 0
+    assert: length >= 0
+    assert: start + length <= payload.size
+    assert: payload.size > 0
+
     end := start + length
     pos := payload.index-of '\0' --from=start --to=end
     if pos > -1: end = pos
@@ -1468,6 +1473,10 @@ class MonVer extends Message:
   has-extension str/string -> bool:
     return extensions-raw.any: it.contains str
 
+  /** Whether this is a poll message (1-byte payload). */
+  is-poll -> bool:
+    return payload.size == 0
+
   /**
   The entire line of the extension with the given $str.
 
@@ -1495,6 +1504,7 @@ class MonVer extends Message:
 
   /** See $super. */
   stringify -> string:
+    if is-poll: return "$super: (poll)"
     return "$super: $sw-version|$hw-version"
 
 /**
