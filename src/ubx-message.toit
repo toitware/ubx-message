@@ -718,7 +718,7 @@ class CfgMsg extends Message:
   constructor.poll --msg-class --msg-id:
     super.private_ Message.CFG ID #[msg-class, msg-id]
 
-  /** Set all port rates at once using 6*byte byte array ($rates). */
+  /** Set all port rates at once using byte array ($rates) with 6 entries. */
   constructor.per-port --msg-class/int --msg-id/int --rates/ByteArray:
     assert: 0 <= msg-class <= 255
     assert: 0 <= msg-id <= 255
