@@ -1062,7 +1062,7 @@ class NavStatus extends Message:
   fix-type -> int:
     return uint8_ 4
 
-  // Deprecated - switched to use naming convention from later message type.
+  // Deprecated - use $fix-type.
   gps-fix -> int: return fix-type
 
   /**
