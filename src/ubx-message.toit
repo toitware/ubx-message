@@ -735,7 +735,7 @@ class CfgMsg extends Message:
   message-id -> int:
     return uint8_ 1
 
-  /** True if this is a poll message (2-byte payload). */
+  /** Whether this is a poll message (2-byte payload). */
   is-poll -> bool:
     return payload.size == 2
 
@@ -2769,7 +2769,7 @@ class CfgInf extends Message:
   constructor.private_ bytes/ByteArray:
     super.private_ Message.CFG ID bytes
 
-  /** True if this is a poll message (1-byte payload). */
+  /** Whether this is a poll message (1-byte payload). */
   is-poll -> bool:
     return payload.size == 1
 
