@@ -1189,6 +1189,10 @@ class NavSat extends Message:
     if not 0 <= index < num-svs: throw "INVALID ARGUMENT"
     return SatelliteData index payload --src-id=ID
 
+  /** See $super. */
+  stringify -> string:
+    return "$super: satellite-count:$satellite-count"
+
 /**
 Satellite data for a single satellite.
 
@@ -2785,7 +2789,8 @@ class CfgInf extends Message:
     assert: 0 <= level <= 0x1F
 
     if port == PORT-ALL:
-      6.repeat:
+      // Deliberately misses port PORT-RES5 as stated in the manual.
+      5.repeat:
         if enable: put-uint8_ (4 + it) ((uint8_ (4 + it)) | level)
         else: put-uint8_ (4 + it) ((uint8_ (4 + it)) & (~level & 0xFF))
     else:
@@ -2804,7 +2809,8 @@ class CfgInf extends Message:
     assert: 0 <= raw-value <= 0x1F
 
     if port == PORT-ALL:
-      6.repeat:
+      // Deliberately misses port PORT-RES5, as stipluated in the manual.
+      5.repeat:
         put-uint8_ (4 + it) raw-value
     else:
       put-uint8_ (4 + port) raw-value
