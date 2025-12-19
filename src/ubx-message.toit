@@ -502,7 +502,7 @@ class Message:
       return Message.PACK-MESSAGE-TYPES[clsid][msgid]
     return "0x$(%02x msgid)"
 
-  /** Returns the message type in full UBX-* message name format. */
+  /** The message type name in full UBX-* format. */
   full-name -> string:
     return "UBX-$cls-string_-$id-string_"
 
@@ -739,7 +739,7 @@ class CfgMsg extends Message:
   is-poll -> bool:
     return payload.size == 2
 
-  /** Returns the string name of the given port. */
+  /** The string name of the given $port. */
   port-string_ port/int -> string:
     assert: port == PORT-ALL or 0 <= port <= 5
     return PACK-PORT-TYPES[port]
@@ -2871,13 +2871,13 @@ class CfgInf extends Message:
   disable-all --port/int=PORT-ALL:
     set-port-type --port=port --enable=null --type=MASK_NONE
 
-  /** Returns the string name of this messages' protocol. */
+  /** The string name of this messages' protocol. */
   proto-string_ -> string:
     if protocol-id == PROTO-UBX: return "UBX"
     if protocol-id == PROTO-NMEA: return "NMEA"
     return "UNKNOWN($protocol-id)"
 
-  /** Returns the string name of the given port. */
+  /** The string name of the given $port. */
   port-string_ port/int -> string:
     assert: port == PORT-ALL or 0 <= port <= 5
     return PACK-PORT-TYPES[port]
