@@ -778,8 +778,9 @@ class CfgMsg extends Message:
     assert: port == PORT-ALL or 0 <= port <= 5
     assert: 0 <= rate <= 0xFF
 
-    if port == PORT-ALL:  //
-      6.repeat:
+    if port == PORT-ALL:
+      // Deliberately misses port PORT-RES5, as stipluated in the manual.
+      5.repeat:
         put-uint8_ (2 + it) rate
     else:
       put-uint8_ (2 + port) rate
@@ -802,9 +803,10 @@ class CfgMsg extends Message:
   /** See $super. */
   stringify -> string:
     out-str := "$super"
+    info-str := "{0x$(%02x class-id)($(cls-string_ class-id)):0x$(%02x message-id)($(id-string_ class-id message-id))}"
     if is-poll:
-      return "$out-str: {poll}"
-    out-str += ": {0x$(%02x class-id)($(cls-string_ class-id)):0x$(%02x message-id)($(id-string_ class-id message-id))}"
+      return "$out-str: (poll) $info-str"
+    out-str += ": $info-str"
     out-set := []
     6.repeat:
       out-set.add "$(port-string_ (it))=0x$(%02x payload[2 + it])"
