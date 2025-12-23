@@ -3002,7 +3002,7 @@ class InfWarning extends Message:
 /**
 The UBX-INF-NOTICE message.
 
-Asynchronous human-readable text message, emitted by the receiver for ublox-
+Asynchronous human-readable text message emitted by the receiver for ublox-
   sourced notice output (if configured).
 
 This message is not pollable.  It is enabled/disabled via configuration using
@@ -3043,7 +3043,7 @@ class InfNotice extends Message:
 /**
 The UBX-INF-TEST message.
 
-Asynchronous human-readable text message, emitted by the receiver (if
+Asynchronous human-readable text message emitted by the receiver (if
   configured) for ublox-sourced test output.
 
 This message is not pollable.  It is enabled/disabled via configuration using
@@ -3084,7 +3084,7 @@ class InfTest extends Message:
 /**
 The UBX-INF-DEBUG message.
 
-Asynchronous human-readable text message, emitted by the receiver (if
+Asynchronous human-readable text message emitted by the receiver (if
   configured) for ublox-sourced debug output.
 
 This message is not pollable.  It is enabled/disabled via configuration using
