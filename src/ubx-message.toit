@@ -2743,8 +2743,6 @@ class CfgInf extends Message:
     PORT-RES5: "RES5",
   }
 
-  static ENABLED ::= true
-  static DISABLED ::= false
   /**
   The minimum protocol version for the message type.
 
@@ -2829,7 +2827,7 @@ class CfgInf extends Message:
   $port must be one of  $PORT-ALL(-1), $PORT-DDC(0), $PORT-UART1(1),
     $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
   */
-  set-port-level-raw port/int=PORT-ALL --raw-value/int -> none:
+  set-port-level port/int=PORT-ALL --raw-value/int -> none:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     assert: port == PORT-ALL or 0 <= port <= 5
     assert: 0 <= raw-value <= 0x1F
@@ -2851,39 +2849,24 @@ class CfgInf extends Message:
   The $port parameter must be one of $PORT-DDC(0), $PORT-UART1(1),
     $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
   */
-  get-port-level-raw port/int -> int:
+  get-port-level port/int -> int:
     assert: payload.size >= 10
     assert: 0 <= port <= 5
     return uint8_ (4 + port)
 
-  // Convenience per-port getters/setters.
-  get-ddc-level-raw -> int: return get-port-level-raw PORT-DDC
-  get-uart1-level-raw -> int: return get-port-level-raw PORT-UART1
-  get-uart2-level-raw -> int: return get-port-level-raw PORT-UART2
-  get-usb-level-raw -> int: return get-port-level-raw PORT-USB
-  get-spi-level-raw -> int: return get-port-level-raw PORT-SPI
-  get-res5-level-raw -> int: return get-port-level-raw PORT-RES5
-
-  set-ddc-level-raw level/int -> none: set-port-level-raw PORT-DDC --raw-value=level
-  set-uart1-level-raw level/int -> none: set-port-level-raw PORT-UART1 --raw-value=level
-  set-uart2-level-raw level/int -> none: set-port-level-raw PORT-UART2 --raw-value=level
-  set-usb-level-raw level/int -> none: set-port-level-raw PORT-USB --raw-value=level
-  set-spi-level-raw level/int -> none: set-port-level-raw PORT-SPI --raw-value=level
-  set-res5-level-raw level/int -> none: set-port-level-raw PORT-RES5 --raw-value=level
-
   // Helpers for checking whether a given INF type is enabled on a port.
-  error-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-ERROR != 0
-  warning-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-WARNING != 0
-  notice-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-NOTICE != 0
-  test-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-TEST != 0
-  debug-enabled port/int -> bool: return (get-port-level-raw port) & LEVEL-DEBUG != 0
+  error-enabled port/int -> bool: return (get-port-level port) & LEVEL-ERROR != 0
+  warning-enabled port/int -> bool: return (get-port-level port) & LEVEL-WARNING != 0
+  notice-enabled port/int -> bool: return (get-port-level port) & LEVEL-NOTICE != 0
+  test-enabled port/int -> bool: return (get-port-level port) & LEVEL-TEST != 0
+  debug-enabled port/int -> bool: return (get-port-level port) & LEVEL-DEBUG != 0
 
   // Helpers for enabling a given INF type on a port.
-  enable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR ENABLED
-  enable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING ENABLED
-  enable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE ENABLED
-  enable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST ENABLED
-  enable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG ENABLED
+  enable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR true
+  enable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING true
+  enable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE true
+  enable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST true
+  enable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG true
   /**
   Enables all message types for the given $port.
 
@@ -2893,11 +2876,11 @@ class CfgInf extends Message:
     set-port-level port --level=LEVEL-ALL
 
   // Helpers for disabling a given INF type on a port.
-  disable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR DISABLED
-  disable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING DISABLED
-  disable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE DISABLED
-  disable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST DISABLED
-  disable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG DISABLED
+  disable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR false
+  disable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING false
+  disable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE false
+  disable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST false
+  disable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG false
   /**
   Disables all message types for the given $port.
 
