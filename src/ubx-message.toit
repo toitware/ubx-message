@@ -2799,9 +2799,10 @@ class CfgInf extends Message:
   /**
   Enable (or disable) a specific logging $level, for a specific $port.
 
-  Adds or removes the given $level bit from the ports' bitmask.  This method
-    does not replace other bits that might be set ($set-port-level replaces the
-    entire mask).  Use $enable to set or unset the desired bit.
+  Adds or removes the given $level bit from the ports' bitmask of enabled
+    logging levels.  Use $enable to set or unset the desired $level. (This
+    method does not replace other bits that might be set. In comparison,
+    $set-port-level replaces the entire bitmask with the new value).
 
   Sets the logging $level for all ports if $port is omitted. Logging $level
     should be one of  $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE, $LEVEL-TEST,
