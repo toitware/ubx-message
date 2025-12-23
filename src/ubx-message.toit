@@ -1500,7 +1500,7 @@ class MonVer extends Message:
     offset := 40
     field-size := 30
     num-extensions := (payload.size - offset) / field-size
-    num-extensions.repeat: | i |
+    num-extensions.repeat: | i/int |
       raw-extensions.add (convert-string_ (offset + (i * field-size)) field-size)
     return raw-extensions
 
