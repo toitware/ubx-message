@@ -558,7 +558,7 @@ class Message:
 
   /** Helper to read a '\0'-terminated string from the payload. */
   convert-string_ start/int length/int -> string:
-    // Find first NUL within [start .. start+length].
+    // Find first '\0' within [start .. start+length].
     assert: start >= 0
     assert: length >= 0
     assert: start + length <= payload.size
