@@ -2829,7 +2829,7 @@ class CfgInf extends Message:
     assert: 0 <= raw-value <= 0x1F
 
     if port == PORT-ALL:
-      // Deliberately misses port PORT-RES5, as stipluated in the manual.
+      // Deliberately misses port PORT-RES5, as stipulated in the manual.
       5.repeat:
         put-uint8_ (4 + it) raw-value
     else:
