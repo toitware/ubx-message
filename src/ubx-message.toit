@@ -2822,7 +2822,7 @@ class CfgInf extends Message:
   /**
   Sets the raw logging level mask byte the given $port.
 
-  $raw-value is a mask of all the bits of the requested levels combined.
+  $raw-value is a bitmask of all the bits of the requested levels combined.
     Individual bits are given by $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE
     $LEVEL-TEST, and $LEVEL-DEBUG.
 
@@ -2843,6 +2843,10 @@ class CfgInf extends Message:
 
   /**
   Gets the raw logging level mask byte the given $port.
+
+  Output is a bitmask of all the bits of the requested levels combined.
+    Individual bits are given by $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE
+    $LEVEL-TEST, and $LEVEL-DEBUG.
 
   The $port parameter must be one of $PORT-DDC(0), $PORT-UART1(1),
     $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
