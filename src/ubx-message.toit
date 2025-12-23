@@ -332,7 +332,7 @@ class Message:
   payload/ByteArray
 
   /** Constructs a UBX message with the given $cls, $id, and $payload. */
-  constructor.private_ .cls .id .payload:
+  constructor.private_ .cls/int .id/int .payload/ByteArray:
 
   /**
   Constructs a UBX message with the given $cls, $id, and $payload.
@@ -340,7 +340,7 @@ class Message:
   If message is implemented in this package, then it returns the appropriate
     sub-class.
   */
-  constructor cls id payload:
+  constructor cls/int id/int payload:
     if cls == Message.ACK:
       if id == AckAck.ID:
         return AckAck.private_ payload
@@ -492,11 +492,11 @@ class Message:
       bytes[bytes.size - 1] = ck-b
     return bytes
 
-  cls-string_ clsid=cls -> string:
+  cls-string_ clsid/int=cls -> string:
     return PACK-CLASSES.get clsid --if-absent=:
       return "0x$(%02x clsid)"
 
-  id-string_ clsid=cls msgid=id -> string:
+  id-string_ clsid/int=cls msgid/int=id -> string:
     if Message.PACK-MESSAGE-TYPES.contains clsid and
         Message.PACK-MESSAGE-TYPES[clsid].contains msgid:
       return Message.PACK-MESSAGE-TYPES[clsid][msgid]
@@ -515,45 +515,45 @@ class Message:
     return payload.hash-code ^ ((cls << 16) | id)
 
   /** Helper to return an int8 from payload index. */
-  int8_ index --payload=payload -> int: return LITTLE-ENDIAN.int8 payload index
+  int8_ index/int --payload/ByteArray=payload -> int: return LITTLE-ENDIAN.int8 payload index
 
   /** Helper to return an uint8 from payload index. */
-  uint8_ index --payload=payload -> int: return payload[index]
+  uint8_ index/int --payload/ByteArray=payload -> int: return payload[index]
 
   /** Helper to return an int16 from payload index. */
-  int16_ index --payload=payload -> int: return LITTLE-ENDIAN.int16 payload index
+  int16_ index/int --payload/ByteArray=payload -> int: return LITTLE-ENDIAN.int16 payload index
 
   /** Helper to return an uint16 from payload index. */
-  uint16_ index --payload=payload -> int: return LITTLE-ENDIAN.uint16 payload index
+  uint16_ index/int --payload/ByteArray=payload -> int: return LITTLE-ENDIAN.uint16 payload index
 
   /** Helper to return an int32 from payload index. */
-  int32_ index --payload=payload -> int: return LITTLE-ENDIAN.int32 payload index
+  int32_ index/int --payload/ByteArray=payload -> int: return LITTLE-ENDIAN.int32 payload index
 
   /** Helper to return an uint32 from payload index. */
-  uint32_ index --payload=payload -> int: return LITTLE-ENDIAN.uint32 payload index
+  uint32_ index/int --payload/ByteArray=payload -> int: return LITTLE-ENDIAN.uint32 payload index
 
   /** Helper to insert an int8 into payload index. */
-  put-int8_ index value --payload=payload -> none:
+  put-int8_ index/int value/int --payload/ByteArray=payload -> none:
     LITTLE-ENDIAN.put-int8 payload index value
 
   /** Helper to insert an uint8 into payload index. */
-  put-uint8_ index value --payload=payload -> none:
+  put-uint8_ index/int value/int --payload/ByteArray=payload -> none:
     payload[index] = value
 
   /** Helper to insert an int16 into payload index. */
-  put-int16_ index value --payload=payload -> none:
+  put-int16_ index/int value/int --payload=payload -> none:
     LITTLE-ENDIAN.put-int16 payload index value
 
   /** Helper to insert an uint16 into payload index. */
-  put-uint16_ index value --payload=payload -> none:
+  put-uint16_ index/int value/int --payload=payload -> none:
     LITTLE-ENDIAN.put-uint16 payload index value
 
   /** Helper to insert an int32 into payload index. */
-  put-int32_ index value --payload=payload -> none:
+  put-int32_ index/int value/int --payload=payload -> none:
     LITTLE-ENDIAN.put-int32 payload index value
 
   /** Helper to insert an uint32 into payload index. */
-  put-uint32_ index value --payload=payload -> none:
+  put-uint32_ index/int value/int --payload=payload -> none:
     LITTLE-ENDIAN.put-uint32 payload index value
 
   /** Helper to read a '\0'-terminated string from the payload. */
@@ -590,7 +590,7 @@ class AckAck extends Message:
   static MAX-PROTVER/string := ""
 
   /** Constructs a dummy acknowledge message. */
-  constructor.private_ cls id:
+  constructor.private_ cls/int id:
     super.private_ Message.ACK ID #[cls, id]
 
   /** Constructs an instance with the payload $bytes from a retrieved message. */
@@ -638,7 +638,7 @@ class AckNak extends Message:
   static MAX-PROTVER/string := ""
 
   /** Constructs a dummy NAK message. */
-  constructor.private_ cls id:
+  constructor.private_ cls/int id/int:
     super.private_ Message.ACK ID #[cls, id]
 
   /** Constructs an instance with the payload $bytes from a retrieved message. */
@@ -728,7 +728,9 @@ class CfgMsg extends Message:
     set-rate port --rate=rate
 
   /** Constructs a message to retrieve the current rate for $msg-class and $msg-id. */
-  constructor.poll --msg-class --msg-id:
+  constructor.poll --msg-class/int --msg-id/int:
+    assert: 0 <= msg-class <= 255
+    assert: 0 <= msg-id <= 255
     super.private_ Message.CFG ID #[msg-class, msg-id]
 
   /** Set all port rates at once using byte array ($rates) with 6 entries. */
@@ -1004,7 +1006,7 @@ class CfgRst extends Message:
   The default parameters are a controlled software reset with a cold start.
   See the description for other parameter options.
   */
-  constructor --clear-sections=0xFFFF --reset-mode=2:
+  constructor --clear-sections/int=0xFFFF --reset-mode=2:
     super.private_ Message.CFG ID (ByteArray 4)
     put-uint16_ 0 clear-sections
     put-uint8_ 2 reset-mode
@@ -1642,7 +1644,7 @@ class NavSvInfo extends Message:
 
   The $index must satisfy 0 <= $index < $num-ch.
   */
-  satellite-data index -> SatelliteData:
+  satellite-data index/int -> SatelliteData:
     if not 0 <= index < num-ch: throw "INVALID ARGUMENT"
     return SatelliteData index payload --src-id=ID
 
@@ -2028,7 +2030,7 @@ class NavSol extends Message:
   One of "NO-FIX", "DEAD-RECKONING-ONLY", "FIX-2D", "FIX-3D", "GPS-DEAD-FIX",
     "TIME-ONLY", or "UNKNOWN" in case of error or unexpected output.
   */
-  fix-type-text fixtype=fix-type -> string:
+  fix-type-text fixtype/int=fix-type -> string:
     return PACK-FIX-TYPE_.get fixtype --if-absent=:
       return "UNKNOWN"
 
