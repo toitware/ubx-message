@@ -567,7 +567,7 @@ class Message:
     end := start + length
     pos := payload.index-of '\0' --from=start --to=end
     if pos > -1: end = pos
-    return (payload[start..end]).to-string
+    return payload[start..end].to-string
 
 /**
 The UBX-ACK-ACK message.
