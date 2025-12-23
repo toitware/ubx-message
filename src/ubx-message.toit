@@ -2797,13 +2797,17 @@ class CfgInf extends Message:
     return uint8_ 0
 
   /**
-  Enable or disable) a specific logging $level, for a specific $port.
+  Enable (or disable) a specific logging $level, for a specific $port.
+
+  Adds or removes the given $level bit from the ports' bitmask.  This method
+    does not replace other bits that might be set.  Use $enable to set or unset
+    the desired bit.
 
   Sets the logging $level for all ports if $port is omitted. Logging $level
     should be one of  $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE, $LEVEL-TEST,
     or $LEVEL-DEBUG.
   */
-  set-port-level port/int=PORT-ALL --level/int enable/bool=true -> none:
+  enable-port-level port/int=PORT-ALL level/int=LEVEL-ALL --enable/bool=true -> none:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     assert: port == PORT-ALL or 0 <= port <= 5
     assert: 0 <= level <= 0x1F
@@ -2820,24 +2824,25 @@ class CfgInf extends Message:
   /**
   Sets the raw logging level mask byte the given $port.
 
-  $raw-value is a bitmask of all the bits of the requested levels combined.
+  $level is a bitmask of all the bits of the requested levels combined.
     Individual bits are given by $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE
-    $LEVEL-TEST, and $LEVEL-DEBUG.
+    $LEVEL-TEST, and $LEVEL-DEBUG.  Setting one level will replace all other
+    bits.
 
   $port must be one of  $PORT-ALL(-1), $PORT-DDC(0), $PORT-UART1(1),
     $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
   */
-  set-port-level port/int=PORT-ALL --raw-value/int -> none:
+  set-port-level port/int=PORT-ALL level/int=LEVEL-ALL -> none:
     assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     assert: port == PORT-ALL or 0 <= port <= 5
-    assert: 0 <= raw-value <= 0x1F
+    assert: 0 <= level <= 0x1F
 
     if port == PORT-ALL:
       // Deliberately misses port PORT-RES5, as stipulated in the manual.
       5.repeat:
-        put-uint8_ (4 + it) raw-value
+        put-uint8_ (4 + it) level
     else:
-      put-uint8_ (4 + port) raw-value
+      put-uint8_ (4 + port) level
 
   /**
   Gets the raw logging level mask byte the given $port.
@@ -2854,40 +2859,66 @@ class CfgInf extends Message:
     assert: 0 <= port <= 5
     return uint8_ (4 + port)
 
-  // Helpers for checking whether a given INF type is enabled on a port.
+  /**  Whether logging level $LEVEL-ERROR is enabled on the given $port. */
   error-enabled port/int -> bool: return (get-port-level port) & LEVEL-ERROR != 0
+
+  /**  Whether logging level $LEVEL-WARNING is enabled on the given $port. */
   warning-enabled port/int -> bool: return (get-port-level port) & LEVEL-WARNING != 0
+
+  /**  Whether the logging level $LEVEL-NOTICE is enabled on the given $port. */
   notice-enabled port/int -> bool: return (get-port-level port) & LEVEL-NOTICE != 0
+
+  /**  Whether the logging level $LEVEL-TEST is enabled on the given $port. */
   test-enabled port/int -> bool: return (get-port-level port) & LEVEL-TEST != 0
+
+  /**  Whether the logging level $LEVEL-DEBUG is enabled on the given $port. */
   debug-enabled port/int -> bool: return (get-port-level port) & LEVEL-DEBUG != 0
 
-  // Helpers for enabling a given INF type on a port.
-  enable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR true
-  enable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING true
-  enable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE true
-  enable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST true
-  enable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG true
+  /**  Enables the $LEVEL-ERROR logging level on the given $port. */
+  enable-error port/int -> none: enable-port-level port LEVEL-ERROR --enable=true
+
+  /**  Enables the $LEVEL-WARNING logging level on the given $port. */
+  enable-warning port/int -> none: enable-port-level port LEVEL-WARNING --enable=true
+
+  /**  Enables the $LEVEL-NOTICE logging level on the given $port. */
+  enable-notice port/int -> none: enable-port-level port LEVEL-NOTICE --enable=true
+
+  /**  Enables the $LEVEL-TEST logging level on the given $port. */
+  enable-test port/int -> none: enable-port-level port LEVEL-TEST --enable=true
+
+  /**  Enables the $LEVEL-DEBUG logging level on the given $port. */
+  enable-debug port/int -> none: enable-port-level port LEVEL-DEBUG --enable=true
+
   /**
   Enables all message types for the given $port.
 
   Sets the type for all ports if $port is omitted.
   */
   enable-all --port/int=PORT-ALL:
-    set-port-level port --level=LEVEL-ALL
+    set-port-level port LEVEL-ALL
 
-  // Helpers for disabling a given INF type on a port.
-  disable-error port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-ERROR false
-  disable-warning port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-WARNING false
-  disable-notice port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-NOTICE false
-  disable-test port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-TEST false
-  disable-debug port/int=PORT-ALL -> none: set-port-level port --level=LEVEL-DEBUG false
+  /**  Disables the $LEVEL-ERROR logging level on the given $port. */
+  disable-error port/int=PORT-ALL -> none: enable-port-level port LEVEL-ERROR --enable=false
+
+  /**  Disables the $LEVEL-WARNING logging level on the given $port. */
+  disable-warning port/int=PORT-ALL -> none: enable-port-level port LEVEL-WARNING --enable=false
+
+  /**  Disables the $LEVEL-NOTICE logging level on the given $port. */
+  disable-notice port/int=PORT-ALL -> none: enable-port-level port LEVEL-NOTICE --enable=false
+
+  /**  Disables the $LEVEL-TEST logging level on the given $port. */
+  disable-test port/int=PORT-ALL -> none: enable-port-level port LEVEL-TEST --enable=false
+
+  /**  Disables the $LEVEL-DEBUG logging level on the given $port. */
+  disable-debug port/int=PORT-ALL -> none: enable-port-level port LEVEL-DEBUG --enable=false
+
   /**
   Disables all message types for the given $port.
 
   Sets the type for all ports if $port is omitted.
   */
   disable-all --port/int=PORT-ALL:
-    set-port-level port --level=LEVEL-NONE
+    set-port-level port LEVEL-NONE
 
   /** The name of this messages' protocol. */
   proto-string_ -> string:
