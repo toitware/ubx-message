@@ -727,7 +727,7 @@ class CfgMsg extends Message:
     put-uint8_ 1 msg-id
     set-rate port --rate=rate
 
-  /** Constructs a message to retireve the current rate for $msg-class and $msg-id. */
+  /** Constructs a message to retrieve the current rate for $msg-class and $msg-id. */
   constructor.poll --msg-class --msg-id:
     super.private_ Message.CFG ID #[msg-class, msg-id]
 
@@ -779,7 +779,7 @@ class CfgMsg extends Message:
     assert: 0 <= rate <= 0xFF
 
     if port == PORT-ALL:
-      // Deliberately misses port PORT-RES5, as stipluated in the manual.
+      // Deliberately misses port PORT-RES5, as stipulated in the manual.
       5.repeat:
         put-uint8_ (2 + it) rate
     else:
