@@ -2701,7 +2701,7 @@ This message type polls, gets and sets the configuration for UBX-CFG-* message
   types.  It controls whether UBX-INF-* (and/or NMEA informational) messages
   are emitted, and on which interface/port.
 
-  These types are acsynchronous human-readable text messages, emitted
+  These types are asynchronous human-readable text messages, emitted
   by the receiver when an error condition occurs.  The UBX-INF-* message types
   cannot be directly polled for.
 
