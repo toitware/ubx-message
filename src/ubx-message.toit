@@ -2704,9 +2704,6 @@ This message type polls, gets and sets the configuration for UBX-CFG-* message
   These types are asynchronous human-readable text messages, emitted
   by the receiver when an error condition occurs.  The UBX-INF-* message types
   cannot be directly polled for.
-
-This message type is used for M8 or lower devices, for higher devices use the
-  VALGET/VALSET/VALDEL configuration mechanism.
 */
 class CfgInf extends Message:
   /** The UBX-CFG-INF message ID. */
