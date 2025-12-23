@@ -2800,8 +2800,8 @@ class CfgInf extends Message:
   Enable (or disable) a specific logging $level, for a specific $port.
 
   Adds or removes the given $level bit from the ports' bitmask.  This method
-    does not replace other bits that might be set.  Use $enable to set or unset
-    the desired bit.
+    does not replace other bits that might be set ($set-port-level replaces the
+    entire mask).  Use $enable to set or unset the desired bit.
 
   Sets the logging $level for all ports if $port is omitted. Logging $level
     should be one of  $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE, $LEVEL-TEST,
@@ -2825,9 +2825,9 @@ class CfgInf extends Message:
   Sets the raw logging level mask byte the given $port.
 
   $level is a bitmask of all the bits of the requested levels combined.
-    Individual bits are given by $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE
+    (Individual bits are given by $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE
     $LEVEL-TEST, and $LEVEL-DEBUG.  Setting one level will replace all other
-    bits.
+    bits.)
 
   $port must be one of  $PORT-ALL(-1), $PORT-DDC(0), $PORT-UART1(1),
     $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
@@ -2848,8 +2848,8 @@ class CfgInf extends Message:
   Gets the raw logging level mask byte the given $port.
 
   Output is a bitmask of all the bits of the requested levels combined.
-    Individual bits are given by $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE
-    $LEVEL-TEST, and $LEVEL-DEBUG.
+    (Individual bits are given by $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE
+    $LEVEL-TEST, and $LEVEL-DEBUG.)
 
   The $port parameter must be one of $PORT-DDC(0), $PORT-UART1(1),
     $PORT-UART2(2), $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
@@ -2894,8 +2894,7 @@ class CfgInf extends Message:
 
   Sets the type for all ports if $port is omitted.
   */
-  enable-all --port/int=PORT-ALL:
-    set-port-level port LEVEL-ALL
+  enable-all --port/int=PORT-ALL -> none: set-port-level port LEVEL-ALL
 
   /**  Disables the $LEVEL-ERROR logging level on the given $port. */
   disable-error port/int=PORT-ALL -> none: enable-port-level port LEVEL-ERROR --enable=false
@@ -2917,8 +2916,7 @@ class CfgInf extends Message:
 
   Sets the type for all ports if $port is omitted.
   */
-  disable-all --port/int=PORT-ALL:
-    set-port-level port LEVEL-NONE
+  disable-all --port/int=PORT-ALL -> none: set-port-level port LEVEL-NONE
 
   /** The name of this messages' protocol. */
   proto-string_ -> string:
