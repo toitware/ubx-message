@@ -2920,11 +2920,11 @@ class CfgInf extends Message:
 /**
 The UBX-INF-ERROR message.
 
-Asynchronous human-readable text message, emitted by the receiver (if
-  configured) when an error condition occurs in the UBX firmware.
+Asynchronous human-readable text message emitted by the receiver (if
+  configured) when an error condition occurs in the ublox firmware.
 
-UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
-  (VALSET 'CFG-INFMSG' keys, or using  UBX-CFG-INF M8/older devices).
+This message is not pollable.  It is enabled/disabled via configuration using
+  $CfgInf (UBX-CFG-INF).
 */
 class InfError extends Message:
   /** The UBX-INF-ERROR message ID. */
@@ -2961,11 +2961,11 @@ class InfError extends Message:
 /**
 The UBX-INF-WARNING message.
 
-Asynchronous human-readable text message, emitted by the receiver (if
-  configured) for warnings.
+Asynchronous human-readable text message emitted by the receiver (if configured)
+  for ublox-sourced warnings.
 
-UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
-  (VALSET 'CFG-INFMSG' keys, or using UBX-CFG-INF M8/older devices).
+This message is not pollable.  It is enabled/disabled via configuration using
+  $CfgInf (UBX-CFG-INF).
 */
 class InfWarning extends Message:
   /** The UBX-INF-WARNING message ID. */
@@ -3002,11 +3002,11 @@ class InfWarning extends Message:
 /**
 The UBX-INF-NOTICE message.
 
-Asynchronous human-readable text message, emitted by the receiver for notices
-  (if configured).
+Asynchronous human-readable text message, emitted by the receiver for ublox-
+  sourced notice output (if configured).
 
-UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
-  (VALSET 'CFG-INFMSG' keys, or using UBX-CFG-INF M8/older devices).
+This message is not pollable.  It is enabled/disabled via configuration using
+  $CfgInf (UBX-CFG-INF).
 */
 class InfNotice extends Message:
   /** The UBX-INF-NOTICE message ID. */
@@ -3044,10 +3044,10 @@ class InfNotice extends Message:
 The UBX-INF-TEST message.
 
 Asynchronous human-readable text message, emitted by the receiver (if
-  configured) for test output.
+  configured) for ublox-sourced test output.
 
-UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
-  (VALSET 'CFG-INFMSG' keys, or using UBX-CFG-INF M8/older devices).
+This message is not pollable.  It is enabled/disabled via configuration using
+  $CfgInf (UBX-CFG-INF).
 */
 class InfTest extends Message:
   /** The UBX-INF-TEST message ID. */
@@ -3085,10 +3085,10 @@ class InfTest extends Message:
 The UBX-INF-DEBUG message.
 
 Asynchronous human-readable text message, emitted by the receiver (if
-  configured) for debug output.
+  configured) for ublox-sourced debug output.
 
-UBX-INF-* messages are not pollable. They are enabled/disabled via configuration
-  (VALSET 'CFG-INFMSG' keys, or using UBX-CFG-INF M8/older devices).
+This message is not pollable.  It is enabled/disabled via configuration using
+  $CfgInf (UBX-CFG-INF).
 */
 class InfDebug extends Message:
   /** The UBX-INF-DEBUG message ID. */
