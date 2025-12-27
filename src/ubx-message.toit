@@ -2805,8 +2805,8 @@ class CfgInf extends Message:
     set $raw instead.
 
   Sets the logging $level for all ports if $port is omitted.  $port must be one
-    of  $PORT-ALL(-1), $PORT-DDC(0), $PORT-UART1(1), $PORT-UART2(2),
-    $PORT-USB(3), $PORT-SPI(4), $PORT-RES5(5).
+    of $PORT-ALL, $PORT-DDC, $PORT-UART1, $PORT-UART2,
+    $PORT-USB, $PORT-SPI, $PORT-RES5.
 
   Logging $level should be one of $LEVEL-ERROR, $LEVEL-WARNING, $LEVEL-NOTICE,
     $LEVEL-TEST or $LEVEL-DEBUG.
