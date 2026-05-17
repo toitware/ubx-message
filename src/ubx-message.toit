@@ -722,7 +722,7 @@ class CfgMsg extends Message:
     assert: 0 <= msg-class <= 255
     assert: 0 <= msg-id <= 255
     assert: 0 <= rate <= 255
-    super.private_ Message.CFG ID (ByteArray 6 --initial=0x00)
+    super.private_ Message.CFG ID (ByteArray 8 --initial=0x00)
     put-uint8_ 0 msg-class
     put-uint8_ 1 msg-id
     set-rate port --rate=rate
@@ -1367,7 +1367,7 @@ class SatelliteData:
       alm-avail    = (flags & alm-avail-mask) >> alm-avail-mask.count-trailing-zeros
       eph-avail    = (flags & eph-avail-mask) >> eph-avail-mask.count-trailing-zeros
       ano-avail    = (flags & ano-avail-mask) >> ano-avail-mask.count-trailing-zeros
-      aop-avail    = (flags & alm-avail-mask) >> alm-avail-mask.count-trailing-zeros
+      aop-avail    = (flags & aop-avail-mask) >> aop-avail-mask.count-trailing-zeros
       diff-corr    = ((flags & diff-corr-mask) >> diff-corr-mask.count-trailing-zeros) != 0
       sv-used      = ((flags & sv-used-mask) >> sv-used-mask.count-trailing-zeros) != 0
       smoothed     = ((flags & smoothed-mask) >> smoothed-mask.count-trailing-zeros) != 0
@@ -2673,11 +2673,12 @@ class CfgGnss extends Message:
 
   /** The `gnssId` for the i'th config block. */
   config-block-gnss-id i/int -> int:
-    assert: 0 < i <= num-config-blocks
+    assert: 0 <= i < num-config-blocks
     return uint8_ (4 + 8*i)
 
   /** The flags for the i'th config block. */
   config-block-flags i/int -> int:
+    assert: 0 <= i < num-config-blocks
     return uint32_ (4 + 8*i + 4)
 
   /**
@@ -2687,7 +2688,7 @@ class CfgGnss extends Message:
     sending back.
   */
   config-block i/int -> Map:
-    assert: 0 < i <= num-config-blocks
+    assert: 0 <= i < num-config-blocks
     base := (4 + 8*i)
     block := {:}
     block["gnssId"] = uint8_ (base + BLOCK-GNSSID_)
