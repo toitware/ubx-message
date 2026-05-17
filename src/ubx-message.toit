@@ -722,7 +722,7 @@ class CfgMsg extends Message:
     assert: 0 <= msg-class <= 255
     assert: 0 <= msg-id <= 255
     assert: 0 <= rate <= 255
-    super.private_ Message.CFG ID (ByteArray 6 --initial=0x00)
+    super.private_ Message.CFG ID (ByteArray 8 --initial=0x00)
     put-uint8_ 0 msg-class
     put-uint8_ 1 msg-id
     set-rate port --rate=rate
@@ -1367,7 +1367,7 @@ class SatelliteData:
       alm-avail    = (flags & alm-avail-mask) >> alm-avail-mask.count-trailing-zeros
       eph-avail    = (flags & eph-avail-mask) >> eph-avail-mask.count-trailing-zeros
       ano-avail    = (flags & ano-avail-mask) >> ano-avail-mask.count-trailing-zeros
-      aop-avail    = (flags & alm-avail-mask) >> alm-avail-mask.count-trailing-zeros
+      aop-avail    = (flags & aop-avail-mask) >> aop-avail-mask.count-trailing-zeros
       diff-corr    = ((flags & diff-corr-mask) >> diff-corr-mask.count-trailing-zeros) != 0
       sv-used      = ((flags & sv-used-mask) >> sv-used-mask.count-trailing-zeros) != 0
       smoothed     = ((flags & smoothed-mask) >> smoothed-mask.count-trailing-zeros) != 0
@@ -2634,7 +2634,7 @@ class CfgGnss extends Message:
 
     blocks.size.repeat: | i/int |
       block := blocks[i]  // Expect map with fields: "gnssId", "resTrkCh", "maxTrkCh", "flags"
-      assert: block.size == 5
+      assert: block.size == 4
       base := 4 + 8 * i
       put-uint8_ (base + BLOCK-GNSSID_) block["gnssId"]
       put-uint8_ (base + BLOCK-RESTRKCH_) block["resTrkCh"]
@@ -2658,10 +2658,10 @@ class CfgGnss extends Message:
       --res-trk/int=0
       --max-trk/int=0
       --flags/int=0:
-    if enable:
-      flags = (enable ? FLAG-ENABLE : 0) | flags
-    block/Map := {"gnssId": gnss-id, "resTrkCh": res-trk, "maxTrkCh": max-trk, "flags": flags}
-    return block
+    if enable != null:
+      if enable: flags |= FLAG-ENABLE
+      else:      flags &= ~FLAG-ENABLE
+    return {"gnssId": gnss-id, "resTrkCh": res-trk, "maxTrkCh": max-trk, "flags": flags}
 
   /** Message version for this set of config blocks.  */
   msg-ver -> int:
@@ -2673,11 +2673,12 @@ class CfgGnss extends Message:
 
   /** The `gnssId` for the i'th config block. */
   config-block-gnss-id i/int -> int:
-    assert: 0 < i <= num-config-blocks
+    assert: 0 <= i < num-config-blocks
     return uint8_ (4 + 8*i)
 
   /** The flags for the i'th config block. */
   config-block-flags i/int -> int:
+    assert: 0 <= i < num-config-blocks
     return uint32_ (4 + 8*i + 4)
 
   /**
@@ -2687,7 +2688,7 @@ class CfgGnss extends Message:
     sending back.
   */
   config-block i/int -> Map:
-    assert: 0 < i <= num-config-blocks
+    assert: 0 <= i < num-config-blocks
     base := (4 + 8*i)
     block := {:}
     block["gnssId"] = uint8_ (base + BLOCK-GNSSID_)
@@ -2812,7 +2813,6 @@ class CfgInf extends Message:
     $LEVEL-TEST or $LEVEL-DEBUG.
   */
   set-port-level level/int=LEVEL-ALL --port/int=PORT-ALL --enable/bool=true --raw/bool=false -> none:
-    assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     assert: port == PORT-ALL or 0 <= port <= 5
     assert: 0 <= level <= 0x1F
 
