@@ -2813,7 +2813,6 @@ class CfgInf extends Message:
     $LEVEL-TEST or $LEVEL-DEBUG.
   */
   set-port-level level/int=LEVEL-ALL --port/int=PORT-ALL --enable/bool=true --raw/bool=false -> none:
-    assert: protocol-id == PROTO-UBX or protocol-id == PROTO-NMEA
     assert: port == PORT-ALL or 0 <= port <= 5
     assert: 0 <= level <= 0x1F
 
