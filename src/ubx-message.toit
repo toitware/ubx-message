@@ -2634,7 +2634,7 @@ class CfgGnss extends Message:
 
     blocks.size.repeat: | i/int |
       block := blocks[i]  // Expect map with fields: "gnssId", "resTrkCh", "maxTrkCh", "flags"
-      assert: block.size == 5
+      assert: block.size == 4
       base := 4 + 8 * i
       put-uint8_ (base + BLOCK-GNSSID_) block["gnssId"]
       put-uint8_ (base + BLOCK-RESTRKCH_) block["resTrkCh"]
@@ -2658,10 +2658,10 @@ class CfgGnss extends Message:
       --res-trk/int=0
       --max-trk/int=0
       --flags/int=0:
-    if enable:
-      flags = (enable ? FLAG-ENABLE : 0) | flags
-    block/Map := {"gnssId": gnss-id, "resTrkCh": res-trk, "maxTrkCh": max-trk, "flags": flags}
-    return block
+    if enable != null:
+      if enable: flags |= FLAG-ENABLE
+      else:      flags &= ~FLAG-ENABLE
+    return {"gnssId": gnss-id, "resTrkCh": res-trk, "maxTrkCh": max-trk, "flags": flags}
 
   /** Message version for this set of config blocks.  */
   msg-ver -> int:
