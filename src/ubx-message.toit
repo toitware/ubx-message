@@ -3388,6 +3388,9 @@ Each item is identified by a unique 32-bit key ID that packs a size identifier,
   a group ID, and an item ID.  The numeric form uses lower-case hexadecimal,
   such as 0x20c400a1; the readable form is CFG-GROUP-ITEM.  This class parses the
   key identifier only, not the associated value.
+
+Note that the class can encodes int values by width but has no float path. For
+  R4/R8 items, a pre-encoded ByteArray is required.
 */
 class CfgGroupItem:
   payload_/int := 0
