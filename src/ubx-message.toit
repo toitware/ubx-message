@@ -380,6 +380,12 @@ class Message:
         return CfgInf.private_ payload
       if id == CfgMsg.ID:
         return CfgMsg.private_ payload
+      if id == CfgValGet.ID:
+        return CfgValGet.private_ payload
+      if id == CfgValSet.ID:
+        return CfgValSet.private_ payload
+      if id == CfgValDel.ID:
+        return CfgValDel.private_ payload
 
     if cls == Message.INF:
       if id == InfError.ID:
@@ -3127,3 +3133,348 @@ class InfDebug extends Message:
   stringify -> string:
     if payload.size > 0: return "$super: $text"
     return super
+
+/**
+The UBX-CFG-VALGET message.
+
+Requests one or more configuration keys; the device responds with a
+  UBX-CFG-VALGET payload containing key-value pairs.
+*/
+class CfgValGet extends Message:
+  static ID ::= 0x8B
+
+  /** The RAM layer (current configuration).  See $layer. */
+  static LAYER-RAM     ::= 0x00
+  /** The battery-backed RAM layer.  See $layer. */
+  static LAYER-BBR     ::= 0x01
+  /** The flash layer, if present.  See $layer. */
+  static LAYER-FLASH   ::= 0x02
+  /** The default layer (hard-coded factory defaults, read-only).  See $layer. */
+  static LAYER-DEFAULT ::= 0x07
+
+  /** Maximum number of key IDs allowed in a single request. */
+  static MAX-KEY-IDS_ ::= 64
+
+  /**
+  Constructs a message that polls the receiver for the given $keys.
+
+  Each entry of $keys is a 32-bit configuration key ID (an int).  Wild-card keys
+    (item 0xfff for a whole group) are permitted.  Values are read from the
+    single $layer given, one of $LAYER-RAM, $LAYER-BBR, $LAYER-FLASH, or
+    $LAYER-DEFAULT.  The $position skips that many key-value pairs in the
+    response, used to page through wild-card results larger than $MAX-KEY-IDS_.
+  */
+  constructor.poll --keys/List=[] --layer/int=LAYER-RAM --position/int=0 --version/int=0:
+    assert: keys.size <= MAX-KEY-IDS_
+    bytes := ByteArray (4 + 4 * keys.size)
+    bytes[0] = version
+    bytes[1] = layer
+    LITTLE-ENDIAN.put-uint16 bytes 2 position
+    i := 0
+    while i < keys.size:
+      LITTLE-ENDIAN.put-uint32 bytes (4 + 4 * i) keys[i]
+      i++
+    super.private_ Message.CFG ID bytes
+
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.CFG ID bytes
+
+  version -> int:
+    return uint8_ 0
+
+  /** The layer the values were retrieved from.  See $LAYER-RAM. */
+  layer -> int:
+    return uint8_ 1
+
+  /** The paging offset; see $CfgValGet.poll. */
+  position -> int:
+    return uint16_ 2
+
+  /**
+  Parses a VALGET response payload into a map of $CfgGroupItem to raw value
+    bytes.
+
+  Values are returned as raw little-endian byte arrays of the width implied by
+    each key's size field; callers convert them to native form as needed.
+  */
+  payload-to-map_ -> Map:
+    output := {:}
+    if payload.size < 4: return output
+    reader := io.Reader payload
+    reader.skip 4
+    while (payload.size - reader.processed) >= 4:
+      key := CfgGroupItem.from-value_ reader.little-endian.read-uint32
+      width := key.size-bytes
+      if width > (payload.size - reader.processed): throw "VALGET value exceeds remaining payload"
+      output[key] = reader.read-bytes width
+    return output
+
+/**
+The UBX-CFG-VALSET message.
+
+Sets one or more configuration keys.  The device responds with UBX-ACK-ACK or
+  UBX-ACK-NAK.  When transactions are used, either all or none of the values are
+  applied.
+*/
+class CfgValSet extends Message:
+  static ID ::= 0x8A
+
+  /** The RAM layer bit.  See $layers. */
+  static LAYER-RAM   ::= 0b001
+  /** The battery-backed RAM layer bit.  See $layers. */
+  static LAYER-BBR   ::= 0b010
+  /** The flash layer bit.  See $layers. */
+  static LAYER-FLASH ::= 0b100
+
+  /** Maximum number of key-value pairs allowed in a single message. */
+  static MAX-KEY-IDS_ ::= 64
+
+  /** Apply immediately; cancels any open transaction. */
+  static TRANSACTIONLESS ::= 0
+  /** Begin (or restart) a transaction. */
+  static START           ::= 1
+  /** Add to the current transaction. */
+  static CONTINUE        ::= 2
+  /** Commit the current transaction. */
+  static COMMIT          ::= 3
+  static TRANSACTION-MASK_ ::= 0b11
+
+  /**
+  Constructs a message that sets the given $values.
+
+  $values maps each 32-bit key ID (an int) to its value.  A value given as an
+    int is encoded little-endian at the width implied by the key's size field
+    (see $CfgGroupItem.size-bytes); a value given as a $ByteArray is written
+    verbatim and must already match that width.
+
+  $layers is a bit set of destination layers ($LAYER-RAM, $LAYER-BBR,
+    $LAYER-FLASH; may be OR'd).  Transactions require $version 1 and are selected
+    with $transaction-state, one of $TRANSACTIONLESS, $START, $CONTINUE, or
+    $COMMIT.
+  */
+  constructor.set --values/Map --layers/int=LAYER-RAM --transaction-state/int=TRANSACTIONLESS --version/int=0:
+    assert: 0 <= version <= 1
+    assert: 0 < values.size <= MAX-KEY-IDS_
+
+    keys := []
+    encoded := []
+    values.do: | key value |
+      if not CfgGroupItem.is-valid key: throw "Invalid configuration key 0x$(%08x key)"
+      keys.add key
+      encoded.add (encode-value_ (CfgGroupItem.from-value_ key) value)
+
+    total := 4
+    i := 0
+    while i < encoded.size:
+      total += 4 + encoded[i].size
+      i++
+
+    body := ByteArray total
+    body[0] = version
+    body[1] = layers
+    body[2] = transaction-state & TRANSACTION-MASK_  // Byte 3 reserved, left 0.
+
+    offset := 4
+    j := 0
+    while j < keys.size:
+      LITTLE-ENDIAN.put-uint32 body offset keys[j]
+      offset += 4
+      body.replace offset encoded[j]
+      offset += encoded[j].size
+      j++
+
+    super.private_ Message.CFG ID body
+
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.CFG ID bytes
+
+  version -> int:
+    return uint8_ 0
+
+  /** The destination layer bit set.  See $LAYER-RAM. */
+  layers -> int:
+    return uint8_ 1
+
+  transaction-state -> int:
+    return (uint8_ 2) & TRANSACTION-MASK_
+
+  /** Encodes $value to the byte width implied by $item's size field. */
+  static encode-value_ item/CfgGroupItem value -> ByteArray:
+    width := item.size-bytes
+    if value is ByteArray:
+      array := value as ByteArray
+      assert: array.size == width
+      return array
+    out := ByteArray width
+    if width == 1: out[0] = value & 0xFF
+    else if width == 2: LITTLE-ENDIAN.put-uint16 out 0 value
+    else if width == 4: LITTLE-ENDIAN.put-uint32 out 0 value
+    else: LITTLE-ENDIAN.put-int64 out 0 value  // 8-byte: written as int64.
+    return out
+
+/**
+The UBX-CFG-VALDEL message.
+
+Deletes keys (resets them to default) from one or more non-volatile layers.
+  Responds with UBX-ACK-ACK or UBX-ACK-NAK; note that an ACK only means the
+  message was accepted, not that a transaction was committed.
+*/
+class CfgValDel extends Message:
+  static ID ::= 0x8C
+
+  /** The battery-backed RAM layer bit.  See $layers. */
+  static LAYER-BBR   ::= 0b010
+  /** The flash layer bit.  See $layers. */
+  static LAYER-FLASH ::= 0b100
+
+  /** Maximum number of key IDs allowed in a single message. */
+  static MAX-KEY-IDS_ ::= 64
+
+  /** Apply immediately; cancels any open transaction. */
+  static TRANSACTIONLESS ::= 0
+  /** Begin (or restart) a transaction. */
+  static START           ::= 1
+  /** Add to the current transaction. */
+  static CONTINUE        ::= 2
+  /** Commit the current transaction. */
+  static COMMIT          ::= 3
+  static TRANSACTION-MASK_ ::= 0b11
+
+  /**
+  Constructs a message that deletes the given $keys.
+
+  Each entry of $keys is a 32-bit configuration key ID (an int).  Deletion
+    applies to the non-volatile $layers given as a bit set ($LAYER-BBR,
+    $LAYER-FLASH; may be OR'd) — the volatile RAM layer cannot be deleted from.
+    Transactions require $version 1 and are selected with $transaction-state.
+  */
+  constructor.delete --keys/List --layers/int --transaction-state/int=TRANSACTIONLESS --version/int=0:
+    assert: 0 <= version <= 1
+    assert: 0 < keys.size <= MAX-KEY-IDS_
+    body := ByteArray (4 + 4 * keys.size)
+    body[0] = version
+    body[1] = layers
+    body[2] = transaction-state & TRANSACTION-MASK_  // Byte 3 reserved, left 0.
+    i := 0
+    while i < keys.size:
+      key := keys[i]
+      if not CfgGroupItem.is-valid key: throw "Invalid configuration key 0x$(%08x key)"
+      LITTLE-ENDIAN.put-uint32 body (4 + 4 * i) key
+      i++
+    super.private_ Message.CFG ID body
+
+  /** Constructs an instance with the payload $bytes from a retrieved message. */
+  constructor.private_ bytes/ByteArray:
+    super.private_ Message.CFG ID bytes
+
+  version -> int:
+    return uint8_ 0
+
+  /** The target layer bit set.  See $LAYER-BBR. */
+  layers -> int:
+    return uint8_ 1
+
+  transaction-state -> int:
+    return (uint8_ 2) & TRANSACTION-MASK_
+
+
+/**
+Handles CFG-GROUP-ITEM configuration keys for $CfgValGet, $CfgValSet, and
+  $CfgValDel.
+
+Each item is identified by a unique 32-bit key ID that packs a size identifier,
+  a group ID, and an item ID.  The numeric form uses lower-case hexadecimal,
+  such as 0x20c400a1; the readable form is CFG-GROUP-ITEM.  This class parses the
+  key identifier only, not the associated value.
+*/
+class CfgGroupItem:
+  payload_/int := 0
+
+  // Bit layout of the 32-bit key ID (u-blox interface description):
+  //   bits 30..28  size identifier
+  //   bits 27..24  reserved
+  //   bits 23..16  group ID
+  //   bits 15..12  reserved
+  //   bits 11..0   item ID
+  static SIZE-MASK_  ::= 0b01110000_00000000_00000000_00000000
+  static GROUP-MASK_ ::= 0b00000000_11111111_00000000_00000000
+  static ID-MASK_    ::= 0b00000000_00000000_00001111_11111111
+
+  constructor.from-value_ .payload_/int:
+
+  constructor.from-byte-array_ bytes/ByteArray:
+    assert: bytes.size == 4
+    payload_ = LITTLE-ENDIAN.uint32 bytes 0
+
+  constructor --size/int --group/int --id/int:
+    assert: 0x01 <= size <= 0x05
+    assert: 0x01 <= group <= 0xfe
+    assert: 0x001 <= id <= 0xffe
+    payload_ = replace_ payload_ size SIZE-MASK_
+    payload_ = replace_ payload_ group GROUP-MASK_
+    payload_ = replace_ payload_ id ID-MASK_
+
+  /**
+  The key's storage-size identifier (not the actual byte width).
+
+  One of 0x01 (one bit), 0x02 (one byte), 0x03 (two bytes), 0x04 (four bytes),
+    or 0x05 (eight bytes).
+  */
+  size-raw -> int:
+    return read_ SIZE-MASK_
+
+  /** The actual value width in bytes, derived from $size-raw. */
+  size-bytes -> int:
+    if size-raw == 0x01: return 1  // One bit, stored in one byte.
+    if size-raw == 0x02: return 1  // One byte.
+    if size-raw == 0x03: return 2  // Two bytes.
+    if size-raw == 0x04: return 4  // Four bytes.
+    return 8                       // 0x05: eight bytes.
+
+  /** The configuration group identifier. */
+  group -> int:
+    return read_ GROUP-MASK_
+
+  /** The configuration item ID within the group. */
+  id -> int:
+    return read_ ID-MASK_
+
+  /** Hash code for use as a map key. */
+  hash-code -> int:
+    return payload_
+
+  /** Whether $other is a $CfgGroupItem with the same key ID. */
+  operator == other -> bool:
+    if other is not CfgGroupItem: return false
+    return payload_ == (other as CfgGroupItem).payload_
+
+  /** The key ID as a 4-byte little-endian byte array. */
+  to-byte-array -> ByteArray:
+    return to-bytes32 payload_
+
+  /** The key ID as an integer. */
+  to-int -> int:
+    return payload_
+
+  /** Extracts the field selected by $mask from $payload_. */
+  read_ mask/int -> int:
+    return (payload_ & mask) >> mask.count-trailing-zeros
+
+  /** Turns a 32-bit $value into a 4-byte little-endian byte array. */
+  static to-bytes32 value/int -> ByteArray:
+    assert: 0 <= value <= 0xFFFF_FFFF
+    output := ByteArray 4
+    LITTLE-ENDIAN.put-uint32 output 0 value
+    return output
+
+  /** Whether $id is a valid key (only size/group/item bits are set). */
+  static is-valid id/int -> bool:
+    if not 0 <= id <= 0xFFFF_FFFF: return false
+    return (id & ~(SIZE-MASK_ | GROUP-MASK_ | ID-MASK_)) == 0
+
+  /** Writes $value into the field selected by $mask within $payload. */
+  static replace_ payload/int value/int mask/int -> int:
+    shift := mask.count-trailing-zeros
+    return (payload & ~mask) | ((value << shift) & mask)
