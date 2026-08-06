@@ -109,8 +109,9 @@ this internal representation.
 
 # Usage
 While different drivers might do this differently (especially if I2c vs. SPI vs.
-Serial) the messages operate in the following broad way:
-#### Sending a message
+Serial) the messages operate in the following broad ways.
+
+### Sending a message
 To send a message, first create the message using the appropriate constructor,
 and then send it to the device:
 ```toit
@@ -139,6 +140,35 @@ constructors:
   // driver not in this parser library):
   device.send-packet rate-message.to-byte-array
 ```
+
+### `UBX-CFG-VALGET`/`UBX-CFG-VALSET`/`UBX-CFG-VALDEL` replacing `UBX-CFG`
+A newer configuration architecture exists for for Generation 9 and 10 GNSS
+modules (like the `ZED-F9P`, `NEO-M9N`, and `M10`).  This replaces the legacy
+`UBX-CFG` message structure, offering granular, key-based configuration instead
+of grouped, field-heavy messages.  Note that current implementations on tested
+hardware support both newer and older mechanisms at the time of writing.
+
+This process relies on 7 distinct memory layers. When a parameter is updated
+via `UBX-CFG-VALSET`, the layer in which to save it must be explicitly supplied
+(This driver implements constants `LAYER-RAM` (0x0), `LAYER-BBR` (0x1),
+`LAYER-FLASH` (0x2), and `LAYER-DEFAULT` (0x7 - the hard coded defaults) see
+Toitdoc notes).  The receiver evaluates the layers from bottom (highest number)
+to top (lowest), with the highest layer that contains the value being the
+winning value.
+
+Preparing a key/type table in this driver would need approximately 1100 items,
+plus variations for different models - a difficult task to keep maintained in
+any driver.  Therefore this feature been implemented using a "caller supplies
+the consumption logic" pattern: if a specific key is polled, it is expected
+that the user would already know its type and what is required to decode the
+result.  In this driver, the `CfgGroupItem` class holds this information, and
+has functions to return the group, key, size and result data of a setting.
+
+> [!WARNING]
+> Not all devices have all possible layers.  See device documentataion, and
+> attached toitdocs on how to set this value.  It is possible to set a
+> configuration which would make the device unavailable - before setting any
+> saved values, be sure to understand the safe-boot feature.
 
 
 # Documentation
